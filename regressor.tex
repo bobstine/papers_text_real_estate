@@ -143,8 +143,7 @@
 
  In contrast to substantively oriented modeling, we propose a version of supervised
  sentiment analysis that converts text into conventional explanatory variables.
- We convert the text into conventional numerical regressors (featurize) by exploiting methods from computational linguistics that will be familiar to many statisticians. These so-called vector space models \citep{turney10}, such as latent semantic analysis (LSA), make use of  singular value decompositions of  the bag-of-words and bigram representations of text.  These representations map words into points in a vector space defined by counts. This approach is highly automated with little need for human intervention, though it makes it easy to exploit such investments when available.  The derived regressors can be used alone or in combination with traditional variables, such as those obtained from a lexicon or other semantic model.  We use the example of real estate listings to illustrate the impact of various
- choices on the predictive accuracy.  For example, a regression using the
+ We convert the text into conventional numerical regressors (featurize) by exploiting methods from computational linguistics that are familiar to statisticians. These so-called vector space models \citep{turney10}, such as latent semantic analysis (LSA), make use of  singular value decompositions of  the bag-of-words and bigram representations of text. (This connection leads to methods being described as a `spectral algorithm for'.) These representations map words into points in a vector space defined by counts. This approach is highly automated with little need for human intervention, though it makes it easy to exploit such investments when available.  The derived regressors can be used alone or in combination with traditional variables, such as those obtained from a lexicon or other semantic model.  We use the example of real estate listings to illustrate the impact of various  choices on the predictive accuracy.  For example, a regression using the
  automated features produced by this analysis explains over two-thirds of the
  variation in listed prices for real estate in Chicago.  The addition of several
  substantively derived variables adds little.  Though we do not emphasize its
@@ -246,19 +245,17 @@ Associating words that co-occur in a document is more familiar to statisticians,
  \end{equation}
  define the SVD of $B$, and again use matrices without $\sim$ to denote components of the truncated SVD:  $U_B$ and $V_B$ denote the first $k_B$ columns of $\tilde{U}_B$ and $\tilde{V}_B$, respectively.  As in the
  decomposition of $W$, the number of singular vector to retain is a user-defined choice.  We generally keep $k_W = k_B$.  Because $B$ is $M
- \times M$, these singular vectors define a points in $\R^M$ and are sometimes referred to as ``eigenwords'' because of the way in which they form directions in word space \ras{cite}.  To build regressors, we measure how much of these eigenwords appears in the various documents.  We measure each by computing correlations between the vectors in $U_B$ and $V_B$ with the bag-of-words representations of the documents.  Because the columns of $U_B$ and $V_B$ are orthonormal, these correlations are given by
+ \times M$, these singular vectors define points in $\R^M$ and are sometimes referred to as ``eigenwords'' because of the way in which they form directions in word space \ras{cite}.  The $i$th row of $U_B$  locates the word type $w_i$ within $\R^{k_B}$  (all of the following applies  to $V_B$ as well).  To build regressors, we locate each document at a point within this same space.  We can think of this location in two, nearly equivalent ways that emphasize either the rows or columns of $U_B$.  The two methods differ in a sum is normalized.  The row-oriented motivation is particularly simple: a document is positioned at the average of the positions of its words.  For example, the $i$th document is located at $w_i'U_B/m_i$.  Alternatively, emphasizing columns, we can compute the correlation between the columns of $U_B$ with the bag-of-words representations of the documents.  Because the columns of $U_B$  and $V_B$ are orthonormal, these correlations are given by
  \begin{equation}
      C = [C_l C_r] 
          = \mbox{diag}(\norm{w_i}^{-1})W[U_B \; V_B]   \;, 
             \quad \mbox{ where } \quad  \normsq{x} = \sum x_i^2  \;.
  \label{eq:C}
  \end{equation}
- The $i$th row of of the $n \times 2k_B$ matrix $C$ is the vector of
- correlations between the bag-of-words representation $w_i$ and the singular
- vectors of $B$.  The columns of $C$ form the second bundle of regressors.
+ The $i$th row of of the $n \times 2k_B$ matrix $C$ is the vector of correlations between the bag-of-words representation $w_i$ and the singular vectors of $B$.  In our models for real-estate listings, the columns of $C$ form the second bundle of regressors.
 
 
- It is worthwhile to point out two features of these calculations that are
+ It is worthwhile to take note of two properties of these calculations that are
  important in practice.  First, one needs to take advantage of sparsity in the
  matrices $W$ and $B$ to reduce memory usage and to increase the speed of
  computing matrix products.  Second, the computation of the SVD of a large
@@ -763,16 +760,17 @@ Again, a constrained factorization that produced probability vectors would be mo
 \end{figure}
 
 
-The distribution of words produced by this topic model  loosely resembles the distribution found in real estate ads.  Compare Figure \ref{fig:simzipf} to Figure \ref{fig:zipf} from the real estate data.  Though a good match for the less common words, the most common words are not as common as one might want.  The common words do not have a high enough frequency (disjoint topics lack common words like `a' and `the' and punctuation as found in the real-estate listings shown in Figure \ref{fig:zipf}), and the frequencies for rare words drop off too quickly.  
+The distribution of words produced by this topic model  loosely resembles the distribution found in real estate ads.  Compare Figure \ref{fig:simzipf}(a) to Figure \ref{fig:zipf} from the real estate data.  Though a good match for the less common words, the most common words are not as common as one might want.  The common words do not have a high enough frequency (disjoint topics lack common words like `a' and `the' and punctuation as found in the real-estate listings shown in Figure \ref{fig:zipf}), and the frequencies for rare words drop off too quickly.  
 
 
 \begin{figure}
 \caption{ \label{fig:simzipf} { \sl Distribution of word frequencies for simulated
-topic data does not match that for typical real text.}}
+topic data, based on (a) disjoint word distributions and (b) over-lapping distributions.}}
  \centerline{
  \vspace{0.1in}
- \includegraphics[width=3in]{figures/simzipf}  }
- \vspace{0.2in}
+ \includegraphics[width=2.5in]{figures/simzipfA}  
+ \includegraphics[width=2.5in]{figures/simzipfB} }
+  \vspace{0.2in}
  \end{figure}
 
 
