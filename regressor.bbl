@@ -1,0 +1,64 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{Baayen(2002)}]{baayen02}
+\textsc{Baayen, R.~H.} (2002).
+\newblock \textit{Word Frequency Distributions}.
+\newblock Springer, New York.
+
+\bibitem[{Blei(2012)}]{blei12}
+\textsc{Blei, D.} (2012).
+\newblock Probabilistic topic models.
+\newblock \textit{Communications of the ACM} \textbf{55} 77--84.
+
+\bibitem[{Bullinaria and Levy(2007)}]{bullinaria07}
+\textsc{Bullinaria, J.~A.} and \textsc{Levy, J.~P.} (2007).
+\newblock Extracting semantic representations from word co-occurrence
+  statistics: {A} computational study.
+\newblock \textit{Behavior Research Methods} \textbf{39} 510--526.
+
+\bibitem[{Clauset et~al.(2009)Clauset, Shalizi and Newman}]{clauset09}
+\textsc{Clauset, A.}, \textsc{Shalizi, C.~R.} and \textsc{Newman, M. E.~J.}
+  (2009).
+\newblock Power-law distributions in empirical data.
+\newblock \textit{SIAM Review} \textbf{51} 661--703.
+
+\bibitem[{Deerwester et~al.(1990)Deerwester, Dumais, Furnas, Landauer and
+  Harshman}]{deerwester90}
+\textsc{Deerwester, S.}, \textsc{Dumais, S.~T.}, \textsc{Furnas, G.~W.},
+  \textsc{Landauer, T.~K.} and \textsc{Harshman, R.} (1990).
+\newblock Indexing by latent semantic analysis.
+\newblock \textit{Journal of the American Society for Information Science}
+  \textbf{41} 391--407.
+
+\bibitem[{Halko et~al.(2010)Halko, Martinsson and Tropp}]{tropp10}
+\textsc{Halko, N.}, \textsc{Martinsson, P.} and \textsc{Tropp, J.~A.} (2010).
+\newblock Finding structure with randomness: stochastic algorithms for
+  constructing approximate matrix decompositions.
+\newblock \textit{Siam Review} \textbf{53} 217–--288.
+
+\bibitem[{Landauer and Dumais(1997)}]{landauer97}
+\textsc{Landauer, T.~K.} and \textsc{Dumais, S.~T.} (1997).
+\newblock A solution to {P}lato's problem: {T}he latent semantic analysis
+  theory of acquisition, induction, and representation of knowledge.
+\newblock \textit{Psychological Review} \textbf{104} 211--240.
+
+\bibitem[{Taboada et~al.(2011)Taboada, Brooke, Tofiloski, Voli and
+  Stede}]{taboada11}
+\textsc{Taboada, M.}, \textsc{Brooke, J.}, \textsc{Tofiloski, M.},
+  \textsc{Voli, K.} and \textsc{Stede, M.} (2011).
+\newblock Lexicon-based methods for sentiment analysis.
+\newblock \textit{Computational Linguistics} \textbf{37} 267--307.
+
+\bibitem[{Turney and Pantel(2010)}]{turney10}
+\textsc{Turney, P.} and \textsc{Pantel, P.} (2010).
+\newblock From frequency to meaning: vector space models of semantics.
+\newblock \textit{Journal of Artificial Intelligence Research} \textbf{37}
+  141--188.
+
+\bibitem[{Zipf(1935)}]{zipf35}
+\textsc{Zipf, G.~K.} (1935).
+\newblock \textit{The psycho-biology of language}.
+\newblock Houghton, Mifflin, Oxford, England.
+
+\end{thebibliography}

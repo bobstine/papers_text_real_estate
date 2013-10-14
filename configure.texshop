@@ -1,0 +1,6 @@
+defaults write TeXShop commentred 0.0
+defaults write TeXShop commentgreen 1.0
+defaults write TeXShop commentblue 0.0
+defaults write TeXShop commandred 0.2
+defaults write TeXShop commandgreen 0.2
+defaults write TeXShop commandblue 0.6

@@ -1,0 +1,18 @@
+Notes from Natural Language Reading Group
+Spring Semester, 2013
+
+
+
+
+* Non-negative matrix factorizations
+
+  Dean comment that the constraint for a non-negativity is not
+necessary (his claim).  The idea is that the interesting coordinates
+in a principle components decomposition are those that emerge beyond
+the 'fog' of random variation.  Think of the pointy graphite pencil
+ball.  The pencil-points represent meaningful coordinates; the others
+in the ball are random variation.
+
+  Imagine doing a histogram of the coordinates/direction given by PC.
+Only those that are outliers in the histogram that extend beyond the
+noise level are meaningful.

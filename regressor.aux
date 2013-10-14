@@ -1,0 +1,90 @@
+\relax 
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}}
+\citation{taboada11}
+\citation{turney10}
+\citation{deerwester90,landauer97,bullinaria07,turney10}
+\citation{manning99}
+\citation{jurafsky09}
+\citation{turney10}
+\@writefile{toc}{\contentsline {section}{\numberline {2}An Algorithm for Featurizing Text}{5}}
+\newlabel{sec:algo}{{2}{5}}
+\citation{turney10}
+\newlabel{eq:svdW}{{1}{7}}
+\newlabel{eq:svdB}{{2}{7}}
+\citation{tropp10}
+\citation{zipf35,baayen02}
+\citation{clauset09}
+\newlabel{eq:C}{{3}{8}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Predicting Prices of Real Estate}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces   { \sl  The distribution of prices for real estate in Chicago is highly skewed, but a log transformation produces data that are nearly normal.} The presence of a long lower tail might indicate that the data mix typical home sales with special, subsided properties or perhaps vacant lots that sell for an unusually low price. }}{9}}
+\newlabel{fig:prices}{{1}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1} Tokenization and Parsing }{9}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces   { \sl  The log of the frequency of word types in the listings for properties in Chicago is roughly linear in the log of the rank of the words, a Zipf distribution.} The shown line $\mathop {\mathgroup \symoperators log}\nolimits \unhbox \voidb@x \hbox {freq} = 10.9 - 0.93 \mathop {\mathgroup \symoperators log}\nolimits \unhbox \voidb@x \hbox {rank}$ was fit to words with ranks 1 through 500. }}{10}}
+\newlabel{fig:zipf}{{2}{10}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces   { \sl  The distribution of the lengths $m_i$ of the property descriptions is right-skewed, with some listing running hundreds of words compared to a median length of 74 words. } }}{11}}
+\newlabel{fig:boxplot}{{3}{11}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces   { \sl  The parsed characteristics have slight positive association with the log of the prices. } Gray points in the figures identify cases that were missing the explanatory variable; the shown correlation uses the complete, filled-in data. }}{12}}
+\newlabel{fig:parsed}{{4}{12}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces   {\sl  OLS multiple regression of log prices on the parsed explanatory variables and indicators of observed values.}}}{13}}
+\newlabel{tab:parsed}{{1}{13}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces   {\sl  Multiple regression of log prices on counts from the document/word matrix $W$ for the most common 2,000 words.} The table shows the 14 estimates that exceed the Bonferroni threshold for statistical significance.}}{14}}
+\newlabel{tab:regrInd}{{2}{14}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces   { \sl  Distribution of the t-statistics for the regression of log prices on 2,000 word indicators (columns of $W$).}}}{15}}
+\newlabel{fig:regrInd}{{5}{15}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces   {\sl  Multiple regression of log prices on singular vectors of the document/word count matrix $W$.} The first table shows estimated coefficients for first 10 and last 3 singular vectors with $k_w = 500$. }}{17}}
+\newlabel{tab:regrW}{{3}{17}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces   {\sl  Multiple regression of log prices on regressors derived from the bigram matrix $B$.} Each regression uses correlations derived from $k_B$ left and $k_B$ right singular vectors. }}{18}}
+\newlabel{tab:regrB}{{4}{18}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces   { \sl  T-statistics of the singular value regressors for (a) the singular vectors of $W$ and (b) the left and right singular vectors of $B$.}}}{19}}
+\newlabel{fig:svdregr}{{6}{19}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces   { \sl  Canonical correlations between the 500 columns of $C_l$ and $C_r$.} $C_l$ and $C_r$ project the left and right singular vectors of the bigram matrix into $\unhbox \voidb@x \hbox {$\mathbb  {R}$}^n$.}}{20}}
+\newlabel{fig:cca}{{7}{20}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces   { \sl  Canonical variables from the analysis of the dependence between $C_l$ and $C_r$ concentrate more signal into the leading regressors.}}}{20}}
+\newlabel{fig:regrBcca}{{8}{20}}
+\citation{blei12}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Models and Motivation}{21}}
+\newlabel{sec:model}{{4}{21}}
+\newlabel{eq:zeta}{{4}{22}}
+\newlabel{eq:regr}{{5}{22}}
+\newlabel{eq:Pk}{{6}{22}}
+\newlabel{eq:P}{{7}{22}}
+\newlabel{eq:wim}{{9}{23}}
+\newlabel{eq:di}{{10}{23}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Latent Semantic Analysis}{23}}
+\newlabel{eq:EW}{{11}{23}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Bigram Analysis}{24}}
+\newlabel{eq:joint}{{12}{24}}
+\newlabel{eq:B2}{{13}{25}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Example: Simulated Data from Topic Models}{26}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.1}Nearly Disjoint Topic Distributions}{26}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces   \sl  Probabilities assigned to words by two simulated topic distributions with (a) nearly disjoint support and (b) with overlapping words.}}{27}}
+\newlabel{fig:simdist}{{9}{27}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces   { \sl  Distribution of word frequencies for simulated topic data does not match that for typical real text.}}}{28}}
+\newlabel{fig:simzipf}{{10}{28}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces   \sl  Fits to regression in simulated topic data using singular vectors of $W$ and $B$ for two topic distributions.}}{28}}
+\newlabel{tab:simregr}{{5}{28}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces   {\sl  Scatterplot of fitted values for the two regressions based on singular vectors of $W$ and $B$.} The shown smooth curve is the lowess fit, and the correlation $r \approx 0.97$.}}{28}}
+\newlabel{fig:simfits}{{11}{28}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces   { \sl  Canonical correlations for left and right singular vectors of the bigram matrix $B$ of simulated topic data.} (a) The underlying topics are nearly disjoint in support. (b) The underlying topics overlap.}}{29}}
+\newlabel{fig:simccab}{{12}{29}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.2}Overlapping Topic Distributions}{29}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Variable Selection and Cross Validation}{30}}
+\newlabel{sec:cv}{{5}{30}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces   {\sl  Distribution of statistical significance in the regression with simulated, overlapping topic models.} Results first for the regression on singular vectors from $W$, then those derived from the bigram matrix $B$.}}{31}}
+\newlabel{fig:simregr}{{13}{31}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Lighthouse Variables and Interpretation}{32}}
+\newlabel{sec:light}{{6}{32}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Next Steps}{32}}
+\newlabel{sec:disc}{{7}{32}}
+\bibdata{../../../references/stat,../../../references/TextPapers/text}
+\bibcite{baayen02}{{1}{2002}{{Baayen}}{{}}}
+\bibcite{blei12}{{2}{2012}{{Blei}}{{}}}
+\bibcite{bullinaria07}{{3}{2007}{{Bullinaria and Levy}}{{}}}
+\bibcite{clauset09}{{4}{2009}{{Clauset et~al.}}{{Clauset, Shalizi and Newman}}}
+\bibcite{deerwester90}{{5}{1990}{{Deerwester et~al.}}{{Deerwester, Dumais, Furnas, Landauer and Harshman}}}
+\bibcite{tropp10}{{6}{2010}{{Halko et~al.}}{{Halko, Martinsson and Tropp}}}
+\bibcite{landauer97}{{7}{1997}{{Landauer and Dumais}}{{}}}
+\bibcite{taboada11}{{8}{2011}{{Taboada et~al.}}{{Taboada, Brooke, Tofiloski, Voli and Stede}}}
+\bibcite{turney10}{{9}{2010}{{Turney and Pantel}}{{}}}
+\bibcite{zipf35}{{10}{1935}{{Zipf}}{{}}}
+\bibstyle{../bst/ims}

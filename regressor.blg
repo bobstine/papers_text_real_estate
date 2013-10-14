@@ -1,0 +1,47 @@
+This is BibTeX, Version 0.99d (TeX Live 2013)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: regressor.aux
+The style file: ../bst/ims.bst
+Database file #1: ../../../references/stat.bib
+Database file #2: ../../../references/TextPapers/text.bib
+You've used 10 entries,
+            2836 wiz_defined-function locations,
+            692 strings with 6126 characters,
+and the built_in function-call counts, 5000 in all, are:
+= -- 477
+> -- 220
+< -- 6
++ -- 89
+- -- 75
+* -- 480
+:= -- 885
+add.period$ -- 30
+call.type$ -- 10
+change.case$ -- 73
+chr.to.int$ -- 10
+cite$ -- 10
+duplicate$ -- 225
+empty$ -- 353
+format.name$ -- 105
+if$ -- 950
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 12
+newline$ -- 54
+num.names$ -- 40
+pop$ -- 69
+preamble$ -- 1
+purify$ -- 65
+quote$ -- 0
+skip$ -- 116
+stack$ -- 0
+substring$ -- 313
+swap$ -- 70
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 84
+warning$ -- 0
+while$ -- 45
+width$ -- 0
+write$ -- 131

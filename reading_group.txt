@@ -1,0 +1,43 @@
+Notes from Natural Language Reading Group
+Spring Semester, 2013
+
+
+
+
+* Non-negative matrix factorizations
+
+  Dean comment that the constraint for a non-negativity is not
+necessary (his claim).  The idea is that the interesting coordinates
+in a principle components decomposition are those that emerge beyond
+the 'fog' of random variation.  Think of the pointy graphite pencil
+ball.  The pencil-points represent meaningful coordinates; the others
+in the ball are random variation.
+
+  Imagine doing a histogram of the coordinates/direction given by PC.
+Only those that are outliers in the histogram that extend beyond the
+noise level are meaningful.
+
+
+* Skewness and positivity constraint
+
+  Natural in some problems to have a dimension that represents the
+presence of some collection/cluster rather than a typical 'scale' that
+would be used for numbers.  The dimension is not so much a Euclidean
+dimension but instead an indicator for the presence of some property,
+like an indicator variable.  Since the dimension is only meaningful
+for positive coordinates, such vectors would have a skewed
+distribution (3rd moment) of coordinates.
+
+  These show up a lot in the context of word groups, for which there's
+not a meaningful negative scale.  Eg, you can have a word cluster
+representing household pets {dog, cat, goldfish, ...}, but there's not
+a notion for the negative of this direction.  The direction only picks
+a cluster, not a real coordinate.  See paper 'Learning effective and
+interpretable semantic models using non-negative sparse embedding'.
+
+
+* Relevant software
+
+	SPAMS for non-negative sparse embedding
+
+	
