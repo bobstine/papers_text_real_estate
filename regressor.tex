@@ -887,27 +887,23 @@ Transductive case, rather than so-called inductive case.
  
  
  \item Further work:
-   \begin{itemize}
+   \begin{description}
+   
+   \item[Other domains.]  We have applied these same methods to similarly structured data from other domains.  For example, we built a regression to predict the ratings of wine using variables constructed from the SVDs of $W$ and $B$ for about 21,000 ratings of wine.  Though a larger number of documents, these descriptions are shorter (averaging 42 words).  The qualitative properties of our example with real estate carries over to that modeling.  For instance, plots of the coefficients share the features shown in Figure \ref{fig:svdregr}: A greater concentration in the LSA variables with the signal widely spread over coordinates.  The fits for the wine ratings are stronger, however.  Using the first 100 LSA singular vectors produces $\ol{R}^2 = 0.61$.
 
-   \item Transfer learning.  Going from one location (Chicago) to another.
+   \item[Transfer learning.]  Going from one location (Chicago) to another.
    
-   \item Use of unsupervised data, such as google eigenwords.
+   \item[Use of unsupervised data.] such as google eigenwords.
    
-   \item Variable selection.  In particular, nonlinear variables -- namely interactions -- or the use of other n-grams rather than just bigrams.  Perhaps some shrinkage as well to improve predictions.  Alpha investing results.
+   \item[n-grams.]  Can use trigrams or skipped bigrams.
    
- \item Would be interesting to explore the use of stemming to reduce the number of word types and with a larger collection of documents, to explore annotation (that would distinguish words by their part of speech).
-
-   \item Further parsing, lexical analysis.  Some readers will be troubled by the simplicity of the
- ``bag-of-words'' representation of a document.  Our methods understand neither
- English nor the rules of grammar, nor do they distinguish the ambiguity of the
- multiple uses of the same word.  Linguists have debated the ability of such
- representations to reveal the meaning of language, and it is clear that the bag of words representation loses information.  Just imagine cooking from "bag of words" recipe or following a "bag of words" driving directions.  Nonetheless,
- this very direct representation produces very useful explanatory variables
- within our application.  We leave open the opportunity to embellish this
+   \item[Variable selection.]  In particular, nonlinear variables -- namely interactions -- or the use of other n-grams rather than just bigrams.  Perhaps some shrinkage as well to improve predictions.  Alpha investing results.
+   
+ \item[More elaborate tokenizing] Would be interesting to explore the use of stemming to reduce the number of word types and with a larger collection of documents, to explore annotation (that would distinguish words by their part of speech).  Further parsing, lexical analysis.  Some readers will be troubled by the simplicity of the  ``bag-of-words'' representation of a document.  Our methods understand neither English nor the rules of grammar or spelling, nor do they attempt to untangle the multiple uses of the same word.  Linguists have debated the ability of such  representations to reveal the meaning of language, and it is clear that the bag of words representation loses information.  Just imagine cooking from "bag of words" recipe or following a "bag of words" driving directions.  Nonetheless, this very direct representation produces very useful explanatory variables within our application.  We leave open the opportunity to embellish this
  approach with more domain specific methods of parsing, such as adding
  part-of-speech tags and lexical information.
 
-   \end{itemize}
+   \end{description}
 
 \end{itemize}
 
