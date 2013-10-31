@@ -407,7 +407,7 @@ words compared to a median length of 74 words. } }
 \begin{center}
 \begin{tabular}{rrrrr}
   \hline
- & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
+ & Estimate & Std. Error & t  & Pr($>$$|$t$|$) \\ 
   \hline
  Intercept & 4.8858 & 0.4944 & 9.88 & 0.0000 \\ 
   $\log m$ & 0.8211 & 0.0239 & 34.31 & 0.0000 \\ 
@@ -425,7 +425,7 @@ words compared to a median length of 74 words. } }
 \end{table}
 
 
-Before building models using singular vectors, we begin by regressing the response on indicators for the words.  That is, we simply regress $y$ on the word counts in $W$.  This model provides a baseline for comparison with the fits produced by regressions using singular vectors.  Table \ref{tab:regrInd} summarizes the fit using the most common 2,000 words.  Overall, this model produces $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity that might be anticipated due to the differences in the document lengths (Figure \ref{fig:boxplot}).  The most significant word is ``vacant'' with $t=-8.5$; not surprisinging, the presence of this word in a listing indicates a property with lower than usual value.  In contrast, out-of-vocabulary words denoted ``OOV'' have higher than average prices ($t=6.3$). Figure \ref{fig:regrInd} summarizes the distribution of all t-statistics in this model.  Twenty-two words are not used due to singularities among these counts, leaving 1,978 estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$ in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this threshold for statistical significance.  The nearly flat red line in the figure is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the distribution of the fitted $t$-statistics is not far from the null distribution.  The gray line in the half-normal plot is the diagonal; the red line is the fitted regression of the smallest 200  $|t|$-statistics on the corresponding quantiles.  For a sample from a standard normal distribution, the slope of a line fit to the $t$ values should be 1.  The slope of the fitted line for these estimates is significantly larger, but clearly the signal is widely spread over these estimates.  A regression on counts for 14 words whose estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called ``nearly black'' models often studied in research on variable selection.  In those models, a few estimates stand out from a noisy background. In this application, much of the signal lies embedded in that background.
+Before building models using singular vectors, we begin by regressing the response on indicators for the words.  That is, we simply regress $y$ on the word counts in $W$.  This model provides a baseline for comparison with the fits produced by regressions using singular vectors.  Table \ref{tab:regrInd} summarizes the fit using the most common 2,000 words.  Overall, this model produces $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity that might be anticipated due to the differences in the document lengths (Figure \ref{fig:boxplot}).  The most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the presence of this word in a listing indicates a property with lower than usual value.  In contrast, out-of-vocabulary words denoted ``OOV'' have higher than average prices ($t=6.3$). Figure \ref{fig:regrInd} summarizes the distribution of all t-statistics in this model.  Twenty-two words are not used due to singularities among these counts, leaving 1,978 estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$ in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this threshold for statistical significance.  The nearly flat red line in the figure is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the distribution of the fitted $t$-statistics is not far from the null distribution.  The gray line in the half-normal plot is the diagonal; the red line is the fitted regression of the smallest 200  $|t|$-statistics on the corresponding quantiles.  For a sample from a standard normal distribution, the slope of a line fit to the $t$ values should be 1.  The slope of the fitted line for these estimates is significantly larger, but clearly the signal is widely spread over these estimates.  A regression on counts for 14 words whose estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called ``nearly black'' models often studied in research on variable selection.  In those models, a few estimates stand out from a noisy background. In this application, much of the signal lies embedded in that background.
 
  \begin{table}
  \caption{ \label{tab:regrInd} {\sl Multiple regression of log prices on 
@@ -460,12 +460,39 @@ Before building models using singular vectors, we begin by regressing the respon
 
 
  \begin{figure}
-  \caption{ \label{fig:regrInd} { \sl Distribution of the t-statistics for the regression of log prices on 2,000 word indicators (columns of $W$).}}
+  \caption{ \label{fig:regrInd} { \sl Distribution of the t-statistics for the regression of log prices on counts of the most frequent 2,000 word types (columns of $W$).}}
  \centerline{  \includegraphics[width=6in]{figures/tstatRegrInd}    }
  \vspace{0.2in}
  \end{figure}
 
- 
+
+Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  The initial model includes the number of tokens in each document, $m$.  By initializing the model with this count, common words are not added simply because they are common but rather because the use of the word is associated with the price.  Otherwise, common tokens such as a period or comma might appear predictive  because they occur frequently in longer documents.  Figure \ref{fig:cumr2} shows the accumulated $R^2$ statistic, with the words added in two orders: in order of decreasing (solid black) or increasing (dashed black) frequency.  Adding the most frequent words first provides a better fit with fewer variables.  The gray curve in the figure shows the contribution to $R^2$ of the words in order of frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  The difference between the black and gray curves shows the influence of collinearity among the word types.  For example, when added as the fourth variable, an OOV token boosts $R^2$ from 0.1417 to 0.1608.  If added four places from the last variable, these tokens add only 0.0003 to  $R^2$.  When constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
+
+
+\begin{figure}
+\caption{  \label{fig:cumr2}  
+  {\sl Accumulated $R^2$ statistics of regression models with words added in order of decreasing (solid black) or increasing (dashed black) frequency.} The gray curve shows the contributions having adjusted for subsequent words and shows the amount of collinearity among the word counts.}  
+  \centerline{ \includegraphics[width=4in]{figures/cum_r2.pdf} }
+\end{figure}
+
+Although the $R^2$ statistic grows steadily with increasing model size, the slowing rate of growth suggests that we can find a more predictive model with fewer coefficients.  To this end, we use the corrected AIC statistic \citep{hurvich89}
+\begin{equation}
+    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
+\end{equation}
+where $k$ is the number of estimated parameters in the regression.  Figure \ref{fig:aicwords} plots $AIC_c$ for models constructed from counts of word times in order of decreasing (solid) and increasing (dashed) frequency.  Again we find that building up a model from the most common words produces a better fit with fewer terms.  The best fit in this example occurs with $k=1,090$ words (4 frequency, but collinear words were omitted).
+
+
+\begin{figure}
+\caption{  \label{fig:aicwords}  
+  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or decreasing (dashed) frequency.}  The vertical gray segment identifies the model that minimizes $AIC_c$.}
+  \centerline{ \includegraphics[width=4in]{figures/aic_words.pdf} }
+\end{figure}
+
+
+It is useful to notice the importance of using a model selection criterion such as $AIC_c$ in this context rather than a classical test.  For example, consider the classical $F$ test between the  model that minimizes $AIC_c$ and a larger model derived from the most frequent 2,000 words.  The $F$-test indicates that the model derived from 2,000 words is ``better.''  The  partial-$F$ test of the variation added by including the additional words is statistically significant ($F = 1.93$ with $p$-value far less than 0.001).  The larger model explains statistically significantly more variation in log prices.  That said, because the larger model also has many more estimated coefficients, it is less predictive.  Repeated 10-fold cross validation gives mean squared prediction error 0.714 for the larger model, compared to 0.639 for the smaller model identified by AICc.
+
+
+
  The next model uses regressors created from the SVD of the document/word
  count matrix $W$ defined in equation \eqn{eq:svdW}.  We retained $k_W = 100,\, 200, \, \ldots, 500$ singular vectors of $W$.   Our analysis suggests each of these collections of singular vectors both retains too many insignificant features while at the same time omits others that are predictive.  Broadly speaking, the leading singular vectors (those with larger singular values) are more predictive than subsequent singular vectors.  That said, not all of the leading vectors are statistically significant nor do all of the later singular vectors have coefficients near zero.   As a result, variable selection from a yet larger collection of singular vectors may provide a better fit, a task we defer to Section \ref{sec:cv}.  
  
