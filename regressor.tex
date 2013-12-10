@@ -233,7 +233,7 @@ Associating words that co-occur in a document is more familiar to statisticians,
      W = \tilde{U}_W \tilde{D}_W \tilde{V}_W'   
  \label{eq:svdW}
  \end{equation}
- denote the SVD of $W$. We typically use only a subset of this decomposition, and so  we define $U_W$ to be the $n \times k_W$ matrix defined by the leading $k_W$ singular vectors of $W$ (\ie, the first $k_W$ columns of $\tilde{U}_W$ that are associated with the largest singular values).  The collection $U_W$ defines a collection of regressors.  (The resulting computation that isolates only these leading singular vectors is sometimes called a truncated SVD.)  This representation of text is known as latent semantic analysis (or latent semantic indexing) within computational linguistics; statisticians will recognize this as a principal components analysis (PCA) of $W$.   The choice of the number of singular vectors to retain, $k_W$, is a user-controlled tuning parameter of this technique.  We will provide some advice on unsupervised methods for picking $k_W$ in the following section within the example that analyzes real estate listings in Chicago.  
+ denote the SVD of $W$. We typically use only a subset of this decomposition, and so  we define $U_W$ to be the $n \times k_W$ matrix defined by the leading $k_W$ singular vectors of $W$ (\ie, the first $k_W$ columns of $\tilde{U}_W$ that are associated with the largest singular values).  The collection $U_W$ defines a collection of regressors.  (The resulting computation that isolates only these leading singular vectors is sometimes called a truncated SVD.)  This representation of text is known as latent semantic analysis (or latent semantic indexing) within computational linguistics; statisticians will recognize this as a principal components analysis (PCA) of $W$.   The choice of the number of singular vectors to retain, $k_W$, is a user-controlled tuning parameter of this technique.  We will provide some advice on unsupervised methods for picking $k_W$ in the following section within the example that analyzes real estate listings in Chicago.  \ras{Discussion of the various normalizations used in LSA, particularly converting row to probabilities and normalizing words (columns) for fixed entropy.}
 
  
  A second application of the SVD produces regressors from the bigram matrix $B$.
@@ -941,6 +941,11 @@ For comparison, we performed repeated 10-fold transductive cross validation.  Tr
    It would also be interesting to explore these models for nonlinearity. Variable selection is perhaps unnecessary for using the regressors derived from $U_W$ and $C$, but essential if one hopes to detect and incorporate nonlinearity. In particular, searching for nonlinearity -- such as interactions -- requires variable selection.  Even a very large corpus of documents looks small compared to the number of possible second-order interactions.  Finally, the ordered presentation of the $|t|$ statistics suggests an opportunity for variable selection derived from alpha investing \citep{fosterstine08}.  Alpha investing is a procedure for testing a sequence of hypotheses that benefits from {\it a priori} ordering of the tests.
    
    \end{description}
+
+One can generalize LSA from words and documents to collections of other items,
+ such as phonemes in speech or tones in music \cite[called latent semantic
+ mappingin][]{bellegarda05}.
+
 
 
 %--------------------------------------------------------------------------
