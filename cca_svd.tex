@@ -1,0 +1,215 @@
+%-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
+\documentclass[12pt]{article}
+\usepackage[longnamesfirst]{natbib}
+\usepackage[usenames]{color}
+\usepackage{graphicx}  % Macintosh pdf files for figures
+\usepackage{amssymb}   % Real number symbol {\Bbb R}
+\input{../../standard}
+
+% --- margins
+\usepackage{../sty/simplemargins}
+\setleftmargin{1in}   % 1 inch is NSF legal minimum
+\setrightmargin{1in}  % 1 inch is NSF legal minimum
+\settopmargin{1in}    % 1 inch is NSF legal minimum
+\setbottommargin{1in} % 1 inch is NSF legal minimum
+
+% --- Paragraph split, indents
+\setlength{\parskip}{0.00in}
+\setlength{\parindent}{0in}
+
+% --- Line spacing
+\renewcommand{\baselinestretch}{1.5}
+
+% --- page numbers
+\pagestyle{empty}  % so no page numbers
+
+% --- Hypthenation
+\sloppy  % fewer hyphenated
+\hyphenation{stan-dard}
+\hyphenation{among}
+
+% --- Customized commands, abbreviations
+\newcommand{\TIT}{{\it  {\tiny CCA SVD notes (\today)}}}
+
+% --- Header
+\pagestyle{myheadings}
+\markright{\TIT}
+
+% --- Title
+
+\title{ Notes on CCA and SVD in Text }
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+% \maketitle 
+
+
+
+%--------------------------------------------------------------------------
+\section{Modeling paradigm, notation}
+\label{sec:paradigm}
+%--------------------------------------------------------------------------
+
+Need to settle notation, terminology: document length, number tokens, document
+name.
+
+
+Our perspective mimics the familiar convention that statistics concerns the
+analysis of variables measured on observations, and we can view those
+observations as realizations of a stochastic process or sampled data from a
+population.  For analyzing text, {\em tokens} form the observations, and
+variables are constructed from the analysis of how tokens {\em collocate} within
+a variety of {\em contexts}.  Examples of contexts include documents, word types
+before and after, or even just adjacency.
+
+The paradigm we adopt follows these unsupervised steps:
+\begin{enumerate}
+ \item
+ Compute the token $\times$ type matrix $W$.  This is a large, very sparse matrix with
+ elements $W_{ij} \in \{0,1\}$.  $W$ has $N$ rows, where $N$ is the length of
+ the source corpus, and $M$ columns, where $M$ is the size of the vocabulary
+ (the number of types, which includes OOV and EOL markers). $W_{ij}=1$ implying
+ that the $i$th word in the source corpus is of type $j$.
+ \item
+ Define the context matrix $C$.  $C$ defines a context for the sequence of
+ tokens, so $C$ has $N$ rows as well.  Examples of the context are
+  \begin{enumerate}
+    \item Documents, where $C$ has the form resembling a Kronecker matrix,
+                $C = I \otimes I_{N_i}$ 
+          where $N_i$ is the length of the $i$th document.
+    \item $W_1$, the following word (as used to form a bigram).
+  \end{enumerate}
+ \item
+ Compute the SVD of $W'C = UDV'$, perhaps with some additional normalization or
+ scaling that produces an analysis closer to what is obtained with a CCA (see
+ further notes in section \ref{sec:ccasvd}.  The columns of $U$ define the
+ location of {\em eigentypes}.
+ \item
+ Form regressors as centroids (perhaps weighted centroids) of the eigentype
+ coordinates for the types that make up each document.
+\end{enumerate}
+
+%--------------------------------------------------------------------------
+\section{CCA, via Lagrange multipliers}
+\label{sec:ccalag}
+%--------------------------------------------------------------------------
+
+ The problem is to maximize
+ \begin{equation}
+    \max_{a,b} \rho(a,b)=
+               \frac{a'S_{12}b}
+                    {\left((a'S_{11}a)(b'S_{22}b)\right)^{1/2}}
+ \label{eq:cancor}
+ \end{equation}
+ Since it is scale invariant, assume $a'S_{11}a = b'S_{22}b = 1$, and
+reformulate with Lagrange multipliers as
+ \begin{equation}
+    \max_{a,b} a'S_{12}b - \la_1(a'S_{11}a-1) - \la_2 (b'S_{22}b-1)
+ \label{eq:cca}
+ \end{equation}
+ Taking vector derivatives with respect to $a$ and $b$ gives the system of
+ equations 
+ \begin{eqnarray*}
+   -2\la_2 S_{11} a + S_{12} b &=& 0  \cr
+   S_{21} a - 2\la_2 S_{22} b &=& 0
+\end{eqnarray*}
+ Multiply the first equation by $a$ and use the constraint $a'S_{11}a = 1$ and multiply the second by $b$ and you see that $ 2 \la_1 = 2 \la_2 = \rho(a,b) \equiv \la$.  Now collect the two equations into matrix form as
+ \begin{displaymath}
+   \left( \begin{array}{cc}
+     -\la S_{11} & S_{12} \cr
+            S_{21} & -\la S_{22} 
+   \end{array} \right)
+   \left( \begin{array}{c}  a \cr b \end{array} \right)
+   = 
+   \left( \begin{array}{c} 0 \cr 0 \end{array} \right)
+ \end{displaymath}
+ For there to be a nontrivial solution, the matrix must be singular, with
+determinant 0. The determinant being zero allows us to solve for $\la$ by using the expression for the determinant of a partitioned matrix:
+ \begin{displaymath}
+    |-\la  S_{11}| \; |-\la S_{22} - S_{21}S_{11}^{-1}S_{12}| \;
+    = 
+    |-S_{11}| \; |S_{22}| \;|\la^2I - S_{22}^{-1}S_{21}S_{11}^{-1}S_{12}| \; = 0
+ \end{displaymath}
+ Canceling the leading terms (product is zero) means that $\la^2$ is an eigenvalue of 
+  $S_{22}^{-1}S_{21}S_{11}^{-1}S_{12}$. 
+
+ Now that we know the values of the Lagrange multipliers (and the value of 
+the canonical correlation $\rho(a,b)$), we can return to the
+system of equations.  From the equation $d/da = 0$, we get
+ \begin{displaymath}
+    a = \frac{1}{\la} S_{11}^{-1} S_{12} b   
+ \end{displaymath}
+ Plug this into the second equation and you obtain
+ \begin{displaymath}
+   \frac{1}{\la} S_{21}S_{11}^{-1}S_{12} b - \la S_{22} b = 0
+ \end{displaymath}
+ which then implies that $b$ is an eigenvector with eigenvalue $\la^2$
+ \begin{displaymath}
+   (S_{22}^{-1} S_{21} S_{11}^{-1} S_{12}) \, b \; = \; \la^2 \, b \;.
+ \end{displaymath}
+ You get a similar expression for $a$ (just swap the 1s and 2s).
+
+
+%--------------------------------------------------------------------------
+\section{CCA, via Cauchy-Schwarz}
+\label{sec:ccacs}
+%--------------------------------------------------------------------------
+
+The problem as given above in \eqn{eq:cancor} is 
+ \begin{equation}
+    \max_{a,b} \rho(a,b)=
+               \frac{a'S_{12}b}
+                    {\left((a'S_{11}a)(b'S_{22}b)\right)^{1/2}}
+ \end{equation}
+Rather than take the calculus route, this time use C-S to get the maximum
+value.  Start by ``standardizing'' the coordinates, expressing $\rho(a,b)$ in
+terms of 
+ \begin{displaymath}
+     u = S_{11}^{1/2} a \quad \mbox{and} \quad  v = S_{22}^{1/2}
+ \end{displaymath}
+so that we can write $\rho(a,b)$ as
+ \begin{displaymath}
+    \max_{u,v} \frac{u'S_{11}^{-1/2} S_{12} S_{22}^{-1/2}\,v}
+                    {\left((u'u)(v'v)\right)^{1/2}}      
+ \end{displaymath}
+Now apply C-S to the {\em square} of the ratio,
+ \begin{displaymath}
+   \frac{((u'S_{11}^{-1/2} S_{12} S_{22}^{-1/2}\,)v)^2}
+                    {\left((u'u)(v'v)\right)}
+   \le 
+   \frac{
+    (u'S_{11}^{-1/2}S_{12}S_{22}^{-1/2}S_{22}^{-1/2}S_{21}S_{11}^{-1/2}u)
+    (v'v)}
+     {(u'u) (v'v) }
+   = 
+   \frac{
+    (u'S_{11}^{-1/2}S_{12}S_{22}^{-1}S_{21}S_{11}^{-1/2}u)}
+     {(u'u)}
+ \end{displaymath}
+ This is precisely an eigenvalue problem, implying that 
+ \begin{displaymath}
+    u\mbox{ is an eigenvector of }
+        M = S_{11}^{-1/2}S_{12}S_{22}^{-1}S_{21}S_{11}^{-1/2}
+ \end{displaymath}
+ That's not the matrix that we want, but we can get the eigenvector for the CCA
+ from this solution easily. Because $u$ is an eigenvector of $M$
+ \begin{displaymath}
+     M u = \la u \;.
+ \end{displaymath}
+ If we go back to the original coordinates, $u = S_{11}^{1/2}a$, then we get
+ that $a$ is an eigenvector (and the eigenvalue does not change):
+ \begin{displaymath}
+    M S_{11}^{1/2} a = \la S_{11}^{1/2}  \quad \Rightarrow \quad
+    (S_{11}^{-1}S_{12}S_{22}^{-1}S_{21}) a = \la a
+ \end{displaymath}
+ This all agrees with the Lagrange results in Section \ref{sec:ccalag}.
+%--------------------------------------------------------------------------
+% References
+%--------------------------------------------------------------------------
+
+\bibliography{../../../references/stat,../../../references/TextPapers/text}
+\bibliographystyle{../bst/ims}
+
+\end{document} %==========================================================
