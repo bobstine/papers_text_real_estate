@@ -96,21 +96,30 @@ The paradigm we adopt follows these unsupervised steps:
 \label{sec:ccalag}
 %--------------------------------------------------------------------------
 
- The problem is to maximize
+ Let $X_1$ and $X_2$ denote the two associated ``data matrices'' and define the
+sample covariances as
  \begin{equation}
-    \max_{a,b} \rho(a,b)=
+   S_{11} = \frac{1}{n} X_1'X_1, S_{22} = \frac{1}{n} X_2'X_2,
+   \; S_{12} = S_{21}' = \frac{1}{n} X_1'X_2 \;.
+ \label{eq:s11}
+ \end{equation}
+ Alternatively think of $S_{11}$ for example as the covariance matrix of $X_1$.
+  The problem is to maximize
+ \begin{equation}
+    \max_{a,b} \rho(a,b)= \corr(X_1a, X_2b)
                \frac{a'S_{12}b}
                     {\left((a'S_{11}a)(b'S_{22}b)\right)^{1/2}}
  \label{eq:cancor}
  \end{equation}
- Since it is scale invariant, assume $a'S_{11}a = b'S_{22}b = 1$, and
-reformulate with Lagrange multipliers as
+ Since $\rho(a,b)$ is scale invariant (\ie, $\rho(c\,a,b) = \rho(a,b)$, assume
+ $a'S_{11}a = b'S_{22}b = 1$.  Now we can reformulate with Lagrange multipliers
+ as
  \begin{equation}
     \max_{a,b} a'S_{12}b - \la_1(a'S_{11}a-1) - \la_2 (b'S_{22}b-1)
  \label{eq:cca}
  \end{equation}
  Taking vector derivatives with respect to $a$ and $b$ gives the system of
- equations 
+ vector equations
  \begin{eqnarray*}
    -2\la_2 S_{11} a + S_{12} b &=& 0  \cr
    S_{21} a - 2\la_2 S_{22} b &=& 0
@@ -149,7 +158,7 @@ system of equations.  From the equation $d/da = 0$, we get
  \begin{displaymath}
    (S_{22}^{-1} S_{21} S_{11}^{-1} S_{12}) \, b \; = \; \la^2 \, b \;.
  \end{displaymath}
- You get a similar expression for $a$ (just swap the 1s and 2s).
+ You get a similar expression for $a$ (just swap the 1s and 2s).  It is thus easy to transform the solution coefficients for one space into those for the other.
 
 
 %--------------------------------------------------------------------------
@@ -157,19 +166,30 @@ system of equations.  From the equation $d/da = 0$, we get
 \label{sec:ccacs}
 %--------------------------------------------------------------------------
 
-The problem as given above in \eqn{eq:cancor} is 
+The problem as given above in \eqn{cancor} is 
  \begin{equation}
     \max_{a,b} \rho(a,b)=
                \frac{a'S_{12}b}
                     {\left((a'S_{11}a)(b'S_{22}b)\right)^{1/2}}
  \end{equation}
-Rather than take the calculus route, this time use C-S to get the maximum
-value.  Start by ``standardizing'' the coordinates, expressing $\rho(a,b)$ in
-terms of 
+ Rather than take the calculus route, this time use C-S to get the maximum
+ value.  Start by ``standardizing'' the coordinates, expressing $\rho(a,b)$ in
+ terms of
  \begin{displaymath}
-     u = S_{11}^{1/2} a \quad \mbox{and} \quad  v = S_{22}^{1/2}
+     u = S_{11}^{1/2} a \quad \mbox{and} \quad  v = S_{22}^{1/2} \;.
  \end{displaymath}
-so that we can write $\rho(a,b)$ as
+ This form looks a little ``odd'' at first since we usually think of normalizing
+ by multiplying by the inverse square root of the covariance matrix, not the
+ square root itself. The explanation is that we're transforming the coefficients
+ (in the {\em dual space}), not the random variables.  The eigenvectors that you
+ find in CCA are the coefficients $\al$ such that $X \al$ is the linear
+ combination that is most correlated with the other linear combination $Y
+ \beta$, say.  We're not transforming $X$ itself, we're transforming $\al$ so
+ that $X \al = (X S_{11}^{-1/2})(S_{11}^{1/2} \al)$. The coefficients after
+ normalizing $X$ are $S_{11}^{1/2} \al$.
+
+
+ After standardizing, we can write $\rho(a,b)$ as
  \begin{displaymath}
     \max_{u,v} \frac{u'S_{11}^{-1/2} S_{12} S_{22}^{-1/2}\,v}
                     {\left((u'u)(v'v)\right)^{1/2}}      
@@ -188,7 +208,7 @@ Now apply C-S to the {\em square} of the ratio,
     (u'S_{11}^{-1/2}S_{12}S_{22}^{-1}S_{21}S_{11}^{-1/2}u)}
      {(u'u)}
  \end{displaymath}
- This is precisely an eigenvalue problem, implying that 
+ (To get the coefficients for the other random variable, group terms with $v$ rather than $u$.) This is precisely an eigenvalue problem, implying that 
  \begin{displaymath}
     u\mbox{ is an eigenvector of }
         M = S_{11}^{-1/2}S_{12}S_{22}^{-1}S_{21}S_{11}^{-1/2}
@@ -205,6 +225,56 @@ Now apply C-S to the {\em square} of the ratio,
     (S_{11}^{-1}S_{12}S_{22}^{-1}S_{21}) a = \la a
  \end{displaymath}
  This all agrees with the Lagrange results in Section \ref{sec:ccalag}.
+
+
+%--------------------------------------------------------------------------
+\section{Fixed Point characterization of CCA}
+\label{sec:fixedpoint}
+%--------------------------------------------------------------------------
+
+ Here's yet a third way to think of CCA, one that is perhaps more useful from
+ the point of view of fast calculations using random projections.
+ The CCA coefficients (for $X_1$) are eigenvectors of the matrix
+ \begin{displaymath}
+   M = (X_1'X_1)^{-1} (X_1'X_2) (X_2'X_2)^{-1} (X_2'X_1)     
+ \end{displaymath}
+ When you look at the expression for $M$, you can see the components of the
+ projection matrices for the range of $X_1$ and of $X_2$.  To get the fixed
+ point view, define the projection matrices associated with $X_1$ and $X_2$:
+ \begin{displaymath}
+   P_1 = X_1 (X_1'X_1)^{-1} X_1'  \quad \mbox{ and } P_2 = X_2 (X_2'X_2)^{-1} X_2'     
+ \end{displaymath}
+ Suppose that $u$ is a fixed point of the composition of projections
+ \begin{equation}
+    u = P_1 P_2 u
+ \label{eq:fixedpoint}
+ \end{equation}
+ (This does not work, but lets stay with it for the time being.)  Since $u$ lies
+ in the range of $X_1$, we can write $u$ in coordinate form as
+ \begin{displaymath}
+     u = X_1 \al
+ \end{displaymath} 
+ If we regroup the terms in \eqn{fixedpoint}, we obtain an expression for $\al$
+ \begin{displaymath}
+   u = P_1 P_2 u =  X_1 \underbrace{ (X_1'X_1)^{-1} X_1'X_2 (X_2'X_2)^{-1} X_2' X_1 \al }
+ \end{displaymath}
+ Equating the coordinates, we have
+ \begin{displaymath}
+    \al = (X_1'X_1)^{-1} X_1'X_2 (X_2'X_2)^{-1} X_2'X_1 \al = M \al \;.
+ \end{displaymath}
+ Under this development, the coefficient vector $\al$ is an eigenvector of $M$,
+ but its has eigenvalue 1!  That's not correct. To fix the hiccup, add a
+ constant to \eqn{fixedpoint},
+ \begin{displaymath}
+    P_1 P_2 u = \la u \;.   
+ \end{displaymath}
+ The fixed-point computations then have to renormalize at each iteration, so
+ rather than find the fixed point of $f(x) = P_1 P_2 x$, we find the fixed point
+ of $g(x) = f(x)/\norm{f(x)}$.  The numerical properties of the solution would then resemble
+ those of the power method for finding eigenvectors (Daniel's notes).
+
+
+
 %--------------------------------------------------------------------------
 % References
 %--------------------------------------------------------------------------
