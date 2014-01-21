@@ -77,12 +77,34 @@
 
 \clearpage
 
-% To Do
-% 
+{\bf To Do: }
+Are the CCA results in the dual space?
+\\
 
 % ----------------------------------------------------------------------
 \section{Introduction}
 % ----------------------------------------------------------------------
+
+
+New Plan:
+Sections arranged as follows
+\begin{description}
+\item{Introduction}  \\  
+Intro to problem, we're taking direct approach.  Introduce application and do regression based on looking for   regular expressions.  Now see how to do better.  Novelty lies in use of random projections, simplicity.
+\item{ The application } \\ Tokenization.  Zipf distribution.  Word-document matrix. 
+\item{LSA regression}  \\ 
+The obvious regression, with development of several ways to weight the elements, recommending for this application the sqrt n weighting.  Emphasize same as PC regression.  One can go further with quadratic effects (pairs of words), though to what gain in short documents (too sparse)?
+\item{Bigrams and context matrix} \\ 
+Revisit term-document matrix as word-context matrix.  Develop the statistical sense of CCA between token/type and token/document.  then do that perspective of the bigram matrix.  Issue:  Those CCA weights don't seem to help.
+\item{Relate to topic models} \\ 
+Simulation
+\item{Variable selection}  \\
+ AIC and connection to CV analysis.  Plot of reflections.
+\item{Discussion}  \\
+Lighthouse variables combine regular expression variables and linguistic variables. Other applications to wine.
+\end{description}
+
+
 
  Theme of co-occurrence within a window of varying length, document or
 adjancency.  Alternative weights such as TF-IDF rather than entropy.
