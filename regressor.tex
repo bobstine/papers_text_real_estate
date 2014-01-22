@@ -93,7 +93,7 @@ Sections arranged as follows
 Intro to problem, we're taking direct approach.  Introduce application and do regression based on looking for   regular expressions.  Now see how to do better.  Novelty lies in use of random projections, simplicity.
 \item{ The application } \\ Tokenization.  Zipf distribution.  Word-document matrix. 
 \item{LSA regression}  \\ 
-The obvious regression, with development of several ways to weight the elements, recommending for this application the sqrt n weighting.  Emphasize same as PC regression.  One can go further with quadratic effects (pairs of words), though to what gain in short documents (too sparse)?
+The obvious regression, with development of several ways to weight the elements, recommending for this application the sqrt n weighting and CCA weights.  Emphasize same as PC regression.  One can go further with quadratic effects (pairs of words), though to what gain in short documents (too sparse)?  Centroid connection useful if doing transcendent cross validation, so the averaging/centroid connection is useful here.
 \item{Bigrams and context matrix} \\ 
 Revisit term-document matrix as word-context matrix.  Develop the statistical sense of CCA between token/type and token/document.  then do that perspective of the bigram matrix.  Issue:  Those CCA weights don't seem to help.
 \item{Relate to topic models} \\ 
