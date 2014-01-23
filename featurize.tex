@@ -1,5 +1,5 @@
 %-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
-\documentclass[12pt]{article}
+\documentclass[10pt]{article}
 \usepackage[longnamesfirst]{natbib}
 \usepackage[usenames]{color}
 \usepackage{graphicx}  % Macintosh pdf files for figures
@@ -82,12 +82,10 @@ Are the CCA results in the dual space?
 \\
 
 % ----------------------------------------------------------------------
-\section{Introduction}
+\section{New outline}
 % ----------------------------------------------------------------------
 
 
-New Plan:
-Sections arranged as follows
 \begin{description}
 \item{Introduction}  \\  
 Intro to problem, we're taking direct approach.  Introduce application and do regression based on looking for   regular expressions.  Now see how to do better.  Novelty lies in use of random projections, simplicity.
@@ -104,8 +102,6 @@ Simulation
 Lighthouse variables combine regular expression variables and linguistic variables. Other applications to wine.
 \end{description}
 
-
-
  Theme of co-occurrence within a window of varying length, document or
 adjancency.  Alternative weights such as TF-IDF rather than entropy.
 
@@ -116,15 +112,38 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  
 \ras{Would sparse CCA (Witten et al) be useful. \citet{witten09}}
  
+ \clearpage
 
- Modern data streams routinely combine text with numerical data suitable for in
+
+% ----------------------------------------------------------------------
+\section{Introduction}
+% ----------------------------------------------------------------------
+
+ Modern data streams routinely combine text with numerical data suitable for 
  regression analysis.  For example, patient medical records combine lab
- measurements with physician comments and online product ratings such as those
- at Amazon or Netflix blend explicit characteristics with verbal commentary. As
- a specific example, we build a regression model to predict the price of real
- estate from its listing.  The listings we use are verbal rather than
- numerical data obtained by filling out a spreadsheet-like form.  Here are four
- such listings for Chicago, IL, extracted (with permission) from trulia.com on June 12, 2013:
+ measurements with physician comments.  Analogously, online product ratings shown
+ at Amazon blend explicit characteristics with verbal commentary.  How can one easily incorporate the information in such text into a regression model that predicts patient outcomes or product ratings?  Our objective here is to illustrate several particularly straightforward techniques for featurizing text, turning text into numerical variables suitable for regression modeling.  
+ 
+ 
+  As a specific example, we build a regression model to predict the advertised prices of real
+ estate properties from their listings.  The listings we use are verbal rather than
+ numerical data such as that obtained by filling out a spreadsheet-like questionnaire.  The listings may, or may not, contain quantitative characteristics.   The raw data are $n=$7,384 property listings for Chicago, IL extracted (with permission) from trulia.com on June 12, 2013.   (At the time, trulia.com showed  30,322 listings for Chicago, but most were foreclosures that we excluded from our analysis.) The response in our models is the log of the listed price.  The distribution of the listed prices is right skewed, so we transformed the response to a log scale as shown in the histogram of Figure \ref{fig:prices}.  The log transformation produces a roughly Gaussian distribution, with a hint of fat tails for cheaper properties with prices near \$25,000.  The presence of a long lower tail might indicate that the data
+ mix typical home sales with special, subsided properties or perhaps vacant lots
+ that sell for an unusually low price.  (This display uses the base 10 log of the prices for easy interpretation; subsequent models use natural logs.)
+
+
+ \begin{figure}
+ \caption{ \label{fig:prices} { \sl The distribution of prices for real estate
+ in Chicago is highly skewed.  A log transformation produces data that are
+ nearly normal.}  }
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=5in]{figures/prices} }
+ \vspace{0.2in}
+ \end{figure}
+
+
+ Here are four of the property listings.  The initial value is the listed price.
 
  \begin{verbatim}
     $399000 Stunning skyline views like something from a postcard are yours
@@ -148,57 +167,99 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{verbatim}
 
  \noindent
- The only numerical data common to the listings is the price that appears at
- the head of each listing.  Some listings include further numerical data, such
- as the number of rooms or occasionally the size of the property (number of
- square feet).  Many listings, however, provide only a verbal description,
- often written in an idiosyncratic vernacular familiar only to those who are
- house hunting. Some authors write in sentences, others not, and a variety of
+Listings do not obey the grammatical rules of  English.  Rather, listings are written in an idiosyncratic vernacular familiar only to those who are
+ house hunting.  Some authors write in sentences, others not, and a variety of
  abbreviations appear.  The style of punctuation varies from spartan to effusive
  (particularly exclamation marks), and the length of the listing runs from
- several words to a long paragraph.
-
- 
- An obvious approach to building regressors from text data relies on a
- substantive analysis of the text.  For example, sentiment analysis constructs a
- domain-specific lexicon of positive and negative words.  In the context of real
- estate, words such as `modern' and `spacious' might be flagged as positive
- indicators (and so be associated with more expensive properties), whereas
- `Fannie Mae' and `fixer-upper' would be marked as negative indicators.  The
- development of such lexicons has been an active area of research in sentiment
- analysis over the past decade \citep{taboada11}.  The development of a lexicon
- require substantial knowledge of the context and the results are known to be
- domain specific.  Each new problem requires a new lexicon.  The lexicon for
- pricing homes would be quite different from the lexicon for diagnosing patient
- health.  Our approach is also domain specific, but requires little user input
- and so can be highly automated.
+ several words to a long paragraph.  The average description has about 73 words, but the distribution of the
+ lengths is right skewed.  The boxplot in Figure \ref{fig:boxplot} shows
+ the lengths.  The shortest description has 2 words, whereas the longest
+  has 568 words.  This variation in the lengths of the descriptions
+ suggests that modeling the prices from this text will require some form of weighting: we simply do not know so much about  properties with short
+ descriptions.
 
 
- In contrast to substantively oriented modeling, we propose a version of supervised
- sentiment analysis that converts text into conventional explanatory variables.
- We convert the text into conventional numerical regressors (featurize) by exploiting methods from computational linguistics that are familiar to statisticians. These so-called vector space models \citep{turney10}, such as latent semantic analysis (LSA), make use of  singular value decompositions of  the bag-of-words and bigram representations of text. (This connection leads to methods being described as `spectral algorithms' which should not be confused with frequency domain methods for time series.) These representations map words into points in a vector space defined by counts. This approach is highly automated with little need for human intervention, though it makes it easy to exploit such investments when available.  The derived regressors can be used alone or in combination with traditional variables, such as those obtained from a lexicon or other semantic model.  We use the example of real estate listings to illustrate the impact of various  choices on the predictive accuracy.  For example, a regression using the
- automated features produced by this analysis explains over two-thirds of the
- variation in listed prices for real estate in Chicago.  The addition of several
- substantively derived variables adds little.  Though we do not emphasize its
- use here, variable selection can be employed to reduce the ensemble of
- regressors without sacrificing predictive accuracy.  A similar application that models personality traits derived from Facebook messages appears in \citet{ungar13}.
+ \begin{figure}
+ \caption{ \label{fig:boxplot} { \sl The distribution of the lengths of the property descriptions is right-skewed, 
+ with some listing running hundreds of words compared to a median length of 74 words. } }
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=3.5in]{figures/boxplot} }
+ \vspace{0.2in}
+ \end{figure}
 
 
- Our emphasis on predictive accuracy does not necessarily produce an
- interpretable model, and one can use other data to create such structure.  Our
- explanatory variable resemble those from principal components analysis and
- share their anonymity.  To provide more interpretable regressors, the presence
- of partial quantitative information in real estate listings (\eg, some listings
- include the number of square feet) provides what we call ‘lighthouse variables’
- that can be used to derive more interpretable variables.  In our sample, few
- listings (about 6\%) indicate the number of square feet.  With so much missing
- data, this manually derived predictor is not very useful as an explanatory
- variable in a regression.  This partially observed variable can then be used to
- define a weighted sum of the anonymous text-derived features, producing a
- regressor that is both complete (no missing cases) and interpretable.  One
- could similarly use features from a lexicon to provide more interpretable
- features.
+  
+ A natural approach for a statistician is to construct intuitively appealing regressors from the descriptions.  For example when
+ processing ads for real estate, one might conjecture that an agent has a lot
+ more to say about an expensive property than one in need of repair, implying that the length of the listing for a property may be predictive of the price.  In a different vein, one can use regular
+ expressions to extract specific numerical data from the listings.  For example, the first listing indicates that this property has two bedrooms and two bathrooms.  Constructing such regular expressions, however, is a labor-intensive process that must be done on a case-by-case basis.  The patterns used in these regular expressions become complex because they must  allow common abbreviations, such as ``bth'', ``bath'' and ``bthrm'' for
+ bathrooms.  Complexity aside, the greater problem with this approach is that most listings omit these
+ characteristics.  The only numerical data common to every listing is the response, the advertised price.  Some listings include the number of rooms or occasionally the size of the property (number of square feet). For Chicago, our regular expressions found that 6\% of the
+ listings indicate the number of square feet, 26\% indicate the number of
+ bathrooms, and 42\% give the number of bedrooms.  More complex regular
+ expressions would likely find more matches, but the gains are likely to be few.
+  One also faces a Type I/Type II trade-off.  Simple regular
+ expressions omit some matches, but more aggressive expressions 
+ match inadvertently. 
 
+
+ The four scatterplots in Figure \ref{fig:parsed} summarize the marginal
+ association between the log of prices and these parsed predictors, including
+ the number of words in descriptions.   To indicate missing data, we filled the missing values with the averages of the observed cases.  Missing values produce the columns of
+ gray points located at the mean of the variable on the $x$ axis in Figure \ref{fig:parsed}.  The correlations of these extracted variables with the log of the prices range from ($r=0.40$) for length of the description  and the number of bathrooms
+ ($r = ??$) and log sq ft) $= 0.26$ down to. ???    These plots also show several  anomalies.  For example, the   scatterplot of the log of price on the number of words shows a cluster of
+ 25 listings, all with exactly 265 words.  All of these different properties were listed in a common format by a government agency.   The scatterplot of the log of prices
+ on the log of the square footage also shows a clear outlier; this outlier is a
+ consequence of aggressive parsing.  A typo in a description (``has 1sfam'') led to  
+ the regular expression defining a property with 1 square foot.
+
+ \begin{figure}
+  \caption{ \label{fig:parsed} { \sl The parsed characteristics have slight
+ positive association with the log of the prices. } Gray points in the figures
+ identify cases that were missing the explanatory variable; the shown
+ correlation uses only the observed data; the adjacent value in gray uses all of the data. }
+
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=5in]{figures/parsed} }
+ \vspace{0.2in}
+ \end{figure}
+
+
+ Table \ref{tab:parsed} summarizes the fit of the regression of the log of price
+ on these four extracted variables.  To accommodate missing values, we include in the fit missing indicators for the variables given by the regular expressions.  The regressors are not highly correlated, and the importance of these variables in the multiple regression generally echoes the marginal correlations shown in Figure \ref{fig:parsed}.  Among the seven explanatory variables, the length of the descriptions is most predictive, followed by the number of bathrooms.  Unlike the marginal associations, however, both the log of the number of square feet (when observed) and its missing indicator are significant.  The missing indicators for bedrooms and bathrooms are not predictive.  The model
+ obtains adjusted R-squared $\ol{R}^2 = 0.192$, with residual standard deviation $s_e =1.08$.  Because we compare regression models with varying numbers of explanatory variables, $\ol{R}^2$ is more useful than without adjusting for degrees of freedom.  Since
+ we are not doing variable selection at this point, but rather fitting full ensembles of
+ pre-selected variables, adjusted R-squared is an unbiased summary of each
+ model's performance out of sample.  Later in Section \ref{sec:cv} we reports cross-validation results for these models.
+
+
+ \begin{table}
+ \caption{ \label{tab:parsed} {\sl OLS multiple regression of log prices on the
+ parsed explanatory variables and  indicators of observed values.}}
+
+\begin{center}
+\begin{tabular}{rrrrr}
+  \hline
+ & Estimate & Std. Error & t  & Pr($>$$|$t$|$) \\ 
+  \hline
+ Intercept & 4.8858 & 0.4944 & 9.88 & 0.0000 \\ 
+  $\log m$ & 0.8211 & 0.0239 & 34.31 & 0.0000 \\ 
+  log Sq Ft & 0.3680 & 0.0592 & 6.21 & 0.0000 \\ 
+  Sq Ft Obs & 0.6108 & 0.0607 & 10.06 & 0.0000 \\ 
+  Bedrooms & -0.0095 & 0.0169 & -0.56 & 0.5734 \\ 
+  Bedroom Obs & 0.0023 & 0.0306 & 0.08 & 0.9400 \\ 
+  Bathrooms & 0.4153 & 0.0307 & 13.53 & 0.0000 \\ 
+  Bathroom Obs & 0.0038 & 0.0344 & 0.11 & 0.9127 \\ 
+   \hline
+\end{tabular}
+
+   $s_e = 1.084$ with $R^2= 0.193,\;	\ol{R}^2 = 0.192$ 
+ \end{center}
+\end{table}
+
+Transition...
 
  The remainder of this paper develops as follows.  The following section
  provides a concise summary of our technique.  The method is remarkably simple
@@ -211,6 +272,44 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 \section{An Algorithm for Featurizing Text}
 \label{sec:algo}
 %--------------------------------------------------------------------------
+
+ 
+ \subsection{ Tokenization and Parsing }
+
+ The 7,384 property listings in Chicago contain 543,869 word tokens that define
+ 15,228 word types.  More than half of these tokens appear only once or twice,
+ providing little exposure to how the word is used.  We clustered these
+ rare types into one category ($<$UNK$>$), resulting in a reduced vocabulary of
+ $M = 5,708$ word types.  The most common word types are ``not words'' but
+ rather punctuation: `.'  occurs 40,227 times and `,' 33,746 times.  Following
+ these come the collection of seldom seen words (OOV, 11,478), `and' (frequency 11,032), `!' (7,894) and `in' (7,418).    As usual in text, ``most types are common but most words are rare.''  That is, the most common types occur frequently whereas most words appear infrequently.  Figure \ref{fig:zipf} shows a scatterplot of the log of the frequency of these word types versus the log of their ranks.  It is common in text to find a linear trend with slope near 1 in this graph, a Zipf distribution \citep{zipf35, baayen02}.  Even though this text is not standard English, one expects to find counts resembling those produced by a power law \citep{clauset09}.  For
+ this text, the shown line (with log-log slope -0.927) holds only for more
+ common word types.  For less common words (here, outside the most common 500
+ words), the frequencies drop off more rapidly.  (This change in slope is also
+ seen for words in Wikipedia.)
+
+
+ \begin{figure}
+ \caption{ \label{fig:zipf} { \sl The log of the frequency of word types in the
+ listings for properties in Chicago is roughly linear in the log of the rank of
+ the words, a Zipf distribution.}  The shown line $\log \mbox{freq} = 10.9 -
+ 0.93 \log \mbox{rank}$ was fit to words with ranks 1 through 500.  }
+
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=3.5in]{figures/zipf} }
+ \vspace{0.2in}
+ \end{figure}
+
+In contrast to substantively oriented modeling, we propose a version of supervised
+ sentiment analysis that converts text into conventional explanatory variables.
+ We convert the text into conventional numerical regressors (featurize) by exploiting methods from computational linguistics that are familiar to statisticians. These so-called vector space models \citep{turney10}, such as latent semantic analysis (LSA), make use of  singular value decompositions of  the bag-of-words and bigram representations of text. (This connection leads to methods being described as `spectral algorithms' which should not be confused with frequency domain methods for time series.) These representations map words into points in a vector space defined by counts. This approach is highly automated with little need for human intervention, though it makes it easy to exploit such investments when available.  The derived regressors can be used alone or in combination with traditional variables, such as those obtained from a lexicon or other semantic model.  We use the example of real estate listings to illustrate the impact of various  choices on the predictive accuracy.  For example, a regression using the
+ automated features produced by this analysis explains over two-thirds of the
+ variation in listed prices for real estate in Chicago.  The addition of several
+ substantively derived variables adds little.  Though we do not emphasize its
+ use here, variable selection can be employed to reduce the ensemble of
+ regressors without sacrificing predictive accuracy.  A similar application that models personality traits derived from Facebook messages appears in \citet{ungar13}.
+
 
  Our technique for featurizing text has 3 main steps.  These steps are
  remarkably simple:
@@ -301,161 +400,6 @@ Associating words that colocate within a document is more familiar to statistici
 \section{Predicting Prices of Real Estate}
 %--------------------------------------------------------------------------
 
- This section demonstrates the use of regressors defined from text using the
- featurizing techniques defined in the prior section.  The data are $n=$7,384 property listings for Chicago, IL in June, 2013.   (Note that at the time, trulia.com showed  30,322 listings for Chicago, but most of these were foreclosures that are excluded in our analysis.) The response in our models is the log of the listed price.  The prices for properties listed in Chicago is quite skewed, so we transformed the response to a log scale as shown in the histogram of Figure \ref{fig:prices}.  This display uses the base 10 log of the prices for easy interpretation; subsequent models use natural logs throughout.  The log
- transformation produces a roughly Gaussian distribution, with a hint of fat
- tails most prominently for cheaper properties with prices near \$25,000.
-
-
- \begin{figure}
- \caption{ \label{fig:prices} { \sl The distribution of prices for real estate
- in Chicago is highly skewed, but a log transformation produces data that are
- nearly normal.} The presence of a long lower tail might indicate that the data
- mix typical home sales with special, subsided properties or perhaps vacant lots
- that sell for an unusually low price. }
-
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=5in]{figures/prices} }
- \vspace{0.2in}
- \end{figure}
-
-
- \subsection{ Tokenization and Parsing }
-
- The 7,384 property listings in Chicago contain 543,869 word tokens that define
- 15,228 word types.  More than half of these tokens appear only once or twice,
- providing little exposure to how the word is used.  We clustered these
- rare types into one category ($<$UNK$>$), resulting in a reduced vocabulary of
- $M = 5,708$ word types.  The most common word types are ``not words'' but
- rather punctuation: `.'  occurs 40,227 times and `,' 33,746 times.  Following
- these come the collection of seldom seen words (OOV, 11,478), `and' (frequency 11,032), `!' (7,894) and `in' (7,418).    As usual in text, ``most types are common but most words are rare.''  That is, the most common types occur frequently whereas most words appear infrequently.  Figure \ref{fig:zipf} shows a scatterplot of the log of the frequency of these word types versus the log of their ranks.  It is common in text to find a linear trend with slope near 1 in this graph, a Zipf distribution \citep{zipf35, baayen02}.  Even though this text is not standard English, one expects to find counts resembling those produced by a power law \citep{clauset09}.  For
- this text, the shown line (with log-log slope -0.927) holds only for more
- common word types.  For less common words (here, outside the most common 500
- words), the frequencies drop off more rapidly.  (This change in slope is also
- seen for words in Wikipedia.)
-
-
- \begin{figure}
- \caption{ \label{fig:zipf} { \sl The log of the frequency of word types in the
- listings for properties in Chicago is roughly linear in the log of the rank of
- the words, a Zipf distribution.}  The shown line $\log \mbox{freq} = 10.9 -
- 0.93 \log \mbox{rank}$ was fit to words with ranks 1 through 500.  }
-
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=3.5in]{figures/zipf} }
- \vspace{0.2in}
- \end{figure}
-
-
- The average description has about 73 word tokens, but the distribution of the
- lengths $m_i$ is right skewed.  The boxplot in Figure \ref{fig:boxplot} shows
- the lengths.  The shortest description has 2 tokens, whereas the longest
- description has 568 tokens.  This variation in the lengths of the descriptions
- suggests that modeling the prices from this text will require a weighted
- regression.  We simply do not know so much about  properties with short
- descriptions.
-
-
- \begin{figure}
- \caption{ \label{fig:boxplot} { \sl The distribution of the lengths $m_i$ of
-the property descriptions is right-skewed, with some listing running hundreds of
-words compared to a median length of 74 words. } }
-
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=3.5in]{figures/boxplot} }
- \vspace{0.2in}
- \end{figure}
-
-
- Before we use the decomposition rules to construct regressions, we construct
- several by extracting explicit values from the descriptions.  For example when
- processing ads for real estate, one might conjecture that an agent has a lot
- more to say in when describing the features of an expensive property than a
- property in need of repair, implying that the length of the ad for a property
- would $m_i$ may be predictive of the price.  In addition, one can use a regular
- expression to extract the number of bedrooms when it appears in the listing.
-  We wrote regular expressions to extract numerical data from advertisements
- when present.  Constructing these is a labor-intensive process that must be
- done on a case-by-case basis.  For example, a regular expression would parse
- the value 2 for the number of bedrooms and bathrooms from the first listing
- shown in the introduction.  The patterns used in these regular expressions
- allow common abbreviations, such as ``bth'', ``bath'' and ``bthrm'' for
- bathrooms.  Another regular expression that we used extracts the number of
- square feet from the listing.  Most listings, however, omit these
- characteristics.  For Chicago, our regular expressions found that 6\% of the
- listings indicate the number of square feet, 26\% indicate the number of
- bathrooms, and 42\% give the number of bedrooms.  More complex regular
- expressions would likely find more matches, but the gains are likely to be few.
-  One also faces a Type I/Type II trade-off.  Simple regular
- expressions omit some matches, but more aggressive expressions 
- match inadvertently.  To accommodate the large amount of missing data, we used
- the simple procedure of adding indicator variables that distinguish observed
- cases for these variables, and we then filled the missing values with means.
-
-
- The four scatterplots in Figure \ref{fig:parsed} summarize the marginal
- association between the log of prices and these parsed predictors, including
- the number of words in descriptions.  Missing values produce the columns of
- gray points located at the mean of the variable on the $x$ axis.  None of these
- features is highly correlated with the log of price; the highest correlations
- are with the length of the description ($r=0.40$) and the number of bathrooms
- ($r = 0.19$).  One explanation for the low association is the abundance of
- missing data.  For example, corr(log price, log sq ft) $= 0.00$ overall, but is
-  larger (0.26) among the few properties that report this characteristic.
-  These plots also show several  anomalies.  For example, the first
- scatterplot of the log of price on the number of words shows a cluster of
- 25 listings, all with exactly 265 words.  All of these different properties were listed in a common format by a government agency.   The scatterplot of the log of prices
- on the log of the square footage also shows a clear outlier; this outlier is a
- consequence of aggressive parsing.  A typo in a description (``has 1sfam'') led to  
- the regular expression finding a property with 1 square foot.
-
- \begin{figure}
-  \caption{ \label{fig:parsed} { \sl The parsed characteristics have slight
- positive association with the log of the prices. } Gray points in the figures
- identify cases that were missing the explanatory variable; the shown
- correlation uses the complete, filled-in data. }
-
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=5in]{figures/parsed} }
- \vspace{0.2in}
- \end{figure}
-
-
- Table \ref{tab:parsed} summarizes the fit of the regression of the log of price
- on these four extracted variables and the missing indicators.   In this first example, the regressors are not highly correlated, and the importance of these variables in the multiple regression generally echoes the marginal correlations shown in Figure \ref{fig:parsed}.  Among the seven explanatory variables, the length of the descriptions is most predictive, followed by the number of bathrooms.  Unlike the marginal associations, however, both the log of the number of square feet (when observed) and its missing indicator are significant.  The missing indicators for bedrooms and bathrooms are not predictive.  The model
- obtains adjusted R-squared $\ol{R}^2 = 0.192$, with residual standard deviation $s_e =1.08$.  Because we compare regression models with varying numbers of explanatory variables, $\ol{R}^2$ is more useful than without adjusting for degrees of freedom.  Since
- we are not doing variable selection at this point, but rather fitting full ensembles of
- pre-selected variables, adjusted R-squared is an unbiased summary of each
- model's performance out of sample.  (Section \ref{sec:cv} reports cross-validation results for these models.) 
-
-
- \begin{table}
- \caption{ \label{tab:parsed} {\sl OLS multiple regression of log prices on the
- parsed explanatory variables and  indicators of observed values.}}
-
-\begin{center}
-\begin{tabular}{rrrrr}
-  \hline
- & Estimate & Std. Error & t  & Pr($>$$|$t$|$) \\ 
-  \hline
- Intercept & 4.8858 & 0.4944 & 9.88 & 0.0000 \\ 
-  $\log m$ & 0.8211 & 0.0239 & 34.31 & 0.0000 \\ 
-  log Sq Ft & 0.3680 & 0.0592 & 6.21 & 0.0000 \\ 
-  Sq Ft Obs & 0.6108 & 0.0607 & 10.06 & 0.0000 \\ 
-  Bedrooms & -0.0095 & 0.0169 & -0.56 & 0.5734 \\ 
-  Bedroom Obs & 0.0023 & 0.0306 & 0.08 & 0.9400 \\ 
-  Bathrooms & 0.4153 & 0.0307 & 13.53 & 0.0000 \\ 
-  Bathroom Obs & 0.0038 & 0.0344 & 0.11 & 0.9127 \\ 
-   \hline
-\end{tabular}
-
-   $s_e = 1.084$ with $R^2= 0.193,\;	\ol{R}^2 = 0.192$ 
- \end{center}
-\end{table}
 
 
 Before building models using singular vectors, we begin by regressing the response on indicators for the words.  That is, we simply regress $y$ on the word counts in $W$.  This model provides a baseline for comparison with the fits produced by regressions using singular vectors.  Table \ref{tab:regrInd} summarizes the fit using the most common 2,000 words.  Overall, this model produces $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity that might be anticipated due to the differences in the document lengths (Figure \ref{fig:boxplot}).  The most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the presence of this word in a listing indicates a property with lower than usual value.  In contrast, out-of-vocabulary words denoted ``OOV'' have higher than average prices ($t=6.3$). Figure \ref{fig:regrInd} summarizes the distribution of all t-statistics in this model.  Twenty-two words are not used due to singularities among these counts, leaving 1,978 estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$ in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this threshold for statistical significance.  The nearly flat red line in the figure is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the distribution of the fitted $t$-statistics is not far from the null distribution.  The gray line in the half-normal plot is the diagonal; the red line is the fitted regression of the smallest 200  $|t|$-statistics on the corresponding quantiles.  For a sample from a standard normal distribution, the slope of a line fit to the $t$ values should be 1.  The slope of the fitted line for these estimates is significantly larger, but clearly the signal is widely spread over these estimates.  A regression on counts for 14 words whose estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called ``nearly black'' models often studied in research on variable selection.  In those models, a few estimates stand out from a noisy background. In this application, much of the signal lies embedded in that background.
@@ -527,7 +471,7 @@ It is useful to notice the importance of using a model selection criterion such 
 
 
  The next model uses regressors created from the SVD of the document/word
- count matrix $W$ defined in equation \eqn{eq:svdW}.  We retained $k_W = 100,\, 200, \, \ldots, 500$ singular vectors of $W$.   Our analysis suggests each of these collections of singular vectors both retains too many insignificant features while at the same time omits others that are predictive.  Broadly speaking, the leading singular vectors (those with larger singular values) are more predictive than subsequent singular vectors.  That said, not all of the leading vectors are statistically significant nor do all of the later singular vectors have coefficients near zero.   As a result, variable selection from a yet larger collection of singular vectors may provide a better fit, a task we defer to Section \ref{sec:cv}.  
+ count matrix $W$ defined in equation \eqn{svdW}.  We retained $k_W = 100,\, 200, \, \ldots, 500$ singular vectors of $W$.   Our analysis suggests each of these collections of singular vectors both retains too many insignificant features while at the same time omits others that are predictive.  Broadly speaking, the leading singular vectors (those with larger singular values) are more predictive than subsequent singular vectors.  That said, not all of the leading vectors are statistically significant nor do all of the later singular vectors have coefficients near zero.   As a result, variable selection from a yet larger collection of singular vectors may provide a better fit, a task we defer to Section \ref{sec:cv}.  
  
 
 Each collection of singular vectors explains more variation than the simple model derived from several parsed words, but none find all of the signal captured by the larger collection of 2,000 word indicators.  A regression of log prices on the 100 leading singular vectors attains $\ol{R}^2 = 0.49$, more than twice that of the model with parsed variables.  Adding more singular vectors produces statistically significant, though diminishing improvements.  The collection of 500 singular vectors of $W$ produces $\ol{R}^2 = 0.61$, which is less than the $\ol{R}^2 = 0.68$ derived from individual word counts.  Table \ref{tab:regrW}  shows several of the estimated coefficients and summarizes the overall fits of these models.  As often seen in principal components regression, the statistical significance of the singular vectors is not monotonic in the order of the singular vectors. That said, the leading singular vectors tend to be more relevant than those that follow. Figure \ref{fig:svdregr} summarizes the significance of the estimated coefficients in the same fashion as Figure \ref{fig:regrInd} with a plot of the absolute $t$-statistics and a half-normal plot. Most of the main leading singular vectors are significant, with an increasing proportion of insignificant variables as the position in the decomposition increases.  In comparison to the significance for the coefficients of the word indicators, these singular vectors by-and-large are more consistently predictive with less noise.  The slope of the fit in the half-normal plot (using the least significant 200 estimates) is 2.9.  Residual analysis again finds fat tails with only a hint of heteroscedasticity.
@@ -578,7 +522,7 @@ Each collection of singular vectors explains more variation than the simple mode
 
 
  The third regression uses features derived from the SVD of the bigram matrix
- $B$ defined in \eqn{eq:svdB}.  For this analysis, we retained $k_B=100, 200, \ldots, 500$ left and right singular vectors ($k_B$ columns in each of $U_B$ and $V_B$) and for each computed the associated matrix of correlations $C$.  With $2 \, k_B = 1,000$ left and right singular vectors, the largest $\ol{R}^2 = 0.66$, slightly more than the 0.61 obtained using the 500 singular vectors defined from $W$.  Table \ref{tab:regrB} summarizes these fits.  Using correlations from either the left or right singular vectors alone (derived from either $U_B$ or $V_B$) explains significantly less variation; for example, a regression on 500 correlation vectors derived from  $U_B$ alone  produces $\ol{R}^2 = 0.61$ (about the same as obtained from the 500 singular vectors of $W$). The use of the left and right singular vectors produces collinearity among the explanatory variables.  A consequence of this collinearity is a large number of insignificant regressors in the fitted model.  Figure \ref{fig:svdregr}(b) shows the p-values generated by the 500 singular vectors of correlations.  Compared to the singular vectors derived from $W$ shown in Figure \ref{fig:svdregr}(a), these regressors have more diffuse signal.  The slope in the half-normal plot (again, derived from the least significant 200 estimates) is 2 (compared to 2.9 for the regressors derived from $W$).  Also, the trend in the half-normal plot is concave rather than convex; the most significant variables are less significant than anticipated by the signal in the smaller estimates.
+ $B$ defined in \eqn{svdB}.  For this analysis, we retained $k_B=100, 200, \ldots, 500$ left and right singular vectors ($k_B$ columns in each of $U_B$ and $V_B$) and for each computed the associated matrix of correlations $C$.  With $2 \, k_B = 1,000$ left and right singular vectors, the largest $\ol{R}^2 = 0.66$, slightly more than the 0.61 obtained using the 500 singular vectors defined from $W$.  Table \ref{tab:regrB} summarizes these fits.  Using correlations from either the left or right singular vectors alone (derived from either $U_B$ or $V_B$) explains significantly less variation; for example, a regression on 500 correlation vectors derived from  $U_B$ alone  produces $\ol{R}^2 = 0.61$ (about the same as obtained from the 500 singular vectors of $W$). The use of the left and right singular vectors produces collinearity among the explanatory variables.  A consequence of this collinearity is a large number of insignificant regressors in the fitted model.  Figure \ref{fig:svdregr}(b) shows the p-values generated by the 500 singular vectors of correlations.  Compared to the singular vectors derived from $W$ shown in Figure \ref{fig:svdregr}(a), these regressors have more diffuse signal.  The slope in the half-normal plot (again, derived from the least significant 200 estimates) is 2 (compared to 2.9 for the regressors derived from $W$).  Also, the trend in the half-normal plot is concave rather than convex; the most significant variables are less significant than anticipated by the signal in the smaller estimates.
 
  \begin{figure}
  \caption{ \label{fig:svdregr} { \sl T-statistics of the singular value regressors
@@ -707,15 +651,15 @@ Hence, the vector of counts $w_i$ for the $i$th document has a multinomial distr
  \remark{ According to this DGP, the length of a document $m_i$  does not affect the response; only the mixture of traits is relevant.  Our results with real text summarized in the regression (Table \ref{tab:parsed}) provide contradictory evidence: Document length has a significant impact on price. }
  
  
-   Given that documents are generated by a topic model defined by equations \eqn{eq:regr} -- \eqn{eq:di}, the challenge for making regression features from text is to recover the $K$-dimensional linear space spanned by $\zeta$.  The success of latent semantic analysis (LSA, principal components analysis of the word counts $W$) is particularly easy to see. Intuitively, LSA is well-matched to this DGP because both treat a document as a bag-of-words.  Let $D_m$ denote an $n \times n$ diagonal matrix with the  word counts $m_i$ along the diagonal.  Then the expected value of the document/word matrix $W$ is the sum of $K$ outer products:
+   Given that documents are generated by a topic model defined by equations \eqn{regr} -- \eqn{di}, the challenge for making regression features from text is to recover the $K$-dimensional linear space spanned by $\zeta$.  The success of latent semantic analysis (LSA, principal components analysis of the word counts $W$) is particularly easy to see. Intuitively, LSA is well-matched to this DGP because both treat a document as a bag-of-words.  Let $D_m$ denote an $n \times n$ diagonal matrix with the  word counts $m_i$ along the diagonal.  Then the expected value of the document/word matrix $W$ is the sum of $K$ outer products:
 \begin{equation}
     \ev W = D_m \; \zeta \; P = D_m \sum_k \zeta_{*k} P_k' \;.
   \label{eq:EW}
 \end{equation}
-The expectation factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{jj} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{eq:svdW} are related to the allocation of traits over documents held in $\zeta$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would be better than others.  Our rationale relies on convenience (and the evident success in modeling real-estate prices), but one can argue that a decomposition that yields positive factors, namely non-negative matrix factorization NMF, would be more appropriate. Because both $\zeta$ and $P$ are probability matrices, a constrained optimization that factors $W$ into matrices whose rows are discrete probability distributions would be ideal.   We do not explore these here. 
+The expectation factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{jj} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{svdW} are related to the allocation of traits over documents held in $\zeta$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would be better than others.  Our rationale relies on convenience (and the evident success in modeling real-estate prices), but one can argue that a decomposition that yields positive factors, namely non-negative matrix factorization NMF, would be more appropriate. Because both $\zeta$ and $P$ are probability matrices, a constrained optimization that factors $W$ into matrices whose rows are discrete probability distributions would be ideal.   We do not explore these here. 
 
 
-\remark{ Expression \eqn{eq:EW} suggests that we should factor out $D_m$ from $W$ before doing the singular value decomposition so that variation of the lengths $m_i$ does not contaminate the left singular vectors.  This replacement of counts by proportions would then be followed by weighted least squares to down weight the influence of short documents.  We explored several variations of this weighting, but none made a dramatic difference in the goodness of fit or out-of-sample accuracy. }
+\remark{ Expression \eqn{EW} suggests that we should factor out $D_m$ from $W$ before doing the singular value decomposition so that variation of the lengths $m_i$ does not contaminate the left singular vectors.  This replacement of counts by proportions would then be followed by weighted least squares to down weight the influence of short documents.  We explored several variations of this weighting, but none made a dramatic difference in the goodness of fit or out-of-sample accuracy. }
 
 
 The connection of this DGP to bigrams is less obvious and relies more on stronger assumptions.  Bigrams count the frequency of the adjacent word types, a property we associate with the sequence of words rather than co-occurrence within a document.  To see how the analysis of bigrams can nonetheless produce useful regressors, we need to add either stronger assumptions to our DGP or incorporate some type of sequential dependence.  For example, we might assume that words associated with traits appear in {\em phrases}.   As in the bag-of-words model, words within a phrase are drawn independently from the distribution defined by a trait, but the generating process samples within a trait for some length of time before transitioning to another trait (resembling an HMM).  If these phrases are relatively long, then we can approximate the expected counts in the bigram matrix as a weighted outer product of the probability vectors for the traits.  We can obtain the same heuristic in our DGP by assuming that the probability distributions $P_k$ that define the traits have (nearly) singular support on words.  That is, most words are associated with a unique trait (implying $P_{k_1}'P_{k_2}  \approx 0$).  In either case, the marginal probability of finding adjacent words types reveals the underlying probability distribution.  
@@ -733,7 +677,7 @@ Let $N = \sum m_i$ denote the total number of observed words. Using the expressi
                      \qquad  H = \mbox{diag}(h_k)\;,
  \label{eq:B2}
  \end{equation}
-Again, a constrained factorization that produced probability vectors would be more appropriate if one truly believed this model.  In an ideal world, the singular values of the SVD would capture the unobserved marginal probabilities  $h_k$.  Expression \eqn{eq:B2} also suggests why the left and right singular vectors of $B$ should match, or at least define a common subspace.
+Again, a constrained factorization that produced probability vectors would be more appropriate if one truly believed this model.  In an ideal world, the singular values of the SVD would capture the unobserved marginal probabilities  $h_k$.  Expression \eqn{B2} also suggests why the left and right singular vectors of $B$ should match, or at least define a common subspace.
 
 
  The factorization of $B$ defines the coordinates of eigenwords ($\R^M$).  To
@@ -908,7 +852,25 @@ For comparison, we performed repeated 10-fold transductive cross validation.  Tr
 \label{sec:light}
 %--------------------------------------------------------------------------
  
- Though regression models are seldom causal, one is often tempted to interpret
+ 
+
+ Our emphasis on predictive accuracy does not necessarily produce an
+ interpretable model, and one can use other data to create such structure.  Our
+ explanatory variable resemble those from principal components analysis and
+ share their anonymity.  To provide more interpretable regressors, the presence
+ of partial quantitative information in real estate listings (\eg, some listings
+ include the number of square feet) provides what we call ‘lighthouse variables’
+ that can be used to derive more interpretable variables.  In our sample, few
+ listings (about 6\%) indicate the number of square feet.  With so much missing
+ data, this manually derived predictor is not very useful as an explanatory
+ variable in a regression.  This partially observed variable can then be used to
+ define a weighted sum of the anonymous text-derived features, producing a
+ regressor that is both complete (no missing cases) and interpretable.  One
+ could similarly use features from a lexicon to provide more interpretable
+ features.
+
+
+Though regression models are seldom causal, one is often tempted to interpret
  properties of the solution within the domain of application.  Because the
  predictors computed from the decompositions in the prior section describe
  subspaces rather than some specific property of words, interpretation is
@@ -942,6 +904,20 @@ For comparison, we performed repeated 10-fold transductive cross validation.  Tr
 \label{sec:disc}
 %--------------------------------------------------------------------------
   
+  Regression modeling always benefits from greater substantive insight, and the modeling of text is no exception.  An obvious approach to building regressors from text data relies on a
+ substantive analysis of the text.  For example, sentiment analysis constructs a
+ domain-specific lexicon of positive and negative words.  In the context of real
+ estate, one might suspect  words such as ``modern'' and ``spacious''  to be associated with more expensive properties, whereas
+ ``Fannie Mae'' and ``fixer-upper'' to signal properties with lower prices.  The
+ development of such lexicons has been an active area of research in sentiment
+ analysis over the past decade \citep{taboada11}.  The development of a lexicon
+ require substantial knowledge of the context and the results are known to be
+ domain specific.  Each new problem requires a new lexicon.  The lexicon for
+ pricing homes would be quite different from the lexicon for diagnosing patient
+ health.  Our approach is also domain specific, but requires little user input
+ and so can be highly automated.
+
+
  Our analysis here shows that one can exploit well-known methods of multivariate analysis to create regressors from unstructured text.  Compared to iterative methods based on MCMC, the computations are essentially immediate.  Surprisingly, the resulting regressors are quite predictive in several examples we have explored.  For example, we used this same methodology to model ratings assigned to wines based on tasting notes.  The tasting notes themselves are typically shorter than these real estate listings (averaging about 42 tokens compared to 72 for the listings), but we have a larger collection of about 21,000.  Using the methods demonstrated here, a regression using 250 principal components of $W$ explains about 66\% of the variation in ratings, we a remarkably similar distribution of effect sizes as shown in Figure \ref{fig:wine}.  Similarly, regression on the 250 left and 250 right regressors constructed from the bigram matrix explains about 68\% of the variation.  We plan to explore other applications in the near future.
  
  
