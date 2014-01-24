@@ -143,24 +143,18 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  text, turning text into numerical variables suitable for regression modeling.
  
  
- As a specific example, we build a regression model to predict the advertised
- prices of real estate properties from their listings.  The listings we use are
- verbal rather than numerical data such as that obtained by filling out a
- spreadsheet-like questionnaire.  The listings may, or may not, contain
- quantitative characteristics.  The raw data are $n=$7,384 property listings for
- Chicago, IL extracted (with permission) from trulia.com on June 12, 2013.  (At
+ As a specific example, we build a regression model to predict advertised
+ prices of real estate properties from their listings.  Our  data describe $n=$7,384 property listings for
+ Chicago, IL, extracted (with permission) from trulia.com on June 12, 2013.  At
  the time, trulia.com showed 30,322 listings for Chicago, but most were
- foreclosures that we excluded from our analysis.) The response in our models is
+ foreclosures that we excluded from our analysis.  The response in our models is
  the log of the listed price.  The distribution of the listed prices is right
- skewed, so we transformed the response to a log scale as shown in the histogram
- of Figure \ref{fig:prices}.  The log transformation produces a roughly Gaussian
- distribution, with a hint of fat tails for cheaper properties with prices near
- \$25,000.  The presence of a long lower tail might indicate that the data mix
- typical home sales with special, subsided properties or perhaps vacant lots
- that sell for an unusually low price.  (This display uses the base 10 log of
+ skewed, so we transformed the response to a log scale as shown in Figure \ref{fig:prices}.  The log transformation produces a roughly Gaussian
+ distribution, with a hint of fat tails for produced by inexpensive properties with prices near
+ \$25,000.   (This display uses the base 10 log of
  the prices for easy interpretation; subsequent models use natural logs.)
-
-
+ 
+ 
  \begin{figure}
  \caption{ \label{fig:prices} { \sl The distribution of prices for real estate
  in Chicago is highly skewed.  A log transformation produces data that are
@@ -172,7 +166,10 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{figure}
 
 
- Here are four of the property listings.  The initial value is the listed price.
+The listings that describe these properties are verbal,  
+ written in an idiosyncratic vernacular familiar only to those who are house
+ hunting.  Some listings contain
+ quantitative characteristics, but many do not.   The four following listings are typical examples of the data.  The initial value is the listed price.
 
  \begin{verbatim}
     $399000 Stunning skyline views like something from a postcard are yours
@@ -196,76 +193,53 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{verbatim}
 
  \noindent
- Listings do not obey the grammatical rules of English.  Rather, listings are
- written in an idiosyncratic vernacular familiar only to those who are house
- hunting.  Some authors write in sentences, others not, and a variety of
+ Listings do not obey the grammatical rules of English.  Some authors write in sentences, others not, and a variety of
  abbreviations appear.  The style of punctuation varies from spartan to effusive
  (particularly exclamation marks), and the length of the listing runs from
- several words to a long paragraph.  The average description has about 73 words,
- but the distribution of the lengths is right skewed.  The boxplot in Figure
- \ref{fig:boxplot} shows the lengths.  The shortest description has 2 words,
+ several words to a long paragraph.  The average listing has 73 words, and
+  the distribution of the lengths is right skewed.  The shortest listing has 2 words,
  whereas the longest has 568 words.  This variation in the lengths of the
  descriptions suggests that modeling the prices from this text will require some
  form of weighting: we simply do not know so much about properties with short
  descriptions.
 
-
- \begin{figure}
- \caption{ \label{fig:boxplot} { \sl The distribution of the lengths of the
- property descriptions is right-skewed, with some listing running hundreds of
- words compared to a median length of 74 words. } } 
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=3.5in]{figures/boxplot} }
- \vspace{0.2in}
- \end{figure}
-
   
- A natural approach for a statistician is to construct intuitively appealing
- regressors from the descriptions.  For example when processing ads for real
- estate, one might conjecture that an agent has a lot more to say about an
+ A natural approach to the problem for a statistician is to construct intuitively appealing
+ regressors from the listings.  For example, one might conjecture that an agent has a lot more to say about an
  expensive property than one in need of repair, implying that the length of the
- listing for a property may be predictive of the price.  In a different vein,
- one can use regular expressions to extract specific numerical data from the
+ listing for a property may be predictive of its price.  In a different vein,
+ one can use regular expressions -- pattern matching -- to extract specific numerical data from the
  listings.  For example, the first listing indicates that this property has two
- bedrooms and two bathrooms.  Constructing such regular expressions, however, is
+ bedrooms and two bathrooms.  A regular expression can be designed to extract numbers that precede the word ``bath'' from the listings.  Constructing such regular expressions, however, is
  a labor-intensive process that must be done on a case-by-case basis.  The
- patterns used in these regular expressions become complex because they must
- allow common abbreviations, such as ``bth'', ``bath'' and ``bthrm'' for
- bathrooms.  Complexity aside, the greater problem with this approach is that
+ patterns become complex because they must
+ allow common abbreviations, such as ``bth'', ``bath'' and ``bthrm'' in order to match counts of the number of
+ bathrooms.  Complexity aside, the greater problem with explicit pattern matching is that
  most listings omit these characteristics.  The only numerical data common to
- every listing is the response, the advertised price.  Some listings include the
- number of rooms or occasionally the size of the property (number of square
- feet). For Chicago, our regular expressions found that 6\% of the listings
+ every listing is the response, the advertised price.   For these listings, our regular expressions found that 6\% of the listings
  indicate the number of square feet, 26\% indicate the number of bathrooms, and
  42\% give the number of bedrooms.  More complex regular expressions would
- likely find more matches, but the gains are likely to be few.  One also faces a
- Type I/Type II trade-off.  Simple regular expressions omit some matches, but
+ likely find more matches, but the gains are likely to be few.  As illustrated below, one also faces a
+ Type I/Type II trade-off.  Simple regular expressions miss some matches, but
  more aggressive expressions match inadvertently.
 
 
  The four scatterplots in Figure \ref{fig:parsed} summarize the marginal
- association between the log of prices and these parsed predictors, including
- the number of words in descriptions.  To indicate missing data, we filled the
- missing values with the averages of the observed cases.  Missing values produce
- the columns of gray points located at the mean of the variable on the $x$ axis
- in Figure \ref{fig:parsed}.  The correlations of these extracted variables with
- the log of the prices range from ($r=0.40$) for length of the description and
- the number of bathrooms ($r = ??$) and log sq ft) $= 0.26$ down to. ???  These
- plots also show several anomalies.  For example, the scatterplot of the log of
- price on the number of words shows a cluster of 25 listings, all with exactly
- 265 words.  All of these different properties were listed in a common format by
+ association between the log of prices and these constructed predictors, including
+ the number of words in descriptions.  For listings with no match, we filled the
+ missing values with the averages of the observed cases.  These appear as columns of gray points located at the mean of the variable on the $x$ axis
+ in Figure \ref{fig:parsed}.  The correlations between these variables and the log of the prices vary from moderate to nearly zero.  The length of the listing has the largest correlation ($r=0.40$). The correlations for the matched data are 0.42 for the number of bathrooms, 0.26 for the log of the number of square feet, and  0.09 for the number of bedrooms.   If missing data are included, the correlations become much smaller (the second correlation shown in the figure).  These plots also show several anomalies.  For example, the scatterplot of the log price on log length shows a cluster of 25 listings, all with exactly
+ 265 words (log 265=5.6).  All of these different properties were listed in a common format by
  a government agency.  The scatterplot of the log of prices on the log of the
  square footage also shows a clear outlier; this outlier is a consequence of
- aggressive parsing.  A typo in a description (``has 1sfam'') led to the regular
- expression defining a property with 1 square foot.
+ aggressive matching in a regular expression.  A typo in a description (``has 1sfam'') led to the regular
+ expression finding a property with 1 square foot.  
 
  \begin{figure}
-  \caption{ \label{fig:parsed} { \sl The parsed characteristics have slight
+  \caption{ \label{fig:parsed} { \sl Extracted characteristics have moderate to slight
  positive association with the log of the prices. } Gray points in the figures
- identify cases that were missing the explanatory variable; the shown
- correlation uses only the observed data; the adjacent value in gray uses all of
- the data. }
+ identify cases that omit the explanatory variable; the first shown
+ correlations uses only the observed data; the following smaller value included the mean-filled listings. }
  \centerline{
  \vspace{0.1in}
  \includegraphics[width=5in]{figures/parsed} }
@@ -274,66 +248,52 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 
 
  Table \ref{tab:parsed} summarizes the fit of the regression of the log of price
- on these four extracted variables.  To accommodate missing values, we include
- in the fit missing indicators for the variables given by the regular
- expressions.  The regressors are not highly correlated, and the importance of
- these variables in the multiple regression generally echoes the marginal
- correlations shown in Figure \ref{fig:parsed}.  Among the seven explanatory
- variables, the length of the descriptions is most predictive, followed by the
+ on the four extracted features. The fit includes indicators of coded as 1 when the associated regular expression found a match and are coded as 0 otherwise. The features are not highly collinear, so the multiple regression generally echoes the marginal
+ association seen in Figure \ref{fig:parsed}.  The length of the descriptions obtains the largest $t$ statistic, followed by the
  number of bathrooms.  Unlike the marginal associations, however, both the log
  of the number of square feet (when observed) and its missing indicator are
- significant.  The missing indicators for bedrooms and bathrooms are not
- predictive.  The model obtains adjusted R-squared $\ol{R}^2 = 0.192$, with
- residual standard deviation $s_e =1.08$.  Because we compare regression models
- with varying numbers of explanatory variables, $\ol{R}^2$ is more useful than
- without adjusting for degrees of freedom.  Since we are not doing variable
- selection at this point, but rather fitting full ensembles of pre-selected
- variables, adjusted R-squared is an unbiased summary of each model's
- performance out of sample.  Later in Section \ref{sec:cv} we reports
- cross-validation results for these models.
+ significant.  The missing indicators for bedrooms and bathrooms are not.  The model obtains adjusted R-squared $\ol{R}^2 = 0.192$, with
+ residual standard deviation $s_e =1.08$. 
 
-
- \begin{table}
- \caption{ \label{tab:parsed} {\sl OLS multiple regression of log prices on the
+ 
+ \begin{table}[ht]
+\caption{ \label{tab:parsed} {\sl OLS multiple regression of log prices on the
  parsed explanatory variables and  indicators of observed values.}}
-
-\begin{center}
+\centering
 \begin{tabular}{rrrrr}
   \hline
- & Estimate & Std. Error & t  & Pr($>$$|$t$|$) \\ 
+    Feature        & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
   \hline
- Intercept     & 4.8858  & 0.4944 & 9.88 & 0.0000 \\ 
-  $\log m$     & 0.8211  & 0.0239 & 34.31 & 0.0000 \\ 
-  log Sq Ft    & 0.3680  & 0.0592 & 6.21 & 0.0000 \\ 
-  Sq Ft Obs    & 0.6108  & 0.0607 & 10.06 & 0.0000 \\ 
-  Bedrooms     & -0.0095 & 0.0169 & -0.56 & 0.5734 \\ 
-  Bedroom Obs  & 0.0023  & 0.0306 & 0.08 & 0.9400 \\ 
-  Bathrooms    & 0.4153  & 0.0307 & 13.53 & 0.0000 \\ 
-  Bathroom Obs & 0.0038  & 0.0344 & 0.11 & 0.9127 \\ 
+(Intercept)           & 4.7379 & 0.4946 & 9.58 & 0.0000 \\ 
+  Log Length       & 0.8546 & 0.0247 & 34.56 & 0.0000 \\ 
+  Log Sq Ft          & 0.3677 & 0.0592 & 6.22 & 0.0000 \\ 
+  Sq Ft (Obs)       & 0.6068 & 0.0607 & 10.00 & 0.0000 \\ 
+  Bedrooms         & -0.0092 & 0.0169 & -0.55 & 0.5856 \\ 
+  Bedroom (Obs) & 0.0011 & 0.0306 & 0.04 & 0.9710 \\ 
+  Bathrooms        & 0.4129 & 0.0307 & 13.47 & 0.0000 \\ 
+  Bathroom (Obs) & 0.0032 & 0.0344 & 0.09 & 0.9265 \\ 
    \hline
 \end{tabular}
-   $s_e = 1.084$ with $R^2= 0.193,\;	\ol{R}^2 = 0.192$ 
- \end{center}
 \end{table}
 
  
+ 
  Had listings been composed in a consistent manner with a standardized set of
- characterisitics, such constructive modeling would be more successful.  Our
- goal here, however, is to illustrate automatic methods that work in precisely
- this unformatted, unregulated context.  The collection of methods we use are
+ characteristics, such constructive modeling would surely be more successful.  Our
+ goal here, however, is to contrast this constructive approach with automatic methods that work in precisely
+ this unformatted, irregular context.  The collection of methods we use are
  collectively known as {\em vector space models} in computational linguistics
- \citep[e.g.][]{turney10}.  These were originally developed for document
- retrival, known as latent semantic indexing (\ras{cite}).  In that context,
+ \citep[e.g.][]{turney10}.  These were originally developed in artificial intelligence and adapted to document
+ retrieval in a method known as latent semantic indexing \citep{deerwester88}.  In that context,
  documents are clustered to enable a query to locate related documents or to
- partition documents into related clusters.  In contrast to featurizing text for
- regression modeling, these applications of vector space models are
- unsupervised.  Vector space models are also closely related to techniques that
+ partition documents into related clusters. Vector space models continue to be  found most often in
+ such unsupervised applications.  We find that they are equally effect in supervised models.  Vector space models are also closely related to techniques that
  statisticians will find familiar: principal components analysis (PCA) and
  canonical correlation analysis (CCA).  The underlying computational engine is a
  singular value decomposition (SVD), aided by random projections.  Our aim is to
  show how easily one can convert text into familiar regressors for regression.
-  As such, we leave to others the task of attempting to explain why such simple
- representations as the co-occurrence of words in documents might capture the
+  As such, we leave to linguistics the task of explaining why such simple
+ representations of text might capture 
  deeper meaning \citep{deerwester90, landauer97, bullinaria07, turney10}.
 
 
