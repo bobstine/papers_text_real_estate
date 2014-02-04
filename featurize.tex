@@ -252,25 +252,31 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  appear as columns of gray points located at the mean of the variable on the $x$
  axis in Figure \ref{fig:parsed}.  The correlations between these variables and
  the log of the prices vary from moderate to nearly zero.  The length of the
- listing has the largest correlation ($r=0.40$). The correlations for the
- matched data are 0.42 for the number of bathrooms, 0.26 for the log of the
- number of square feet, and 0.09 for the number of bedrooms.  If missing data
- are included, the correlations become much smaller (the second correlation
- shown in the figure).  These plots also show several anomalies.  For example,
- the scatterplot of the log price on log length shows a cluster of 25 listings,
- all with exactly 265 words (log 265=5.6).  All of these different properties
- were listed in a common format by a government agency.  The scatterplot of the
- log of prices on the log of the square footage also shows a clear outlier; this
- outlier is a consequence of aggressive matching in a regular expression.  A
- typo in a description (``has 1sfam'') led to the regular expression finding a
+ listing has the largest correlation ($r=0.40$). This frame includes the fit of
+ a fifth-order polynomial that recovers the evident nonlinearity of this
+ association.  The nonlinearity is highly significant, but increases the amount
+ of explained variation from 0.16 to only 0.20.  The improvement in fit is
+ slight because most of the data lie within the linear range of the fit.
+  Missing data has a large impact on the correlations with the other extracted
+ features shown in Figure \ref{fig:parsed}.  The correlations for complete cases
+ are 0.42 for the number of bathrooms, 0.26 for the log of the number of square
+ feet, and 0.09 for the number of bedrooms.  If missing data are included, the
+ correlations become much smaller (the second correlation shown in each frame).
+  These plots also show several anomalies.  For example, the scatterplot of the
+ log price on log length shows a cluster of 25 listings, all with exactly 265
+ words (log 265=5.6).  These are not errors: All of these different properties
+ were described in a common format by a government agency.  The scatterplot of
+ the log of prices on the log of the square footage also shows a clear outlier;
+ this outlier is a consequence of aggressive matching in a regular expression.
+  A typo in a description (``has 1sfam'') led our regular expressions to find a
  property with 1 square foot.
 
  \begin{figure}
   \caption{ \label{fig:parsed} { \sl Extracted characteristics have moderate to
  slight positive association with the log of the prices. } Gray points in the
  figures identify cases that omit the explanatory variable; the first shown
- correlations uses only the observed data; the following smaller value included
- the mean-filled listings. }
+ correlation in each frame uses only the observed data; the following smaller 
+ value includes mean-filled listings. }
  
 \centerline{
  \vspace{0.1in}
@@ -279,35 +285,43 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{figure}
 
 
- Table \ref{tab:parsed} summarizes the fit of the regression of the log of price
- on the four extracted features. The fit includes indicators of coded as 1 when
- the associated regular expression found a match and are coded as 0
- otherwise. The features are not highly collinear, so the multiple regression
- generally echoes the marginal association seen in Figure \ref{fig:parsed}.  The
- length of the descriptions obtains the largest $t$ statistic, followed by the
- number of bathrooms.  Unlike the marginal associations, however, both the log
- of the number of square feet (when observed) and its missing indicator are
- significant.  The missing indicators for bedrooms and bathrooms are not.  The
- model obtains adjusted R-squared $\ol{R}^2 = 0.192$, with residual standard
- deviation $s_e =1.08$.
+ Table \ref{tab:parsed} summarizes the fit of a regression of the log of price
+ on predictors built from the four extracted features. The model includes a
+ fifth degree polynomial in the log of the length of the description and missing
+ data indicators.  These indicators are coded as 1 when the associated regular
+ expression found a match and are coded as 0 otherwise.  Aside from the
+ components of the polynomial, the features are not highly collinear, and the
+ multiple regression echoes the marginal associations observed in Figure
+ \ref{fig:parsed}.  Features related to the lengths of listings explain the most
+ variation, followed by the number of bathrooms.  Unlike the marginal
+ associations, the log of the number of square feet and its missing indicator
+ are highly significant.  The missing indicators for bedrooms and bathrooms are
+ not.  The model obtains adjusted R-squared $\ol{R}^2 = 0.232$, with residual
+ standard deviation $s_e =1.06$.
 
  
  \begin{table}[ht]
 \caption{ \label{tab:parsed} {\sl OLS multiple regression of log prices on the
  parsed explanatory variables and  indicators of observed values.}}
 \centering
-\begin{tabular}{rrrrr}
+\begin{tabular}{lrrrr}
   \hline
-    Feature        & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
+    Feature       & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
   \hline
-(Intercept)           & 4.7379 & 0.4946 & 9.58 & 0.0000 \\ 
-  Log Length       & 0.8546 & 0.0247 & 34.56 & 0.0000 \\ 
-  Log Sq Ft          & 0.3677 & 0.0592 & 6.22 & 0.0000 \\ 
-  Sq Ft (Obs)       & 0.6068 & 0.0607 & 10.00 & 0.0000 \\ 
-  Bedrooms         & -0.0092 & 0.0169 & -0.55 & 0.5856 \\ 
-  Bedroom (Obs) & 0.0011 & 0.0306 & 0.04 & 0.9710 \\ 
-  Bathrooms        & 0.4129 & 0.0307 & 13.47 & 0.0000 \\ 
-  Bathroom (Obs) & 0.0032 & 0.0344 & 0.09 & 0.9265 \\ 
+  Intercept       & 7.9985 & 0.4749 & 16.84 & 0.0000 \\ 
+  log Tokens      & 39.0183 & 1.0945 & 35.65 & 0.0000 \\ 
+  $(\mbox{log Tokens})^2$   & 1.0086 & 1.0642 & 0.95 & 0.3433 \\ 
+  $(\mbox{log Tokens})^3$ & -18.2556 & 1.0612 & -17.20 & 0.0000 \\ 
+  $(\mbox{log Tokens})^4$ & -4.8956 & 1.0594 & -4.62 & 0.0000 \\ 
+  $(\mbox{log Tokens})^5$ & 7.9094 & 1.0584 & 7.47 & 0.0000 \\ 
+  log Sq Feet     & 0.4039 & 0.0579 & 6.98 & 0.0000 \\ 
+  Sq Feet obs     & 0.6254 & 0.0594 & 10.53 & 0.0000 \\ 
+  Bedrooms        & 0.0080 & 0.0165 & 0.48 & 0.6299 \\ 
+  Bedrooms obs    & -0.0084 & 0.0299 & -0.28 & 0.7783 \\ 
+  Bathrooms       & 0.4015 & 0.0300 & 13.37 & 0.0000 \\ 
+  Bathrooms obs   & -0.0199 & 0.0336 & -0.59 & 0.5537 \\ 
+   \hline
+   \multicolumn{5}{c}{$\ol{R}^2 = 0.232, \; s_e = 1.06$}\\
    \hline
 \end{tabular}
 \end{table}
@@ -316,41 +330,41 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  
  Had listings been composed in a consistent manner with a standardized set of
  characteristics, such constructive modeling would surely be more successful.
-  Our goal here, however, is to contrast this constructive approach with
- automatic methods that work in precisely this unformatted, irregular context.
-  The collection of methods we use are collectively known as {\em vector space
- models} in computational linguistics \citep[e.g.][]{turney10}.  These were
- originally developed in artificial intelligence and adapted to document
- retrieval in a method known as latent semantic indexing \citep{deerwester88}.
-  In that context, documents are clustered to enable a query to locate related
- documents or to partition documents into related clusters. Vector space models
- continue to be found most often in such unsupervised applications.  We find
- that they are equally effect in supervised models.  Vector space models are
- also closely related to techniques that statisticians will find familiar:
- principal components analysis (PCA) and canonical correlation analysis (CCA).
-  The underlying computational engine is a singular value decomposition (SVD),
- aided by random projections.  (The use of the SVD occasionally leads to such
- methods being described as ``spectral algorithms'' which should not be confused
- with frequency domain methods for time series.)  Our aim is to show how easily
- one can convert text into familiar regressors for regression.  As such, we
- leave to linguistics the task of explaining why such simple representations of
- text might capture deeper meaning \citep{deerwester90, landauer97,
- bullinaria07, turney10}.
+  Our goal here takes us in a different direction that, in contrast to this
+ constructive approach, explores automatic methods that thrive in this
+ unformatted, irregular context.  These methods are collectively known as {\em
+ vector space models} in computational linguistics \citep[e.g.][]{turney10}.  A
+ vector space model (VSM) characterizes each document as a point in some
+ $p$-dimensional vector space (think \Rp).  VSMs were originated in artificial
+ intelligence and were adopted for text applications to construct a system for
+ document retrieval known as latent semantic indexing \citep{deerwester88}.
+  Latent semantic indexing clusters documents to enable a query to locate
+ related items.  VSMs are closely related to techniques that statisticians will
+ find familiar: principal components analysis (PCA) and canonical correlation
+ analysis (CCA).  The underlying computational engine is a singular value
+ decomposition (SVD), aided by random projections.  (The use of the SVD
+ occasionally leads to VSMs being described as ``spectral algorithms'' which
+ should not be confused with frequency domain methods for time series.)  There
+ has been considerable debate as to how VSMs represent language; we leave to
+ linguistics the task of explaining why such simple representations of text
+ might capture deeper meaning \citep{deerwester90, landauer97, bullinaria07,
+ turney10}.
 
 
- Vector space models represent words as points in \Rp.  An automated process
- determines the mapping, though algorithms can exploit such side information
- when available.  The derived regressors can be used alone or in combination
- with traditional variables, such as those obtained from a lexicon or other
- semantic model.  We use the example of real estate listings to illustrate the
- impact of various choices on the predictive accuracy.  For example, a
- regression using the automated features produced by this analysis explains over
- two-thirds of the variation in listed prices for real estate in Chicago.  The
- addition of several substantively derived variables adds little.  Though we do
- not emphasize its use here, variable selection can be employed to reduce the
- ensemble of regressors without sacrificing predictive accuracy.  A similar
- application that models personality traits derived from Facebook messages
- appears in \citet{ungar13}.
+ VSMs are commonly found in unsupervised applications such as clustering, but
+ our application here finds that they are equally effective in supervised
+ models.  In essence, each document becomes a point in \Rp, and these
+ coordinates become regressors.  These regressors can be used alone or in
+ combination with traditional variables, such as those obtained from a lexicon,
+ regular expression, or semantic model.  The example of real estate listings
+ illustrates the impact of various choices on the predictive accuracy.  For
+ example, a regression using the automated features produced by a simple VSM
+ explains over two-thirds of the variation in listed prices for real estate in
+ Chicago.  The addition of several substantively derived variables adds little.
+  Though we do not emphasize its use here, variable selection can be employed to
+ reduce the ensemble of regressors without sacrificing predictive accuracy.  A
+ similar application that models personality traits derived from Facebook
+ messages appears in \citet{ungar13}.
 
 
  The remainder of this paper develops as follows.  The next section reviews
@@ -380,56 +394,58 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 %--------------------------------------------------------------------------
 
  Latent semantic analysis (LSA) is essentially a principle components analysis
- of the matrix of counts of how often each word appears in each document (in our
- case, a property listing).  Using these components as features in regression
- then amounts to a principle components regression.  Quite a few details,
- however, need to be resolved in any application. For example, what is a word?
- This section describes the relevant choices within the context of the building
- a regression model for real estate prices.
+ of a matrix of counts of how often each word appears in each document (in our
+ case, the frequency of words in a property listing).  Using these components as
+ features in regression then amounts to a principle components regression.
+  Quite a few details, however, need to be resolved in any application. For
+ example, what is a word?  This section describes the relevant choices within
+ the context of building a regression model for real estate prices.
  
  \subsection{ Tokenization }  % ------------------
 
- LSA begins by converting the source text into a sequence of {\em word tokens}.
-  A word token is a sequence of one or more characters that identifies an
- instance of a unique {\em word type}.  The conversion process, known as
- tokenization, requires answering numerous, often subtle questions.  For
- example, is the number ``735'' a word token?  Should we distinguish word tokens
- based on upper or lower case letters?  Are ``room'' and ``rooms'' instances of
- the same word type?  We adopt a fairly standard, simple approach: we convert
- all text to lower case, distinguish punctuation characters, and replace
- instances of rare word types by an invariant token.  To illustrate some of the
- issues in tokenization, the following string is a portion of a listing:
+ LSA begins by converting the source text into {\em word tokens}.  A word token
+ is a sequence of one or more characters that represents an instance of a unique
+ {\em word type}.  This conversion of text into tokens is known as tokenization.
+  Tokenization requires making numerous, often subtle, choices.  For example, is
+ the number ``735'' a word token?  Do the tokens ``state'' and ``State''
+ represent the same type?  Are ``room'' and ``rooms'' instances of the same word
+ type?  To answer these questions, we adopt a standard, simple approach: we
+ convert all text to lower case, distinguish punctuation characters as separate
+ types, and replace instances of rare word types by an invariant token.  To
+ illustrate some of the issues in tokenization, the following string appears in
+ a listing:
  \begin{verbatim}
    Brick flat, 2 bdrm.  With two-car garage. \end{verbatim} 
  \noindent
  Separated into tokens, this text becomes a list of 10 tokens representing 9
- word types:
+ word types (angle brackets surround punctuation tokens)
  \begin{verbatim}
    {brick, flat, <,>, 2, bdrm, <.>, with, two-car, garage,<.> } \end{verbatim} 
  \noindent
- Once tokenized, all characters are lower case.  Punctuation characters, such as
- commas and periods, are instances of word types. We leave embedded hyphens in
- place.  We do not correct spelling errors and typos, and we leave abbreviations
- as given.  References such as the books by \citet{manning99} and
- \citet{jurafsky09} describe more complex steps, such as stemming and
- annotation, that can be incorporated into tokenization. \citet{turney10} give a
- concise overview.  Word types are not distinguished by meaning or use.  That
- is, this analysis does not distinguish homographs.
+ We leave embedded hyphens in place and do not correct spelling errors and
+ typos.  Abbreviations remain as given.  References such as the texts by
+ \citet{manning99} and \citet{jurafsky09} describe more elaborate choices, such
+ as stemming and annotation, that can be incorporated into
+ tokenization. \citet{turney10} give a concise overview.  Notice that
+ tokenization only considers the letters that identify type type, not how the
+ word appears.  Consequently word types are not distinguished by meaning or use
+ (does not distinguish homographs).
 
   
  When applied to our data from Chicago, the 7,384 property listings contain
- 536,485 word tokens of 15,227 unique word types.  As usual in text, the most
- common word types occur frequently whereas most words appear infrequently.
-  More than half of these tokens appear only once or twice, providing little
- exposure to how the word is used.  We clustered these rare types into one
- category ($<$OOV$>$, for ``out of vocabulary''), resulting in a reduced
- vocabulary of $m = 5,707$ word types.  The most common word types are
+ 536,485 word tokens representing 15,227 unique word types.  As usual in text,
+ the most common word types occur frequently whereas most words appear
+ infrequently.  More than half of these tokens appear only once or twice,
+ providing little exposure to how the word is used.  We clustered these rare
+ types into one category ($<$OOV$>$, for ``out of vocabulary''), resulting in a
+ reduced vocabulary of $m = 5,707$ word types.  The most common word types are
  punctuation: `.'  occurs 40,227 times and `,' occurs 33,746 times.  Following
  these come the collection of seldom seen word types (OOV, 11,478), `and'
  (frequency 11,032), `!' (7,894) and `in' (7,418).  Figure \ref{fig:zipf} graphs
  the log of the frequency of these word types versus the log of their ranks.  It
  is common in text to find a linear trend with slope near 1 in this graph, the
- signature of a Zipf distribution \citep{zipf35, baayen02}.  Even though the
+ signature of a Zipf distribution \citep{zipf35, baayen02}.  In that case, the
+ rank of a word type times its frequency would be constant.  Even though the
  text of real estate listings is not standard English, one expects to find
  counts resembling those produced by a power law \citep{clauset09}.  The shown
  line (with log-log slope -0.927) holds only for more common word types.  For
@@ -441,8 +457,8 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \begin{figure}
  \caption{ \label{fig:zipf} { \sl The log of the frequency of word types in the
  listings for properties in Chicago is roughly linear in the log of the rank of
- the words, a Zipf distribution.}  The shown line $\log \mbox{freq} = 10.9 -
- 0.93 \log \mbox{rank}$ was fit to words with ranks 1 through 500.  }
+ the words.}  The shown line $\log \mbox{freq} = 10.9 - 0.93 \log \mbox{rank}$ 
+ was fit to the most common words with ranks 1 through 500.  }
 
  \centerline{
  \vspace{0.1in}
@@ -451,7 +467,125 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{figure}
 
 
-Once the source text has been tokenized, we collect counts of how often each type appears within a listing.  These counts treat each listing as a ``bag of words,'' a multiset that does not distinguish the placement of  words within a listing. Scrambling the words within each listing would produce the same counts.  Let $n$ denote the number of listings; each listing is an observation in the usual sense of statistics.  Let $V$ denote the vocabulary, the set of $m$ observed  word types.  The $n \times m$ matrix $W$ holds the counts of these word types across the listings; $w_{ij}$ is the number of times word type $j$ appears in the $i$th document.  (All vectors in our notation are column vectors.)    (The  transpose of $W$, called the term-document matrix, is common within computational linguistics. We follow the convention within statistics and arrange independent observations -- the listings -- as rows.)  The matrix $W$ is sparse: most documents use a small portion of the  vocabulary.   
+ Once the source text has been tokenized, we collect counts of how often each
+ type appears within a listing.  These counts treat each listing as a ``bag of
+ words,'' a multiset that does not distinguish the placement of words within a
+ listing. Scrambling the words within each listing would produce the same
+ summary.  Let $n$ denote the number of listings; each listing is an observation
+ in the usual sense of statistics.  Let $V$ denote the vocabulary, the set of
+ $m$ distinct word types.  The $n \times m$ matrix $W$ holds the counts of these
+ word types across the listings; $w_{ij}$ is the number of times word type $j$
+ appears in the $i$th document.  (All vectors in our notation are column
+ vectors.)  (The transpose of $W$, called the term-document matrix, is common
+ within computational linguistics. We follow the convention within statistics
+ and arrange independent observations -- the listings -- as rows.)  The matrix
+ $W$ is sparse: most documents use a small portion of the vocabulary.
+
+
+\subsection{ Regressing on Word Types }  % ----------------------
+
+ Before building models using singular vectors, we set a baseline by directly
+ regressing the log prices response on the word counts in $W$.  Table
+ \ref{tab:regrInd} summarizes the fit using the most common 2,000 words, along
+ with the lengths $m_i$ and log lengths.  We include these in every model to
+ avoid including features constructed from text that simply capture the length
+ effect evident in Figure \ref{fig:parsed}.  Overall, this model produces
+ $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the
+ prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity
+ that might be anticipated due to the differences in the document lengths.  The
+ most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the
+ addition of this word to a listing indicates a lower average price.  In
+ contrast, the presence of additional out-of-vocabulary words (denoted ``OOV'')
+ suggest with higher than average prices ($t=6.3$). Figure \ref{fig:regrInd}
+ summarizes the distribution of all t-statistics in this model.  Twenty-two
+ words are not used due to singularities among these counts, leaving 1,978
+ estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$
+ in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold
+ $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this
+ threshold for statistical significance.  The nearly flat red line in the figure
+ is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of
+ Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the
+ distribution of the fitted $t$-statistics is not far from the null
+ distribution.  The gray line in the half-normal plot is the diagonal; the red
+ line is the fitted regression of the smallest 200 $|t|$-statistics on the
+ corresponding quantiles.  For a sample from a standard normal distribution, the
+ slope of a line fit to the $t$ values should be 1.  The slope of the fitted
+ line for these estimates is significantly larger, but clearly the signal is
+ widely spread over these estimates.  A regression on counts for 14 words whose
+ estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains
+ $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called
+ ``nearly black'' models often studied in research on variable selection.  In
+ those models, a few estimates stand out from a noisy background. In this
+ application, much of the signal lies embedded in that background.
+
+ \begin{table}
+ \caption{ \label{tab:regrInd} {\sl Multiple regression of log prices on 
+  counts from the document/word matrix $W$ for the most common 2,000 words.}  The table shows the 14 estimates that exceed the Bonferroni threshold for statistical significance.} 
+
+\begin{center}
+\begin{tabular}{rrrrr}
+  \hline
+ & Estimate & Std. Error & $t$ & Pr($>|t|$) \\ 
+  \hline
+  vacant & -0.5518 & 0.0652 & -8.46 & 0.0000 \\ 
+  deed & -1.3155 & 0.1557 & -8.45 & 0.0000 \\ 
+  OOV & 0.0373 & 0.0059 & 6.33 & 0.0000 \\ 
+  units & 0.1929 & 0.0342 & 5.64 & 0.0000 \\ 
+  discount & -1.4959 & 0.2992 & -5.00 & 0.0000 \\ 
+  investment & -0.2334 & 0.0497 & -4.70 & 0.0000 \\ 
+  most & 0.3350 & 0.0736 & 4.55 & 0.0000 \\ 
+  bucktown & 0.3570 & 0.0790 & 4.52 & 0.0000 \\ 
+  sf & 0.3305 & 0.0741 & 4.46 & 0.0000 \\ 
+  pullman & -0.6244 & 0.1423 & -4.39 & 0.0000 \\ 
+  bedroom & -0.0978 & 0.0227 & -4.31 & 0.0000 \\ 
+  terraces & 0.7074 & 0.1650 & 4.29 & 0.0000 \\ 
+  fenced & -0.2466 & 0.0578 & -4.27 & 0.0000 \\ 
+  scb & -5.5914 & 1.3244 & -4.22 & 0.0000 \\ 
+ \hline
+\end{tabular}
+ 
+    $s_e =  0.682$ with $R^2 =  0.766$, $\ol{R}^2 =  0.681$  
+\end{center}
+\end{table}
+
+
+
+ \begin{figure}
+  \caption{ \label{fig:regrInd} { \sl Distribution of the t-statistics for the regression of log prices on counts of the most frequent 2,000 word types (columns of $W$).}}
+ \centerline{  \includegraphics[width=6in]{figures/tstatRegrInd}    }
+ \vspace{0.2in}
+ \end{figure}
+
+
+Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  The initial model includes the number of tokens in each document, $m$.  By initializing the model with this count, common words are not added simply because they are common but rather because the use of the word is associated with the price.  Otherwise, common tokens such as a period or comma might appear predictive  because they occur frequently in longer documents.  Figure \ref{fig:cumr2} shows the accumulated $R^2$ statistic, with the words added in two orders: in order of decreasing (solid black) or increasing (dashed black) frequency.  Adding the most frequent words first provides a better fit with fewer variables.  The gray curve in the figure shows the contribution to $R^2$ of the words in order of frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  The difference between the black and gray curves shows the influence of collinearity among the word types.  For example, when added as the fourth variable, an OOV token boosts $R^2$ from 0.1417 to 0.1608.  If added four places from the last variable, these tokens add only 0.0003 to  $R^2$.  When constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
+
+
+\begin{figure}
+\caption{  \label{fig:cumr2}  
+  {\sl Accumulated $R^2$ statistics of regression models with words added in order of decreasing (solid black) or increasing (dashed black) frequency.} The gray curve shows the contributions having adjusted for subsequent words and shows the amount of collinearity among the word counts.}  
+  \centerline{ \includegraphics[width=4in]{figures/cum_r2.pdf} }
+\end{figure}
+
+Although the $R^2$ statistic grows steadily with increasing model size, the slowing rate of growth suggests that we can find a more predictive model with fewer coefficients.  To this end, we use the corrected AIC statistic \citep{hurvich89}
+\begin{equation}
+    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
+\end{equation}
+where $k$ is the number of estimated parameters in the regression.  Figure \ref{fig:aicwords} plots $AIC_c$ for models constructed from counts of word times in order of decreasing (solid) and increasing (dashed) frequency.  Again we find that building up a model from the most common words produces a better fit with fewer terms.  The best fit in this example occurs with $k=1,090$ words (4 frequency, but collinear words were omitted).
+
+
+\begin{figure}
+\caption{  \label{fig:aicwords}  
+  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or increasing (dashed) frequency.}  The vertical gray segment shows the minimum of $AIC_c$.}
+  \centerline{ \includegraphics[width=4in]{figures/aic_words.pdf} }
+\end{figure}
+
+
+It is useful to notice the importance of using a model selection criterion such as $AIC_c$ in this context rather than a classical test.  For example, consider the classical $F$ test between the  model that minimizes $AIC_c$ and a larger model derived from the most frequent 2,000 words.  The $F$-test indicates that the model derived from 2,000 words is ``better.''  The  partial-$F$ test of the variation added by including the additional words is statistically significant ($F = 1.93$ with $p$-value far less than 0.001).  The larger model explains statistically significantly more variation in log prices.  That said, because the larger model also has many more estimated coefficients, it is less predictive.  Repeated 10-fold cross validation gives mean squared prediction error 0.714 for the larger model, compared to 0.639 for the smaller model identified by AICc.
+
+
+
+   
+
 
 
  \subsection{ PCA  via Random Projection }  % ------------------
@@ -560,8 +694,10 @@ LSA proceeds by computing the principal components of $W$ or a weighted version 
  however, are -0.905, 0.396, 0.131, -0.091, and 0.154.  
  
  \begin{figure}
- \caption{ \label{fig:spectrum} { \sl The spectrum of the document-term matrix
- $W$ falls off relatively slowly. }
+ \caption{ 
+ 	\label{fig:spectrum}
+	{\sl The spectrum of the document-term matrix $W$ decays relatively slowly 
+	      after the initial sharp drop. }}
 
  \centerline{
  \vspace{0.1in}
@@ -570,109 +706,6 @@ LSA proceeds by computing the principal components of $W$ or a weighted version 
  \end{figure}
    
 
-\subsection{ LSA of the real estate listings }  % ----------------------
-
- Before building models using singular vectors, we set a baseline by directly
- regressing the log prices response on the word counts in $W$.  Table
- \ref{tab:regrInd} summarizes the fit using the most common 2,000 words, along
- with the lengths $m_i$ and log lengths.  We include these in every model to
- avoid including features constructed from text that simply capture the length
- effect evident in Figure \ref{fig:parsed}.  Overall, this model produces
- $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the
- prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity
- that might be anticipated due to the differences in the document lengths.  The
- most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the
- addition of this word to a listing indicates a lower average price.  In
- contrast, the presence of additional out-of-vocabulary words (denoted ``OOV'')
- suggest with higher than average prices ($t=6.3$). Figure \ref{fig:regrInd}
- summarizes the distribution of all t-statistics in this model.  Twenty-two
- words are not used due to singularities among these counts, leaving 1,978
- estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$
- in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold
- $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this
- threshold for statistical significance.  The nearly flat red line in the figure
- is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of
- Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the
- distribution of the fitted $t$-statistics is not far from the null
- distribution.  The gray line in the half-normal plot is the diagonal; the red
- line is the fitted regression of the smallest 200 $|t|$-statistics on the
- corresponding quantiles.  For a sample from a standard normal distribution, the
- slope of a line fit to the $t$ values should be 1.  The slope of the fitted
- line for these estimates is significantly larger, but clearly the signal is
- widely spread over these estimates.  A regression on counts for 14 words whose
- estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains
- $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called
- ``nearly black'' models often studied in research on variable selection.  In
- those models, a few estimates stand out from a noisy background. In this
- application, much of the signal lies embedded in that background.
-
- \begin{table}
- \caption{ \label{tab:regrInd} {\sl Multiple regression of log prices on 
-  counts from the document/word matrix $W$ for the most common 2,000 words.}  The table shows the 14 estimates that exceed the Bonferroni threshold for statistical significance.} 
-
-\begin{center}
-\begin{tabular}{rrrrr}
-  \hline
- & Estimate & Std. Error & $t$ & Pr($>|t|$) \\ 
-  \hline
-  vacant & -0.5518 & 0.0652 & -8.46 & 0.0000 \\ 
-  deed & -1.3155 & 0.1557 & -8.45 & 0.0000 \\ 
-  OOV & 0.0373 & 0.0059 & 6.33 & 0.0000 \\ 
-  units & 0.1929 & 0.0342 & 5.64 & 0.0000 \\ 
-  discount & -1.4959 & 0.2992 & -5.00 & 0.0000 \\ 
-  investment & -0.2334 & 0.0497 & -4.70 & 0.0000 \\ 
-  most & 0.3350 & 0.0736 & 4.55 & 0.0000 \\ 
-  bucktown & 0.3570 & 0.0790 & 4.52 & 0.0000 \\ 
-  sf & 0.3305 & 0.0741 & 4.46 & 0.0000 \\ 
-  pullman & -0.6244 & 0.1423 & -4.39 & 0.0000 \\ 
-  bedroom & -0.0978 & 0.0227 & -4.31 & 0.0000 \\ 
-  terraces & 0.7074 & 0.1650 & 4.29 & 0.0000 \\ 
-  fenced & -0.2466 & 0.0578 & -4.27 & 0.0000 \\ 
-  scb & -5.5914 & 1.3244 & -4.22 & 0.0000 \\ 
- \hline
-\end{tabular}
- 
-    $s_e =  0.682$ with $R^2 =  0.766$, $\ol{R}^2 =  0.681$  
-\end{center}
-\end{table}
-
-
-
- \begin{figure}
-  \caption{ \label{fig:regrInd} { \sl Distribution of the t-statistics for the regression of log prices on counts of the most frequent 2,000 word types (columns of $W$).}}
- \centerline{  \includegraphics[width=6in]{figures/tstatRegrInd}    }
- \vspace{0.2in}
- \end{figure}
-
-
-Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  The initial model includes the number of tokens in each document, $m$.  By initializing the model with this count, common words are not added simply because they are common but rather because the use of the word is associated with the price.  Otherwise, common tokens such as a period or comma might appear predictive  because they occur frequently in longer documents.  Figure \ref{fig:cumr2} shows the accumulated $R^2$ statistic, with the words added in two orders: in order of decreasing (solid black) or increasing (dashed black) frequency.  Adding the most frequent words first provides a better fit with fewer variables.  The gray curve in the figure shows the contribution to $R^2$ of the words in order of frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  The difference between the black and gray curves shows the influence of collinearity among the word types.  For example, when added as the fourth variable, an OOV token boosts $R^2$ from 0.1417 to 0.1608.  If added four places from the last variable, these tokens add only 0.0003 to  $R^2$.  When constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
-
-
-\begin{figure}
-\caption{  \label{fig:cumr2}  
-  {\sl Accumulated $R^2$ statistics of regression models with words added in order of decreasing (solid black) or increasing (dashed black) frequency.} The gray curve shows the contributions having adjusted for subsequent words and shows the amount of collinearity among the word counts.}  
-  \centerline{ \includegraphics[width=4in]{figures/cum_r2.pdf} }
-\end{figure}
-
-Although the $R^2$ statistic grows steadily with increasing model size, the slowing rate of growth suggests that we can find a more predictive model with fewer coefficients.  To this end, we use the corrected AIC statistic \citep{hurvich89}
-\begin{equation}
-    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
-\end{equation}
-where $k$ is the number of estimated parameters in the regression.  Figure \ref{fig:aicwords} plots $AIC_c$ for models constructed from counts of word times in order of decreasing (solid) and increasing (dashed) frequency.  Again we find that building up a model from the most common words produces a better fit with fewer terms.  The best fit in this example occurs with $k=1,090$ words (4 frequency, but collinear words were omitted).
-
-
-\begin{figure}
-\caption{  \label{fig:aicwords}  
-  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or increasing (dashed) frequency.}  The vertical gray segment shows the minimum of $AIC_c$.}
-  \centerline{ \includegraphics[width=4in]{figures/aic_words.pdf} }
-\end{figure}
-
-
-It is useful to notice the importance of using a model selection criterion such as $AIC_c$ in this context rather than a classical test.  For example, consider the classical $F$ test between the  model that minimizes $AIC_c$ and a larger model derived from the most frequent 2,000 words.  The $F$-test indicates that the model derived from 2,000 words is ``better.''  The  partial-$F$ test of the variation added by including the additional words is statistically significant ($F = 1.93$ with $p$-value far less than 0.001).  The larger model explains statistically significantly more variation in log prices.  That said, because the larger model also has many more estimated coefficients, it is less predictive.  Repeated 10-fold cross validation gives mean squared prediction error 0.714 for the larger model, compared to 0.639 for the smaller model identified by AICc.
-
-
-
-   
 
  
 %--------------------------------------------------------------------------
