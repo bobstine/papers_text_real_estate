@@ -484,14 +484,30 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 
 \subsection{ Regressing on Word Types }  % ----------------------
 
- Before building models using singular vectors, we set a baseline by directly
- regressing the log prices response on the word counts in $W$.  Table
- \ref{tab:regrInd} summarizes the fit using the most common 2,000 words, along
- with the lengths $m_i$ and log lengths.  We include these in every model to
- avoid including features constructed from text that simply capture the length
- effect evident in Figure \ref{fig:parsed}.  Overall, this model produces
- $\ol{R}^2 = 0.681$.  Residual plots show fat tails (consistent with that in the
- prices, Figure \ref{fig:prices}) but no clear evidence of heteroscedasticity
+ Before building examples of VSMs, we fit models directly on the frequencies in $W$.   All of these fits adjust for the lengths of the listings.  As shown in Figure \ref{fig:parsed}, the length of a listing is correlated with its price; longer listings thus include more of the most common word types.  Keeping the fifth degree polynomial used previously in the regression implies that, for a word to be a significant predictor, its association with price must run deeper than its incremental contribution to the length.  Starting from this initial polynomial, we accumulated the $R^2$ statistic as columns of $W$ are added to the model.  The solid curves in Figure \ref{fig:cumr2} track $R^2$ as the words are added in either decreasing (upper) or decreasing (lower) frequency.  Adding the more frequent words first provides a better fit with fewer variables.  These word frequencies define variables that are more correlated than might be anticipated.  To illustrate the effects of collinearity, the dashed curve in the figure shows the contribution to $R^2$ of the words in order of decreasing frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  For example, when added as the fourth variable, the count of OOV tokens boosts $R^2$ by about 0.02.  If added four steps ahead of the last variable, the frequency of OOV tokens adds only 0.0003 to  $R^2$.  Further, when constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
+
+\begin{figure}
+\caption{  \label{fig:cumr2}  
+  {\sl Accumulated $R^2$ statistics of regression models with word frequencies added in order of decreasing (top solid black) or increasing (lower solid black) frequency.} The dashed curve shows the contributions having adjusted for subsequent words and illustrates the effects of collinearity among the word counts.}  
+  \centerline{ \includegraphics[width=4in]{figures/cumr2.pdf} }
+\end{figure}
+
+
+The slow growth of $R^2$ suggests that one obtains a more predictive model with fewer coefficients.  One has numerous approaches to picking features, such as shrinkage by the lasso or subset selection using a selection criterion.  Because the word frequencies are correlated but easily ordered (by frequency), we use the corrected AIC statistic \citep{hurvich89}
+\begin{equation}
+    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
+\end{equation}
+where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a stronger penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency.   The best fit  occurs with $k=1,090$ words, with $R^2 =  0.705$ and $\ol{R}^2=0.654$.  
+
+\begin{figure}
+\caption{  \label{fig:aicwords}  
+  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or increasing (dashed) frequency.}  The vertical gray segment shows the minimum of $AIC_c$.}
+  \centerline{ \includegraphics[width=4in]{figures/aicwords.pdf} }
+\end{figure}
+
+
+ Residual plots for this model show fat tails (consistent with that in the
+ prices, Figure \ref{fig:prices}) but no evidence of heteroscedasticity
  that might be anticipated due to the differences in the document lengths.  The
  most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the
  addition of this word to a listing indicates a lower average price.  In
@@ -557,28 +573,7 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \end{figure}
 
 
-Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  The initial model includes the number of tokens in each document, $m$.  By initializing the model with this count, common words are not added simply because they are common but rather because the use of the word is associated with the price.  Otherwise, common tokens such as a period or comma might appear predictive  because they occur frequently in longer documents.  Figure \ref{fig:cumr2} shows the accumulated $R^2$ statistic, with the words added in two orders: in order of decreasing (solid black) or increasing (dashed black) frequency.  Adding the most frequent words first provides a better fit with fewer variables.  The gray curve in the figure shows the contribution to $R^2$ of the words in order of frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  The difference between the black and gray curves shows the influence of collinearity among the word types.  For example, when added as the fourth variable, an OOV token boosts $R^2$ from 0.1417 to 0.1608.  If added four places from the last variable, these tokens add only 0.0003 to  $R^2$.  When constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
-
-
-\begin{figure}
-\caption{  \label{fig:cumr2}  
-  {\sl Accumulated $R^2$ statistics of regression models with words added in order of decreasing (solid black) or increasing (dashed black) frequency.} The gray curve shows the contributions having adjusted for subsequent words and shows the amount of collinearity among the word counts.}  
-  \centerline{ \includegraphics[width=4in]{figures/cum_r2.pdf} }
-\end{figure}
-
-Although the $R^2$ statistic grows steadily with increasing model size, the slowing rate of growth suggests that we can find a more predictive model with fewer coefficients.  To this end, we use the corrected AIC statistic \citep{hurvich89}
-\begin{equation}
-    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
-\end{equation}
-where $k$ is the number of estimated parameters in the regression.  Figure \ref{fig:aicwords} plots $AIC_c$ for models constructed from counts of word times in order of decreasing (solid) and increasing (dashed) frequency.  Again we find that building up a model from the most common words produces a better fit with fewer terms.  The best fit in this example occurs with $k=1,090$ words (4 frequency, but collinear words were omitted).
-
-
-\begin{figure}
-\caption{  \label{fig:aicwords}  
-  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or increasing (dashed) frequency.}  The vertical gray segment shows the minimum of $AIC_c$.}
-  \centerline{ \includegraphics[width=4in]{figures/aic_words.pdf} }
-\end{figure}
-
+Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  
 
 It is useful to notice the importance of using a model selection criterion such as $AIC_c$ in this context rather than a classical test.  For example, consider the classical $F$ test between the  model that minimizes $AIC_c$ and a larger model derived from the most frequent 2,000 words.  The $F$-test indicates that the model derived from 2,000 words is ``better.''  The  partial-$F$ test of the variation added by including the additional words is statistically significant ($F = 1.93$ with $p$-value far less than 0.001).  The larger model explains statistically significantly more variation in log prices.  That said, because the larger model also has many more estimated coefficients, it is less predictive.  Repeated 10-fold cross validation gives mean squared prediction error 0.714 for the larger model, compared to 0.639 for the smaller model identified by AICc.
 
