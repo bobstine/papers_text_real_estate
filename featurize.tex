@@ -4,6 +4,7 @@
 \usepackage[usenames]{color}
 \usepackage{graphicx}  % Macintosh pdf files for figures
 \usepackage{amssymb}   % Real number symbol {\Bbb R}
+\usepackage{amsmath}
 \usepackage{bbm}
 \input{../../standard}
 
@@ -879,17 +880,30 @@ Each real-estate property described by a listing has a collection of attributes 
 \begin{equation}
    |{\cal L}_i|  \sim 1 + \mbox{Poisson}(\xi), \quad \xi \sim \mbox{Gamma}(\al,\beta) \;,
 \end{equation}
-Every document has at least 1 attribute.  Gamma$(\al,\beta)$ denotes a gamma random variable with shape parameter $\al$ and scale $\beta$ (with mean $\al\,\beta$).  Let the $n \times K$ binary matrix $A$ hold indicators of which attributes appear in each document.  $A_{ij} = 1$ if attribute $j$ appears in document $i$ and is 0 otherwise so that, for example, $\sum_j A_{ij} = |{\cal L}_i|$. 
-
-Attributes determine both the price and the text of the listing through a stochastic mechanism.  For the price, we assume that each attribute has an effect $\mu_k  = \mu(a_k)$ on the expected price of the listing.  The listed price for the $i$th listing is then determined by combining the contributions of its attributes as follows.  Each attribute that is present independently adds a stochastic quantity $Q_{ik} \sim N(\mu_k, \sigma_q^2)$ to the response for this listing. [Might ought to have variance related to size?]   Each contribution is stochastic: the benefit of a fireplace is not a fixed constant.  The observed price $Y_i$ for the $i$th listing is then
+Every document has at least 1 attribute.  Gamma$(\al,\beta)$ denotes a gamma random variable with shape parameter $\al$ and scale $\beta$ (with mean $\al\,\beta$).  Let the $n \times K$ binary matrix $A$ hold indicators of which attributes appear in each document,
 \begin{equation}
-  Y_i = \exp(Q_i), \quad Q_i = \sum_{a_k \in {\cal L}_i}  Q_{ik}
+  \underset{n \times K}{A} = \left[ A_{ij} =
+              \left\{ \begin{array}{cc} 1 & \mbox{ if } a_k \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
+                       \end{array} \right. \right]  \;.
+\end{equation}
+The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. 
+
+Attributes determine both the price and the text of the listing through a stochastic mechanism.  For the price, we assume that each attribute has an effect $\mu_k  = \mu(a_k)$ on the expected price of the listing.  Arrange these in a vector $\bmu = (\mu_1,\ldots,\mu_K)'$.  The listed price is then determined by combining the contributions of its attributes.  Each attribute in ${\cal L}_i$ independently adds a random quantity $Q_{ik} \sim N(\mu_k, \sigma_q^2)$ to the response. [Might ought to have variance related to size?]   Each contribution is stochastic: the benefit of a fireplace is not a fixed constant.  The observed prices $Y$ for the listings are
+\begin{equation*}
+  Y = \exp(Q)
+\end{equation*}
+where $Q = (Q_1,\ldots,Q_n)'$ are random variables that sum the attribute effects for the separate listings,
+\begin{equation}
+   Q_i = \sum_{a_k \in {\cal L}_i}  Q_{ik}
                     \sim N \left(\sum_{a_k \in {\cal L}_i} \mu_k, \;
                                       |{\cal L}_i| \sigma_q^2 + \sigma_u^2\right)  \;.
 \end{equation}
-Notice that the effects on the price are multiplicative (price is log normal).  The variance  $\sigma_u^2$ represents random noise.  We would not know the price even if we knew the observed effect $Q_k$ of every attribute.
+Notice that the effects of attributes on price are multiplicative (price is log normal).  The variance  $\sigma_u^2$ represents random noise.  We would not know the price even if we knew the observed effect $Q_k$ of every attribute.  The expected value of the vector $Y = (Y_1,\ldots,Y_n)'$ of log prices has the compact form
+\begin{equation}
+  \ev \log Y = A \bmu \;.
+\end{equation}
 
-The choice of words used to describe each attribute is sampled from a multinomial distribution.  The parameters of these multinomial distributions are themselves sampled from two Dirichlet distributions.  One Dirichlet distribution determines the probabilities for common words; the second places a distribution over words specific to each attribute.  For our application, we have $m_c$ ``common'' words that are shared over the attributes, and $m - m_c$ attribute-specific words.  Attributes use a wider collection of common words than attribute specific words, so the distribution over attribute-specific words is more spiky.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$. The elements of $p_k$ are
+Each attribute defines a multinomial distribution over the vocabulary of words. The words in a listing are then sampled according to this distribution.  The parameters of these multinomial distributions are themselves sampled from two Dirichlet distributions.  One Dirichlet distribution determines the probabilities for common words that are shared among attributes; the second places a distribution over words specific to each attribute.  For our example, we have $m_c$ ``common'' words that are shared over the attributes, and $m - m_c$ attribute-specific words.  Attributes use a wider collection of common words than attribute-specific words, so the distribution over attribute-specific words is more spiky.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$. The elements of $p_k$ are
 \begin{equation}
   2 \, p_{k,1:m_c} \sim \mbox{Dir}(0.2), \quad 2 \, p_{k,m_c+1:m} \sim \mbox{Dir}(0.005)
 \end{equation}
@@ -900,6 +914,9 @@ The expected word frequencies for a document are then sums of selected rows of $
 	W \sim \mbox{Poisson} \left(\la \, A \, P \right) \;
 \end{equation}
 where $\mbox{Poisson}(M)$ for a matrix argument $M$ denotes a like-sized matrix of independent Poisson random variables with means given by the elements of $M$.
+
+
+
 
 \subsection {Topic Models}  % -------------------------------------------
 
