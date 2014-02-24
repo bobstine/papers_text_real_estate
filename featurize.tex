@@ -870,46 +870,43 @@ How well does combining both sets of variables perform?  To find out, we start w
 
 Topic models have become common as a generative model to explain and rationalize the use of a nonparametric Bayesian methods for text.  Within this context, a topic is a probability distribution over a vocabulary of words.  Topic models for text propose that the observed text was produced by sampling words according to a mixture of these distributions. Topic models treat words as exchangeable and model the text of a document as a multiset, generally called a bag of words.
 
-Topic models are a natural means to motivate vector space models, but topic models do not capture an important aspect of these data.  Namely, the authors of the descriptions write more about valuable properties than cheaper properties.  Descriptions of more expensive properties, those with numerous attractive attributes are longer.  Also, a description only mentions an attribute, such as a fireplace, when the attribute is present.  An ad would not mention that a property did not have a fireplace.  The following model similarly describes distributions over words in such a way that the presence and abundance of some words is indicative of higher prices.
+Topic models are a natural means to motivate vector space models, but topic models do not capture an important aspect of these data.  Namely, the authors of the descriptions write more about valuable properties than cheaper properties.  Descriptions of more expensive properties, those with numerous attractive attributes are longer.  Also, a description only mentions an attribute, such as a fireplace, when the attribute is present.  An ad would not mention that a property did not have a fireplace.  The following model produces distributions over words so that the presence and abundance of some words is indicative of higher prices.
 
 
 \clearpage
 
 
-Each real-estate property described by a listing has a collection of attributes that determines the value of the property.   Examples of attributes are a fireplace or hardwood floors.  We model these attributes as a randomly chosen subset from the collection of all possible attributes.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the collection of $K$ possible attributes,  and let ${\cal L}_i \subset {\cal A}$ denote the attributes of the property described by the $i$th listing.  We model the number of attributes present, $|{\cal L}_i|$, as a negative binomial distribution,
+We now turn to the process that generates the data.  The overall perspective is that of topic models: each property described by a real-estate listing possesses a set of attributes that collectively determine the value of the property.   Examples of attributes are a fireplace or various hardwood floors.  The set of attributes is correlated with the value of the corresponding property and influences the choice of words in its description.  To begin, let $y_i, \, i = 1\,,\ldots, n,$ denote the log of the price of the $i$th simulated property.  In keeping with the observed lognormal distribution (Figure \ref{fig:prices}), define
 \begin{equation}
-   |{\cal L}_i|  \sim 1 + \mbox{Poisson}(\xi), \quad \xi \sim \mbox{Gamma}(\al,\beta) \;,
+	\tilde{y}_i \sim N(\mu, \tilde\sigma^2)
 \end{equation}
-Every document has at least 1 attribute.  Gamma$(\al,\beta)$ denotes a gamma random variable with shape parameter $\al$ and scale $\beta$ (with mean $\al\,\beta$).  Let the $n \times K$ binary matrix $A$ hold indicators of which attributes appear in each document,
+with $\mu $ and $\tilde\sigma^2$ chosen so that the mean and variance of the simulated prices approximate the observed mean and variance of properties listed in Chicago.  We then associate this price with a set of attributes.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the collection of  possible attributes and assign value $\beta_k$ to attribute $a_k$.  ${\cal L}_i \subset {\cal A}$ denote those described by the $i$th listing.  The attributes for each property are then obtained by sampling attributes from $\cal A$ (without replacement) until the sum of assigned values exceeds $\tilde{y}_i$.  If we let $\pi(1), \ldots, \pi(K)$ denote a random permutation of attributes, then the number of attributes $k_i$ assigned to $y_i$ is given by
+\begin{equation}
+	k_i = \min \{ \kappa:  \tilde{y}_i \le \sum_{k=1}^{\kappa} \beta_{\pi(k)} \} - b_i \;,
+	\mbox{ with }
+	{\cal L}_i = \{a_{\pi(1)}, \ldots, a_{\pi(k_i)} \} \;,
+\end{equation}
+where $b_i$ is a random 0/1 Bernoulli r.v. (so that the sum is equally likely to be larger or smaller than $y_i$).  For convenience,  the $n \times K$ binary matrix $A$ hold indicators of which attributes appear in each document,
 \begin{equation}
   \underset{n \times K}{A} = \left[ A_{ij} =
               \left\{ \begin{array}{cc} 1 & \mbox{ if } a_k \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
                        \end{array} \right. \right]  \;.
 \end{equation}
-The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. 
-
-Attributes determine both the price and the text of the listing through a stochastic mechanism.  For the price, we assume that each attribute has an effect $\mu_k  = \mu(a_k)$ on the expected price of the listing.  Arrange these in a vector $\bmu = (\mu_1,\ldots,\mu_K)'$.  The listed price is then determined by combining the contributions of its attributes.  Each attribute in ${\cal L}_i$ independently adds a random quantity $Q_{ik} \sim N(\mu_k, \sigma_q^2)$ to the response. [Might ought to have variance related to size?]   Each contribution is stochastic: the benefit of a fireplace is not a fixed constant.  The observed prices $Y$ for the listings are
-\begin{equation*}
-  Y = \exp(Q)
-\end{equation*}
-where $Q = (Q_1,\ldots,Q_n)'$ are random variables that sum the attribute effects for the separate listings,
+The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover this matrix from the property listings.  The observed price is then 
 \begin{equation}
-   Q_i = \sum_{a_k \in {\cal L}_i}  Q_{ik}
-                    \sim N \left(\sum_{a_k \in {\cal L}_i} \mu_k, \;
-                                      |{\cal L}_i| \sigma_q^2 + \sigma_u^2\right)  \;.
+	y_i = \tilde{y} + \sigma \ep_i, \quad \ep_i \sim N(0,1) \;.
+\label{eq:y}
 \end{equation}
-Notice that the effects of attributes on price are multiplicative (price is log normal).  The variance  $\sigma_u^2$ represents random noise.  We would not know the price even if we knew the observed effect $Q_k$ of every attribute.  The expected value of the vector $Y = (Y_1,\ldots,Y_n)'$ of log prices has the compact form
-\begin{equation}
-  \ev \log Y = A \bmu \;.
-\end{equation}
+The amount of noise added  in \eqn{y} controls the fit of the idealized regression of $y$ on the latent attributes $A$.
 
-Each attribute defines a multinomial distribution over the vocabulary of words. The words in a listing are then sampled according to this distribution.  The parameters of these multinomial distributions are themselves sampled from two Dirichlet distributions.  One Dirichlet distribution determines the probabilities for common words that are shared among attributes; the second places a distribution over words specific to each attribute.  For our example, we have $m_c$ ``common'' words that are shared over the attributes, and $m - m_c$ attribute-specific words.  Attributes use a wider collection of common words than attribute-specific words, so the distribution over attribute-specific words is more spiky.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$. The elements of $p_k$ are
+
+Each attribute defines a multinomial distribution over the vocabulary of words. The words in a listing are then sampled according to the mixture of  distributions determined by its attributes. The distribution associated with each attribute is itself a mixture of a Zipf distribution over $m_c$ common words and a second, randomly generated distribution over the remaining $m-m_c$ words.   This second distribution is specific to each attribute and allows one to recognize an attribute from the text.   The distribution over attribute-specific words is rather spiked to avoid too many words being shared by attributes.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$.  Let $h_i = c/i, i = 1,\, \ldots, c/m_c$ with $1/c = \sum_i^{m_c} 1/i$ denote a Zipf distribution, and let $g_k = (g_1,\ldots,g_{m-m_c}) \sim \mbox{Dir}(\al)$, a sample from a Dirichlet distribution with $m-m_c$ elements.  The distribution for attribute $k$ is then
 \begin{equation}
-  2 \, p_{k,1:m_c} \sim \mbox{Dir}(0.2), \quad 2 \, p_{k,m_c+1:m} \sim \mbox{Dir}(0.005)
+  p_k = ( h_1, \ldots, h_{m_c},  g_1,\ldots,g_{m-m_c})/2 \;.
 \end{equation}
 (The 2s are present because each sample from a Dirichlet sums to 1.)  Arrange these distributions into a $K \times m$ matrix $P$, $p_k$ in row $k$.  
 
-The expected word frequencies for a document are then sums of selected rows of $P$, further scaled by a parameter $\lambda$.  $\la$ determines the average number of words per attribute.  Let $W$ denote the $n \times m$ matrix with the frequencies of word types (the document/word matrix).  Then
+The expected word frequencies for a document are then sums of selected rows of $P$, further scaled by a parameter $\la$.  $\la$ determines the average number of words per attribute.  Let $W$ denote the $n \times m$ matrix with the frequencies of word types (the document/word matrix).  Then
 \begin{equation}
 	W \sim \mbox{Poisson} \left(\la \, A \, P \right) \;
 \end{equation}
