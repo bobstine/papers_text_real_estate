@@ -872,9 +872,19 @@ Topic models have become common as a generative model to explain and rationalize
 
 Topic models are a natural means to motivate vector space models, but topic models do not capture an important aspect of these data.  Namely, the authors of the descriptions write more about valuable properties than cheaper properties.  Descriptions of more expensive properties, those with numerous attractive attributes are longer.  Also, a description only mentions an attribute, such as a fireplace, when the attribute is present.  An ad would not mention that a property did not have a fireplace.  The following model produces distributions over words so that the presence and abundance of some words is indicative of higher prices.
 
+The goal for this probability model is to reproduce several stylized facts from the analysis of real-estate listings.  Namely, data produced by the model should reproduce these characteristics of the observed data:
+\begin{enumerate}
+  \item Lognormal distribution for the response.
+  \item Zipf-like distribution over the vocabulary.
+  \item Skewed distribution for the document lengths.
+  \item Moderate correlation between document length and response.
+  \item Signal concentration in leading components of LSA features.
+\end{enumerate}
+
 
 \clearpage
 
+Budget constraint.
 
 We now turn to the process that generates the data.  The overall perspective is that of topic models: each property described by a real-estate listing possesses a set of attributes that collectively determine the value of the property.   Examples of attributes are a fireplace or various hardwood floors.  The set of attributes is correlated with the value of the corresponding property and influences the choice of words in its description.  To begin, let $y_i, \, i = 1\,,\ldots, n,$ denote the log of the price of the $i$th simulated property.  In keeping with the observed lognormal distribution (Figure \ref{fig:prices}), define
 \begin{equation}
@@ -886,13 +896,13 @@ with $\mu $ and $\tilde\sigma^2$ chosen so that the mean and variance of the sim
 	\mbox{ with }
 	{\cal L}_i = \{a_{\pi(1)}, \ldots, a_{\pi(k_i)} \} \;,
 \end{equation}
-where $b_i$ is a random 0/1 Bernoulli r.v. (so that the sum is equally likely to be larger or smaller than $y_i$).  For convenience,  the $n \times K$ binary matrix $A$ hold indicators of which attributes appear in each document,
+where $b_i$ is a random 0/1 Bernoulli r.v. (so that the sum is equally likely to be larger or smaller than $y_i$).  For convenience,  the $n \times K$ binary matrix $A$ holds indicators of which attributes appear in each document,
 \begin{equation}
   \underset{n \times K}{A} = \left[ A_{ij} =
               \left\{ \begin{array}{cc} 1 & \mbox{ if } a_k \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
                        \end{array} \right. \right]  \;.
 \end{equation}
-The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover this matrix from the property listings.  The observed price is then 
+The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover this matrix from text.  The observed price is then 
 \begin{equation}
 	y_i = \tilde{y} + \sigma \ep_i, \quad \ep_i \sim N(0,1) \;.
 \label{eq:y}
@@ -900,7 +910,7 @@ The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\
 The amount of noise added  in \eqn{y} controls the fit of the idealized regression of $y$ on the latent attributes $A$.
 
 
-Each attribute defines a multinomial distribution over the vocabulary of words. The words in a listing are then sampled according to the mixture of  distributions determined by its attributes. The distribution associated with each attribute is itself a mixture of a Zipf distribution over $m_c$ common words and a second, randomly generated distribution over the remaining $m-m_c$ words.   This second distribution is specific to each attribute and allows one to recognize an attribute from the text.   The distribution over attribute-specific words is rather spiked to avoid too many words being shared by attributes.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$.  Let $h_i = c/i, i = 1,\, \ldots, c/m_c$ with $1/c = \sum_i^{m_c} 1/i$ denote a Zipf distribution, and let $g_k = (g_1,\ldots,g_{m-m_c}) \sim \mbox{Dir}(\al)$, a sample from a Dirichlet distribution with $m-m_c$ elements.  The distribution for attribute $k$ is then
+Each attribute defines a multinomial distribution over the vocabulary of words. The words in a listing are then sampled according to the mixture of  distributions determined by its attributes. The distribution associated with each attribute is itself a mixture of a Zipf distribution over $m_c$ common words and a second, randomly generated distribution over the remaining $m-m_c$ words.   This second distribution is specific to each attribute and allows one to recognize an attribute from the text.   The distribution over attribute-specific words is rather spiked to avoid too many words being shared by attributes.  (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  Let $p_{k} = (p_{k1},\ldots,p_{km})$ with $0 \le p_{ki} \le 1$ and $\sum p_{ki} = 1$ denote the distribution over the vocabulary of $m$  words for attribute $k$, $k = 1,\ldots,K$.  Let $h_i = c/i, i = 1,\, \ldots, c/m_c$ with the normalizing constant chosen so that $1/c = \sum_i^{m_c} 1/i$ denote a Zipf distribution, and let $g_k = (g_1,\ldots,g_{m-m_c}) \sim \mbox{Dir}(\al)$, a sample from a Dirichlet distribution with $m-m_c$ elements.  The distribution for attribute $k$ is then
 \begin{equation}
   p_k = ( h_1, \ldots, h_{m_c},  g_1,\ldots,g_{m-m_c})/2 \;.
 \end{equation}
