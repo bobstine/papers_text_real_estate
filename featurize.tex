@@ -65,8 +65,8 @@
  the price of a property typically include a verbal description.  Some
  descriptions include numerical data, such as the number of rooms or the size of
  the home.  Many others, however, only verbally describe the property, often
- using an idiosyncratic vernacular.  For modeling such data, we describe several
- methods that that convert such text into numerical features suitable for
+ written in an idiosyncratic vernacular.  For modeling such data, we describe several
+ methods that that convert  text into numerical features suitable for
  regression analysis.  The proposed featurizing techniques create regressors
  directly from text, requiring minimal user input.  The techniques range naive
  to subtle.  One can simply use raw counts of words, obtain principal components
@@ -74,34 +74,27 @@
  example that models real estate prices illustrates the surprising success of
  these methods.  To partially explain this success, we offer a motivating
  probabilistic model.  Because the derived regressors are difficult to
- interpret, we further show how the presence of partial quantitative features
- extracted from text can elucidate the structure of a model.
+ interpret, we further show how the presence of incomplete quantitative features
+ extracted from text can illuminate the structure of a model.
 
 }
 
 %------------------------------------------------------------------------
-\vspace{0.05in}
+\vspace{0.15in}
 
 \noindent
-{\it Key Phrases: sentiment analysis, n-gram, latent semantic analysis, text mining } 
+{\it Key Phrases:  latent semantic analysis, random projection, singular value decomposition, text mining, topic models} 
 
 \clearpage
 
-{\bf To Do: }
-Are the CCA results in the dual space?
-\\
-
 % ----------------------------------------------------------------------
-\section{New outline}
+\section{Introduction}
+\label{sec:intro}
 % ----------------------------------------------------------------------
 
 
 \begin{description}
-\item{Introduction} \\ Intro to problem, we're taking direct approach.
-  Introduce application and do regression based on looking for regular
- expressions.  Now see how to do better.  Novelty lies in use of random
- projections, simplicity.
-\item{ The application } \\ 
+\item{Introduction} \\ 
 
  Tokenization.  Zipf distribution.  Word-document matrix. 
 
@@ -144,22 +137,16 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \clearpage
 
 
-% ----------------------------------------------------------------------
-\section{Introduction}
-\label{sec:intro}
-% ----------------------------------------------------------------------
-
- Modern data streams routinely combine text with numerical data suitable for
- regression analysis.  For example, patient medical records combine lab
+ Modern data streams routinely combine text with numerical data.  For example, patient medical records combine lab
  measurements with physician comments.  Analogously, online product ratings
  shown at Amazon blend explicit characteristics with verbal commentary.  How can
- one easily incorporate the information in such text into a regression model
+ one easily incorporate the information in such text into a model
  that predicts patient outcomes or product ratings?  Our objective here is to
- illustrate several particularly straightforward techniques for featurizing
+ describe several particularly straightforward techniques for featurizing
  text, turning text into numerical variables suitable for regression modeling.
  
  
- As a specific example, we build a regression model to predict advertised prices
+ As a specific example, we build a regression that predicts advertised prices
  of real estate properties from their listings.  Our data describe $n=$7,384
  property listings for Chicago, IL, extracted (with permission) from trulia.com
  on June 12, 2013.  At the time, trulia.com showed 30,322 listings for Chicago,
@@ -185,9 +172,8 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 
  The listings that describe these properties are verbal, written in an
  idiosyncratic vernacular familiar only to those who are house hunting.  Some
- listings contain quantitative characteristics, but many do not.  The four
- following listings are typical examples of the data.  The initial value is the
- listed price.
+ listings contain quantitative characteristics, but many do not.  The 
+ following four listings are typical.  The initial value is the listed price.
 
  \begin{verbatim}
     $399000 Stunning skyline views like something from a postcard are yours
@@ -212,20 +198,19 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 
  \noindent
  Listings do not obey the grammatical rules of English.  Some authors write in
- sentences, others not, and a variety of abbreviations appear.  The style of
- punctuation varies from spartan to effusive (particularly exclamation marks),
+ sentences, others not, and a variety of abbreviations appear.  Punctuation varies from spartan to effusive (particularly exclamation marks),
  and the length of the listing runs from several words to a long paragraph.  The
- average listing has 73 words, and the distribution of the lengths is right
- skewed.  The shortest listing has 2 words, whereas the longest has 568 words.
+ average listing has 73 words. The distribution of the lengths is right
+ skewed; the shortest listing has 2 words whereas the longest has 568 words.
   This variation in the lengths of the descriptions suggests that modeling the
- prices from this text will require some form of weighting: we simply do not
- know so much about properties with short descriptions.
+ prices from this text requires some form of weighting: we simply do not
+ know much about properties with short descriptions.
 
   
- A natural approach to the problem for a statistician is to construct
+ A natural approach for a statistician confronted with such data is to construct
  intuitively appealing regressors from the listings.  For example, one might
  conjecture that an agent has a lot more to say about an expensive property than
- one in need of repair, implying that the length of the listing for a property
+ one in need of repair.  Hence, the length of a listing 
  may be predictive of its price.  In a different vein, one can use regular
  expressions -- pattern matching -- to extract specific numerical data from the
  listings.  For example, the first listing indicates that this property has two
@@ -241,7 +226,7 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  of the listings indicate the number of square feet, 26\% indicate the number of
  bathrooms, and 42\% give the number of bedrooms.  More complex regular
  expressions would likely find more matches, but the gains are likely to be few.
-  As illustrated below, one also faces a Type I/Type II trade-off.  Simple
+  As illustrated next, one faces a Type I/Type II trade-off.  Simple
  regular expressions miss some matches, but more aggressive expressions match
  inadvertently.
 
@@ -250,10 +235,10 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  association between the log of prices and these constructed predictors,
  including the number of words in descriptions.  For listings with no match, we
  filled the missing values with the averages of the observed cases.  These
- appear as columns of gray points located at the mean of the variable on the $x$
+ appear as columns of gray points located at the mean of each variable on the $x$
  axis in Figure \ref{fig:parsed}.  The correlations between these variables and
  the log of the prices vary from moderate to nearly zero.  The length of the
- listing has the largest correlation ($r=0.40$). This frame includes the fit of
+ listing has the largest correlation with log prices ($r=0.40$). The frame that shows this association includes the fit of
  a fifth-order polynomial that recovers the evident nonlinearity of this
  association.  The nonlinearity is highly significant, but increases the amount
  of explained variation from 0.16 to only 0.20.  The improvement in fit is
@@ -336,7 +321,7 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  unformatted, irregular context.  These methods are collectively known as {\em
  vector space models} in computational linguistics \citep[e.g.][]{turney10}.  A
  vector space model (VSM) characterizes each document as a point in some
- $p$-dimensional vector space (think \Rp).  VSMs were originated in artificial
+ $p$-dimensional vector space (think \Rp).  VSMs originated in artificial
  intelligence and were adopted for text applications to construct a system for
  document retrieval known as latent semantic indexing \citep{deerwester88}.
   Latent semantic indexing clusters documents to enable a query to locate
@@ -363,24 +348,21 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  explains over two-thirds of the variation in listed prices for real estate in
  Chicago.  The addition of several substantively derived variables adds little.
   Though we do not emphasize its use here, variable selection can be employed to
- reduce the ensemble of regressors without sacrificing predictive accuracy.  A
- similar application that models personality traits derived from Facebook
+ reduce the ensemble of regressors without sacrificing predictive accuracy.  An application that models personality traits derived from Facebook
  messages appears in \citet{ungar13}.
 
 
  The remainder of this paper develops as follows.  The next section reviews
  latent semantic analysis (LSA) and uses this well-known method from
  computational linguistics to featurize text.  This method corresponds to
- pricipal components regression.  Section \ref{sec:cca} presents vector space
- models such as LSA from a novel statistical perspective that emphasizes the
- analysis of ``observations,'' samples drawn from a population.  LSA is seen to
- correspond to a CCA between indicator variables for specific words and
- indicator variables for the context of those words.  Other definitions of the
- context of a word allow one to construct other types of features.  Though
- embarrassingly simple to describe, it is more subtle to appreciate why such
- vector space methods work.  Section \ref{sec:topicmodels} offers one
- explanation by relating vector space models to the structure of generative
- topic models.  Section \ref{sec:cv} returns to regression models for real
+ principal components regression.  Section \ref{sec:cca} presents vector space
+ models such as LSA from a novel perspective that emphasizes the statistical sense 
+ of ``observations,'' samples drawn from a population.  LSA is seen to
+ correspond to a CCA between words and the context of those words.  Various definitions of the
+ context of a word allow one to construct many types of features.  Though
+ embarrassingly simple to describe, it is more subtle to appreciate why a
+ VSM works in regression.  Section \ref{sec:topicmodels} offers one
+ explanation by relating VSMs to a type of topic model that reproduces many aspects of the real estate listings.  Section \ref{sec:cv} returns to regression models for real
  estate with a discussion of the use of variable selection methods ands use
  cross-validation to measure the success of methods and to compare several
  models.  Variable selection is particularly relevant if one chooses to search
@@ -394,12 +376,13 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 \label{sec:lsa}
 %--------------------------------------------------------------------------
 
- Latent semantic analysis (LSA) is essentially a principle components analysis
- of a matrix of counts of how often each word appears in each document (in our
+ LSA is essentially a principle components analysis
+ of a matrix whose elements count how often each word appears in a document (in our
  case, the frequency of words in a property listing).  Using these components as
  features in regression then amounts to a principle components regression.
   Quite a few details, however, need to be resolved in any application. For
- example, what is a word?  This section describes the relevant choices within
+ example, what is a word?  How should the data be scaled? 
+ This section describes the relevant choices within
  the context of building a regression model for real estate prices.
  
  \subsection{ Tokenization }  % ------------------
@@ -409,12 +392,11 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  {\em word type}.  This conversion of text into tokens is known as tokenization.
   Tokenization requires making numerous, often subtle, choices.  For example, is
  the number ``735'' a word token?  Do the tokens ``state'' and ``State''
- represent the same type?  Are ``room'' and ``rooms'' instances of the same word
+ represent the same word type?  Are ``room'' and ``rooms'' instances of the same word
  type?  To answer these questions, we adopt a standard, simple approach: we
  convert all text to lower case, distinguish punctuation characters as separate
- types, and replace instances of rare word types by an invariant token.  To
- illustrate some of the issues in tokenization, the following string appears in
- a listing:
+ types, and replace instances of rare word types by a common token.  To
+ illustrate some of the issues, consider the following listing:
  \begin{verbatim}
    Brick flat, 2 bdrm.  With two-car garage. \end{verbatim} 
  \noindent
@@ -428,8 +410,7 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  \citet{manning99} and \citet{jurafsky09} describe more elaborate choices, such
  as stemming and annotation, that can be incorporated into
  tokenization. \citet{turney10} give a concise overview.  Notice that
- tokenization only considers the letters that identify type type, not how the
- word appears.  Consequently word types are not distinguished by meaning or use
+ tokenization only distinguishes word types, not  meaning or use
  (does not distinguish homographs).
 
   
@@ -471,21 +452,21 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  Once the source text has been tokenized, we collect counts of how often each
  type appears within a listing.  These counts treat each listing as a ``bag of
  words,'' a multiset that does not distinguish the placement of words within a
- listing. Scrambling the words within each listing would produce the same
- summary.  Let $n$ denote the number of listings; each listing is an observation
- in the usual sense of statistics.  Let $V$ denote the vocabulary, the set of
- $m$ distinct word types.  The $n \times m$ matrix $W$ holds the counts of these
- word types across the listings; $w_{ij}$ is the number of times word type $j$
+ listing.  Permuting the words within a listing  produces the same
+ counts.  Let $n$ denote the number of listings; we treat each listing as an observation
+ in the usual sense.  Let $V$ denote the vocabulary, the set of
+ $m$ distinct word types.  The $n \times m$ context-word matrix $W$ holds the counts of  
+ these word types across the listings; $W_{ij}$ is the number of times word type $j$
  appears in the $i$th document.  (All vectors in our notation are column
- vectors.)  (The transpose of $W$, called the term-document matrix, is common
+ vectors.)  (The transpose of $W$, often called the term-document matrix, is common
  within computational linguistics. We follow the convention within statistics
- and arrange independent observations -- the listings -- as rows.)  The matrix
- $W$ is sparse: most documents use a small portion of the vocabulary.
+ and arrange observations -- the listings -- as rows.)  The matrix
+ $W$ is sparse: a small portion of the vocabulary appears in most documents. We assume that the columns of $W$ are sorted so that the first column holds the most frequent word type, the second column holds the second most frequent, and so forth.
 
 
 \subsection{ Regressing on Word Types }  % ----------------------
 
- Before building examples of VSMs, we fit models directly on the frequencies in $W$.   All of these fits adjust for the lengths of the listings.  As shown in Figure \ref{fig:parsed}, the length of a listing is correlated with its price; longer listings thus include more of the most common word types.  Keeping the fifth degree polynomial used previously in the regression implies that, for a word to be a significant predictor, its association with price must run deeper than its incremental contribution to the length.  Starting from this initial polynomial, we accumulated the $R^2$ statistic as columns of $W$ are added to the model.  The solid curves in Figure \ref{fig:cumr2} track $R^2$ as the words are added in either decreasing (upper) or decreasing (lower) frequency.  Adding the more frequent words first provides a better fit with fewer variables.  These word frequencies define variables that are more correlated than might be anticipated.  To illustrate the effects of collinearity, the dashed curve in the figure shows the contribution to $R^2$ of the words in order of decreasing frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  For example, when added as the fourth variable, the count of OOV tokens boosts $R^2$ by about 0.02.  If added four steps ahead of the last variable, the frequency of OOV tokens adds only 0.0003 to  $R^2$.  Further, when constructed in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.
+Before turning to LSA, we fit models directly on the frequencies in $W$.  Because LSA constructs features that are linear combinations of the columns of $W$, all of the signal captured by LSA lies within $W$.  By regressing log prices directly on $W$, we can bound how much variation LSA can explain.  Our fits of log price on $W$ adjust for the lengths of the listings.  As shown in Figure \ref{fig:parsed}, the length of a listing is correlated with its price.  Keeping this polynomial in length in the regression implies that, for a word to be a significant predictor, its association with price must run deeper than its incremental contribution to the length.  Starting from this initial polynomial, we accumulated the $R^2$ statistic as first 3,000 columns of $W$ join the model.  The solid curves in Figure \ref{fig:cumr2} track $R^2$ as these frequencies are added in either decreasing (upper curve) or increasing (lower) frequency.  The gap between these curves shows that adding more frequent words first achieves a better fit with fewer variables. We also wanted to investigate the degree of collinearity within $W$.  PCA is useless if applied to orthogonal variables. The sparsity of $W$ produces small correlations between most columns of $W$, but colinearity emerges within larger collections.  For example, when adding features in order of decreasing frequency, 219 of these 3,000 word types were redundant and not added to the model.  To illustrate the effects of collinearity in regression, the dashed curve in Figure \ref{fig:parsed} shows the contribution to $R^2$ of words in order of decreasing frequency, but with the magnitude of the change in $R^2$ as if added in the other order.  For example, when added as the fourth feature, the count of OOV tokens boosts $R^2$ by about 0.02.  If added three steps ahead of the last variable, the frequency of OOV tokens adds much less to the fit, contributing only 0.0003 to  $R^2$.  
 
 \begin{figure}
 \caption{  \label{fig:cumr2}  
@@ -494,11 +475,12 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
 \end{figure}
 
 
-The slow growth of $R^2$ suggests that one obtains a more predictive model with fewer coefficients.  One has numerous approaches to picking features, such as shrinkage by the lasso or subset selection using a selection criterion.  Because the word frequencies are correlated but easily ordered (by frequency), we use the corrected AIC statistic \citep{hurvich89}
+The slow growth of $R^2$ after the first hundred or so frequencies suggests that later features add too much noise to predictions and should not be in the model.  One has numerous approaches to picking features, such as shrinkage or subset selection.  Because the word frequencies are correlated but easily ordered (by frequency), we use the corrected AIC statistic \citep{hurvich89}
 \begin{equation}
     AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
 \end{equation}
-where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a stronger penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency.   The best fit  occurs with $k=1,090$ words, with $R^2 =  0.705$ and $\ol{R}^2=0.654$.  
+where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a stronger penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency.   The best fit  occurs with $k=1,090$ words, giving $R^2 =  0.705$ and $\ol{R}^2=0.654$.   Residual plots for this model show fat tails (consistent with the distribution of log prices, Figure \ref{fig:prices}) but no evidence of heteroscedasticity
+ that might be anticipated due to the differences among the lengths of documents.
 
 \begin{figure}
 \caption{  \label{fig:aicwords}  
@@ -507,14 +489,14 @@ where $k$ is the number of estimated parameters in the regression.  Rather than 
 \end{figure}
 
 
- Residual plots for this model show fat tails (consistent with that in the
- prices, Figure \ref{fig:prices}) but no evidence of heteroscedasticity
- that might be anticipated due to the differences in the document lengths.  The
- most significant word is ``vacant'' with $t=-8.5$; not surprisingly, the
- addition of this word to a listing indicates a lower average price.  In
+ HERE
+
+ Figure \ref{fig:regrInd}
+ summarizes the t-statistics in this model.  The
+ word with the largest absolute $t$-statistic in this large model is ``vacant'' with $t=-8.5$; not  surprisingly, the
+ addition of this word to a listing lowers the expected price.  In
  contrast, the presence of additional out-of-vocabulary words (denoted ``OOV'')
- suggest with higher than average prices ($t=6.3$). Figure \ref{fig:regrInd}
- summarizes the distribution of all t-statistics in this model.  Twenty-two
+ suggest with higher than average prices ($t=6.3$).  Twenty-two
  words are not used due to singularities among these counts, leaving 1,978
  estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$
  in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold
