@@ -1,5 +1,5 @@
 %-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
-\documentclass[10pt]{article}
+\documentclass[12pt]{article}
 \usepackage[longnamesfirst]{natbib}
 \usepackage[usenames]{color}
 \usepackage{graphicx}  % Macintosh pdf files for figures
@@ -94,16 +94,10 @@
 
 
 \begin{description}
-\item{Introduction} \\ 
-
- Tokenization.  Zipf distribution.  Word-document matrix. 
 
 \item{LSA regression} \\ 
 
- The obvious regression, with development of several ways to weight the
- elements, recommending for this application the sqrt n weighting and CCA
- weights.  Emphasize same as PC regression.  One can go further with quadratic
- effects (pairs of words), though to what gain in short documents (too sparse)?
+ 
   Centroid connection useful if doing transcendent cross validation, so the
  averaging/centroid connection is useful here.
 
@@ -475,206 +469,94 @@ Before turning to LSA, we fit models directly on the frequencies in $W$.  Becaus
 \end{figure}
 
 
-The slow growth of $R^2$ after the first hundred or so frequencies suggests that later features add too much noise to predictions and should not be in the model.  One has numerous approaches to picking features, such as shrinkage or subset selection.  Because the word frequencies are correlated but easily ordered (by frequency), we use the corrected AIC statistic \citep{hurvich89}
+The slow growth of $R^2$ after the first hundred or so frequencies suggests that later features add too much noise to predictions and should not be in the model.  Even so, a model that simply adds the 3,000 most frequent words to the baseline polynomial provides a statistically significant improvement over the initial polynomial. Adding these words improves $R^2$ from 0.194 to 0.832, a highly significant increase.  Nonetheless, the resulting model is huge with many insignificant estimates.  One has numerous approaches to trimming its size, such as shrinkage or subset selection.  Because the word frequencies are correlated but easily ordered (by frequency), we use the corrected AIC statistic \citep{hurvich89}
 \begin{equation}
     AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
 \end{equation}
-where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a stronger penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency.   The best fit  occurs with $k=1,090$ words, giving $R^2 =  0.705$ and $\ol{R}^2=0.654$.   Residual plots for this model show fat tails (consistent with the distribution of log prices, Figure \ref{fig:prices}) but no evidence of heteroscedasticity
+where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a strong penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency to the initial polynomial in log of the number of words.   The best fit  occurs with $k=1,089$ words, giving $R^2 =  0.705$ and $\ol{R}^2=0.654$. (The final model summarized in Figure \ref{fig:cumr2} with 3,000 words reaches $R^2 =  0.832, \, \ol{R}^2  0.719$.)  Residual plots show fat tails (consistent with the distribution of log prices in Figure \ref{fig:prices}), but no evidence of heteroscedasticity
  that might be anticipated due to the differences among the lengths of documents.
 
 \begin{figure}
-\caption{  \label{fig:aicwords}  
-  {\sl Corrected AIC statistics for regression models that add words in the order of decreasing (solid) or increasing (dashed) frequency.}  The vertical gray segment shows the minimum of $AIC_c$.}
-  \centerline{ \includegraphics[width=4in]{figures/aicwords.pdf} }
+\caption{  \label{fig:aic}  
+  {\sl Corrected AIC for two regression models: one adds words in order of decreasing frequency (dashed) and a second that adds LSA components (solid).}  Vertical gray segments mark the positions of the minimum $AIC_c$.}
+  \centerline{ \includegraphics[width=4in]{figures/aic.pdf} }
 \end{figure}
 
 
- HERE
+\begin{figure}
+\caption{  \label{fig:aictstats}  
+  {\sl Absolute $t$-statistics from the regression of log prices on words for the model selected by $AIC_c$.}  In the left panel, the horizontal black line is $\ev |Z|$ for $Z \sim N(0,1)$,  the higher dashed line is the Bonferroni threshold, and the red curve is a loess smooth of $|t|$.  In the right panel, the red line is fit to the smallest 20\% of the $|t|$-statistics, producing the shown slope.}
+  \centerline{ \includegraphics[width=4in]{figures/aictstats.pdf} }
+\end{figure}
 
- Figure \ref{fig:regrInd}
- summarizes the t-statistics in this model.  The
- word with the largest absolute $t$-statistic in this large model is ``vacant'' with $t=-8.5$; not  surprisingly, the
- addition of this word to a listing lowers the expected price.  In
- contrast, the presence of additional out-of-vocabulary words (denoted ``OOV'')
- suggest with higher than average prices ($t=6.3$).  Twenty-two
- words are not used due to singularities among these counts, leaving 1,978
- estimated coefficients.  The dashed line in the scatterplot of $|t_j|$ on $j$
- in the left panel of Figure \ref{fig:regrInd} is the Bonferroni threshold
- $\Phi^{-1}(1-0.025/1978) \approx 4.21$.  Only 14 estimates exceed this
- threshold for statistical significance.  The nearly flat red line in the figure
- is a lowess smooth of the $|t_j|$.  The half-normal plot in the right panel of
- Figure \ref{fig:regrInd} confirms the diffuse signal in this model: the
- distribution of the fitted $t$-statistics is not far from the null
- distribution.  The gray line in the half-normal plot is the diagonal; the red
- line is the fitted regression of the smallest 200 $|t|$-statistics on the
- corresponding quantiles.  For a sample from a standard normal distribution, the
- slope of a line fit to the $t$ values should be 1.  The slope of the fitted
- line for these estimates is significantly larger, but clearly the signal is
- widely spread over these estimates.  A regression on counts for 14 words whose
- estimates exceed the Bonferroni bound (Table \ref{tab:regrInd}) obtains
- $\ol{R}^2 = 0.191$.  Thus, this estimation problem differs from the so-called
- ``nearly black'' models often studied in research on variable selection.  In
- those models, a few estimates stand out from a noisy background. In this
- application, much of the signal lies embedded in that background.
-
- \begin{table}
- \caption{ \label{tab:regrInd} {\sl Multiple regression of log prices on 
-  counts from the document/word matrix $W$ for the most common 2,000 words.}  The table shows the 14 estimates that exceed the Bonferroni threshold for statistical significance.} 
-
-\begin{center}
-\begin{tabular}{rrrrr}
-  \hline
- & Estimate & Std. Error & $t$ & Pr($>|t|$) \\ 
-  \hline
-  vacant & -0.5518 & 0.0652 & -8.46 & 0.0000 \\ 
-  deed & -1.3155 & 0.1557 & -8.45 & 0.0000 \\ 
-  OOV & 0.0373 & 0.0059 & 6.33 & 0.0000 \\ 
-  units & 0.1929 & 0.0342 & 5.64 & 0.0000 \\ 
-  discount & -1.4959 & 0.2992 & -5.00 & 0.0000 \\ 
-  investment & -0.2334 & 0.0497 & -4.70 & 0.0000 \\ 
-  most & 0.3350 & 0.0736 & 4.55 & 0.0000 \\ 
-  bucktown & 0.3570 & 0.0790 & 4.52 & 0.0000 \\ 
-  sf & 0.3305 & 0.0741 & 4.46 & 0.0000 \\ 
-  pullman & -0.6244 & 0.1423 & -4.39 & 0.0000 \\ 
-  bedroom & -0.0978 & 0.0227 & -4.31 & 0.0000 \\ 
-  terraces & 0.7074 & 0.1650 & 4.29 & 0.0000 \\ 
-  fenced & -0.2466 & 0.0578 & -4.27 & 0.0000 \\ 
-  scb & -5.5914 & 1.3244 & -4.22 & 0.0000 \\ 
- \hline
-\end{tabular}
  
-    $s_e =  0.682$ with $R^2 =  0.766$, $\ol{R}^2 =  0.681$  
-\end{center}
-\end{table}
-
-
-
- \begin{figure}
-  \caption{ \label{fig:regrInd} { \sl Distribution of the t-statistics for the regression of log prices on counts of the most frequent 2,000 word types (columns of $W$).}}
- \centerline{  \includegraphics[width=6in]{figures/tstatRegrInd}    }
- \vspace{0.2in}
- \end{figure}
-
-
-Rather than arbitrarily regress log prices on 2,000 words, we can use variable selection to decide the number of words to use.  Rather than pick a subset of words, we use the corrected AIC statistic ($AICc$) to determine the size of the model.  
-
-It is useful to notice the importance of using a model selection criterion such as $AIC_c$ in this context rather than a classical test.  For example, consider the classical $F$ test between the  model that minimizes $AIC_c$ and a larger model derived from the most frequent 2,000 words.  The $F$-test indicates that the model derived from 2,000 words is ``better.''  The  partial-$F$ test of the variation added by including the additional words is statistically significant ($F = 1.93$ with $p$-value far less than 0.001).  The larger model explains statistically significantly more variation in log prices.  That said, because the larger model also has many more estimated coefficients, it is less predictive.  Repeated 10-fold cross validation gives mean squared prediction error 0.714 for the larger model, compared to 0.639 for the smaller model identified by AICc.
-
-
-
+Although the model selected by $AIC_c$ explains a great deal of variation in prices, the signal remains diffusely spread over the words.  Few estimates stand out, leaving substantial signal embedded in the background.   Figure \ref{fig:aictstats} summarizes the t-statistics in this fit. The left panel of the figure graphs $|t|$ for the words in order of decreasing frequency.  The solid horizontal black line is the expected value of the absolute value of a standard normal, $\sqrt{2/\pi}$. The dashed horizontal line is the Bonferroni threshold $\Phi^{-1}(1-0.025/1089) \approx 4.08$.  Between these, the almost flat red curve is the loess smooth of  $|t|$; the average $|t|$ is only slightly larger than one expects for a model with no signal.   Coefficients of only 16 words exceed the Bonferroni threshold.  For example,
+ the coefficient for the word ``vacant'' has $t=-8.1$; not  surprisingly, the
+ addition of this word to a listing lowers the expected price.  In
+ contrast, the presence of additional out-of-vocabulary words
+ suggest with higher than average prices ($t=5.0$).   Though these stand out, these few words explain only a small portion of the fit.  A regression restricted to the 16 words that exceed the Bonferroni bound obtains
+ $\ol{R}^2 = 0.236$. The half-normal plot in the right panel of
+ Figure \ref{fig:aictstats} confirms the diffuse signal: the fitted $t$-statistics are inconsistent with noise, but not by much.  The dashed line in the half-normal plot is the diagonal; the red
+ line is a  regression fit to the smallest 20\% of the $|t|$-statistics.  For a sample from a standard normal distribution, the slope should be 1.  The slope of these estimates is significantly larger, but clearly the signal is
+ widely spread.   
    
 
+ \subsection{ Regressions using LSA }  % ------------------
 
-
- \subsection{ PCA  via Random Projection }  % ------------------
-
-LSA proceeds by computing the principal components of $W$ or a weighted version of $W$.   We consider the effects of three ways to weight the elements of $W$:
-\begin{description}
-  \item[ {\bf Standardized} ] \ Divide each row of $W$ by the square root of the
- number of tokens $n_i = \sum_j W_{ij}$ within each listing, computing $W^s_{ij}
- = W_{ij}/\sqrt{n_i}$.  If the tokens within a listing were a random sample from
- a multinomial distribution across the word types, then $\Var(W_{ij}) \propto
- n_i$.  Dividing $W_{ij}$ by $\sqrt{n_i}$ equalizes the variation across
- listings.
-   \item[ {\bf CCA}] (Canonical correlation analysis) \ $W$ is related to a
- canonical correlation analysis in a sense explained further in the following
- section.  Essentially this weighing combines the standardization of the prior
- weighting by also weighting the columns of $W$ (word types) before constructing
- the principal components.  We denote the resulting matrix ???
-  \item [{\bf TF-IDF}] (Term frequency-inverse document frequency) \ This
- weighting gives more emphasis to the appearance of less common word types. We
- use the simplest variation on this approach.  Let $d_j = \sum _i\one{W_{ij} >
- 0}$ count the number of listings in which word type $j$ appears and compute
- $W^{T}_{ij} = W_{ij} \log(n/d_j)$.  For example, if the type ``.'' appears in
- every listing, then $d_j = n$ and $W^{T}_{ij} = 0$, removing this ubiquitous
- type from the construction of the principal components.
-\end{description}
- \citet{turney10} summarizes the motivation for various weightings used in LSA.
-  Curiously, we find that it makes little difference when predicting prices
- which weights are used.  In the expressions that follow, we generically use $W$
- to stand for any of these weighted versions of the counts.
+The use of LSA to create features for regression models essentially reproduces principal components regression.  The only differences are the absence of centering and the variety of approaches for weighting counts prior to constructing the principal components. For example, one might choose to stabilize the variance of the counts.  Define ${W}^{*}$ to be the $n \times m$ matrix with elements ${W}^{*}_{ij} = W_{ij}/\sqrt{n_i}$ with $n_i = \sum_j W_{ij}$ counting the number of word tokens in the $i$th document.  Were tokens within listings random samples from
+ a multinomial distribution with probabilities $p_{1:m}$ across the word types, then $\Var({W}^{*}_{ij}) = p_j(1-\sum_{k\ne j} p_k)$, without dependence on the number of words in the listing. Similarly, we can define $\tilde{W}$ with elements $\tilde{W}_{ij} = W_{ij}/\sqrt{m_j}$ with $m_j = \sum_i W_{ij}$ counting the number of tokens of word type $j$. This scheme down-weights the most common word types, which is sensible given that the presence of rare  OOV words is a significant indicator of higher priced listings.  Similarly, the popular method known as term frequency-inverse document frequency (TF-IDF) also emphasizes less common word types, but counts the number of documents in which a word appears rather than its frequency overall.  In the simplest version of TF-IDF,  let $d_j = \sum _i\one{W_{ij} >
+ 0}$ count the number of listings in which word type $j$ appears and replace $W_{ij}$ by
+ $W_{ij} \log(n/d_j)$.  For example, if the word type ``.'' appears in
+ every listing, then $\log n/d_j = 0$, removing this ubiquitous
+ type from the construction of principal components.
+ \citet{turney10} provides further motivation for these and other weightings used in LSA.
+  In our application, we use $\tilde{W}$ because of  its ability to recover structure for data generated by in the probability model described in Section {xx}.  In the expressions that follow, we generically use $W$ to stand for any of these weighted versions of the counts.
  
  
- We compute the principal components of $W$ by using random projections that
- estimate the truncated SVD of $W$.  The SVD of the count matrix $W$ produces
- the decomposition
+ We compute the leading principal components of $W$ by using random projections that
+ closely approximate the truncated SVD of $W$.  Denote the SVD of the context-word matrix $W$ by
  \begin{equation}
-       W = U D V'
+       W = U D V' = \sum _{i=1}^{\min(m,n)} \la_i u_i v_i' \;,
  \end{equation}
- where $U$ and $V$ are orthonormal, and $D$ is a $n \times m$ diagonal matrix,
- with the singular values of $X$ along the diagonal.  The columns the $n \times
- n$ matrix $U$ are the eigenvectors of $X'X$ (the sought principal components,
- or left singular vectors), and the columns of the $m \times m$ matrix $V$ are
+ where $U = [u_1,\ldots,u_n]$ and $V=[v_1,\ldots,v_m]$ are orthonormal, and $D = \mbox{diag}(\la_i)$ is a $n \times m$ diagonal matrix,
+ with the singular values $\la_1 \ge \la_2 \ge \cdots \ge \la_{\min(m,n)}$ along the diagonal.  The columns of $U$ are the eigenvectors of $X'X$ (the sought principal components,
+ or left singular vectors), and the columns of $V$ are
  the eigenvectors of $XX'$.  The truncated, or thin, SVD zeros all but the
- largest, say, $k \ll m$ singular values and produces an approximate
- factorization of $W$, which we denote
+ largest, say, $k$ singular values and produces an approximate
+ factorization of $W$ that we denote
  \begin{equation}
-       W \approx U_k D_k V_k'
+       W_k \approx U_k D_k V_k' = \sum _{i=1}^k \la_i u_i v_i' \;,
  \label{eq:Wk}
  \end{equation}
- Each matrix on the right-hand side of \eqn{Wk} consists of the first $k$
- columns of the full decomposition.  Because of the size of $W$, the computation
- of $W_k$ can be very slow.  Since we only need $U_k$, however, we can easily
- exploit the algorithms based on random projection \citep{tropp10}. Let $k'$
- denote an integer slightly larger than $k$ \citep[see][for the
- details]{tropp10}.  Then form a $m \times k'$ matrix $\Omega_{k'}$ with random
- elements $\Omega_{ij} \sim N(0,1)$, independently, and compute the product
- $P_{k'} = W \,Omega$.  This multiplication can be done quickly by exploiting
- the sparsity of $W$.  Since $k' \ll m$, we can either compute the SVD
- \begin{equation}
-   P_{k'} = \tilde{U}_{k'} \tilde{D}_{k'} \tilde{V}_{k'}  \;,
- \end{equation}
- or more simply find an orthogonal basis for its columns (such as by a QR
- decomposition).  Though remarkably simple, the leading $k$ columns of
- $\tilde{U}_k$ accurately approximate the range of $U_k$.  \citet{tropp10}
- provides a thorough analysis of the accuracy of this approximation, so we
- illustrate its performance within the context of the real estate listings.
-
-
- Random projection accurately captures the range of a matrix, but requires a
- smaller SVD in order to reproduce the singular vectors.  Figure
- \ref{fig:approx} shows canonical correlations between the exact and approximate
- SVD of $W$ produced by random projection.  Figure \ref{fig:approx} shows the
- canonical correlations between the exact singular vectors in $U_{1:k}$ and the
- approximation
- \begin{equation}
-      A_k = W W' (W \Omega_k)  \;.
- \label{eq:approx1}
- \end{equation}
- The initial multiplication of $W$ by $\Omega_k$ reduces the number of columns
- from $m$ to $k$; the subsequent multiplication by $W W'$ improves the
- approximation, resembling the power method for finding eigenvalues.  The
- leading canonical correlations between $U_{k}$ and $A_k$ are close to 1, and
- then drop off from about $0.75 k$ onward.  This tendency holds for small $k =
- 100$ and larger choices.  The random projection captures the stonger components
- of the range of $U_k$, but much of the energy associated with weaker components
- lies outside the range of $A_k$.   Hence, recovering the singular vectors
- requires one to form the SVD of $A_k$.  If $k \ll m$, this smaller
- factorization is a much faster than forming the full decomposition. 
-
- \begin{figure}
- \caption{ \label{fig:approx} { \sl Canonical correlations show the accuracy of
- the approximation of the SVD of $W$ by singular value decompositions.}  }
-
- \centerline{
- \vspace{0.1in}
- \includegraphics[width=3.5in]{figures/approx} }
- \vspace{0.2in}
- \end{figure}
-
-
- Figure \ref{fig:spectrum} shows the first 500 singular values of $W$.  After
- the first few elements, the singular values fall off relatively slowly.  
-
-  For instance, the 5 leading canonical correlations between $U_{100}$ and
- $A_{100}$ exceed 0.99999.  The correlations between the first right-singular
- vector of $W$ (the first column of $U$) with the first 5 columns of $A_k$,
- however, are -0.905, 0.396, 0.131, -0.091, and 0.154.  
+ $U_k$ and $V_k$ hold the first $k$ columns of $U$ and $V$, respectively, and $D_k$ is the corresponding leading portion of $D$.  Because of the size of $W$, the computation
+ of $W_k$ can be very slow.  Since we only require the portion of the range of $W$ captured by $U_k$, however, we can 
+ exploit the algorithms based on random projection \citep{tropp10}.  
  
+ 
+ Suppose in the ideal case that $W$ essentially has rank $k$ in the sense that $\la_k \gg 0$ and $\la_{k+1} \approx 0$.  Let $\ell$
+ denote an integer slightly larger than $k$ \citep[see][for the
+ details]{tropp10}.   Form an $m \times \ell$ matrix $\Omega_{\ell}$ with random
+ elements $\Omega_{ij} \sim N(0,1)$, independently, and compute the product
+ $A_{\ell} = (W W')^q W \Omega_{\ell}$ for small $q$.  (We set $q = 4$.)  The initial multiplication of $W$ by $\Omega_\ell$ reduces the number of columns
+ from $m$ to $\ell$;  subsequent multiplication by $W W'$ improves the
+ approximation, resembling the power method for finding eigenvalues. $(W W')^q W$ has the same singular vectors as $W$, but its singular values are $\la_j^{q+1}$, which typically increases the spread between $\la_k$ and $\la_{k+1}$.   The matrix product that defines $A_\ell$ can be done quickly by exploiting
+ the sparsity of $W$.  Let $Q_{\ell}$ denote an orthonormal basis for the range of $A_{\ell}$, such as through a QR factorization $A_\ell = Q_\ell R_\ell$.  At the end of these steps, \citet{tropp10} shows that we obtain a low-rank factorization of $W$ in the sense that 
+ \begin{equation}
+   \norm{W - Q_{\ell} Q_\ell' W} \le  \left(1+11 \sqrt{\ell} \min(m,n)\right) \la_{k+1}
+\label{tropp}
+ \end{equation}
+ with high probability.  $\norm{\cdot}$ denotes the spectral norm of a matrix.
+ To obtain the SVD of $W$, we need only compute the SVD of the much smaller matrix $C_\ell = Q_\ell'W$.  Write the SVD of $C_\ell$ as $C_\ell = U_c D_c V_c'$.  If we plug this expression into the low-rank representation for $W$, we obtain $W \approx Q_\ell U_c D_c V_c'$. The first $k$ columns of $Q_\ell U_c$ approximate  $U_k$.  \citet{tropp10}
+ provides a thorough analysis this algorithm, so we
+ illustrate its performance within the context of the analysis of real estate listings.
+
+
+ The spectrum of the context-word matrix $W$ lacks the distinct gap that would suggest the rank needed to obtain an accurate low-rank approximation.  Figure \ref{fig:spectrum} graphs the singular values of $\tilde{W}$ on a log scale. (Other scalings of $W$ produce similar spectra.)  After the first few elements, the singular values fall off steadily, without the sort of gap described for the idealized case.  The absence of a clear rank complicates the choice of how many components to use in a regression, so once again we use $AIC_c$.  In this case, we order the features by singular value.
+
  \begin{figure}
  \caption{ 
  	\label{fig:spectrum}
-	{\sl The spectrum of the document-term matrix $W$ decays relatively slowly 
+	{\sl The spectrum of the document-term matrix $\tilde{W}$ decays relatively slowly 
 	      after the initial sharp drop. }}
 
  \centerline{
@@ -683,6 +565,16 @@ LSA proceeds by computing the principal components of $W$ or a weighted version 
  \vspace{0.2in}
  \end{figure}
    
+The conversion of words into LSA components produces a qualitative change in the structure of the $t$-statistics.  Figure \ref{fig:lsatstats} summarizes (in the same format as Figure \ref{fig:aictstats}) the $|t|$-statistics from a regression using the first 1,000 LSA component features. (As with words, the model includes a polynomial in document length.) Unlike the regression directly on frequencies, the $|t|$-statistics are roughly monotonically decreasing, with the most significant effects present in the initial components and gradually falling off. Sorting based on singular value is far more useful than sorting on word frequency.  The fitted model obtains $R^2 = 0.718$ with $\ol{R}^2 =  0.674$, compared to $\ol{R}^2 = 0.654$ for the previous regression on 1,089 words.  Though the $t$-statistics are more conveniently positioned by LSA than those in the regression directly on word frequencies, these models share similar explanatory power.  Alternatively, $AICc$ selects the model that uses 523 LSA components, obtaining $R^2 = 0.677$ and $\ol{R}^2  = 0.652$.  
+
+% figure lsaaic.pdf has the plot of the R2 for this model.
+
+\begin{figure}
+\caption{  \label{fig:lsatstats}  
+  {\sl Absolute $t$-statistics from the regression of log prices on the first 1,500 LSA components with column weighting.}  }
+  \centerline{ \includegraphics[width=5in]{figures/lsatstats.pdf} }
+\end{figure}
+
 
 
  
@@ -795,7 +687,7 @@ Each collection of singular vectors explains more variation than the simple mode
  for (a) the singular vectors of $W$ and (b) the left and right singular vectors
  of $B$.}}
  \vspace{0.1in}
- \centerline{  \includegraphics[width=6in]{figures/regrW}  }
+ % \centerline{  \includegraphics[width=6in]{figures/regrW}  }
  \centerline{  \includegraphics[width=6in]{figures/regrB}  }
  \end{figure}
 
