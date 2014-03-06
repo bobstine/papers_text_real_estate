@@ -1,0 +1,103 @@
+%-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
+\documentclass[12pt]{article}
+\usepackage[longnamesfirst]{natbib}
+\usepackage[usenames]{color}
+\usepackage{graphicx}  % Macintosh pdf files for figures
+\usepackage{amssymb}   % Real number symbol {\Bbb R}
+\usepackage{amsmath}
+\usepackage{bbm}
+\input{../../standard}
+
+% --- margins
+\usepackage{../sty/simplemargins}
+\setleftmargin{1in}   % 1 inch is NSF legal minimum
+\setrightmargin{1in}  % 1 inch is NSF legal minimum
+\settopmargin{1in}    % 1 inch is NSF legal minimum
+\setbottommargin{1in} % 1 inch is NSF legal minimum
+
+% --- Paragraph split, indents
+\setlength{\parskip}{0.00in}
+\setlength{\parindent}{0in}
+
+% --- Line spacing
+\renewcommand{\baselinestretch}{1.5}
+
+% --- page numbers
+\pagestyle{empty}  % so no page numbers
+
+% --- Hypthenation
+\sloppy  % fewer hyphenated
+\hyphenation{stan-dard}
+\hyphenation{among}
+
+% --- Customized commands, abbreviations
+\newcommand{\TIT}{{\it  {\tiny Predictive R-Squared, \today)}}}
+\newcommand{\ars}{\mbox{$\ol{R}^2$}}  
+\newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}  
+
+% --- Header
+\pagestyle{myheadings}
+\markright{\TIT}
+
+% --- Title
+
+\title{ Predictive R-Squared }
+\author{
+        Dean P. Foster\footnote{Research supported by NSF grant 1106743} 
+        \ \ Robert A. Stine\footnotemark[\value{footnote}]   \\
+        Department of Statistics                             \\
+        The Wharton School of the University of Pennsylvania \\
+        Philadelphia, PA 19104-6340                          
+}
+
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\maketitle 
+%------------------------------------------------------------------------
+\vspace{-.5in}
+\abstract{  
+
+ Fitting large regression models has become common. The $R^2$ statistic is perhaps the most popular summary of a regression, and its faults are well-known to all but the most casual users.  Adjusted $R^2$, written \ars remedies the omission of degrees of freedom from $R^2$, but estimates a quantity most users would probably find unnatural.  A  further, small adjustment produces the predictive $R^2$ that we define in this short note.  Written \prs, the predictive $R^2$ estimates the variation explained when predicting new data.  As the similarity of the name implies, predictive $R^2$ is nearly the same as predicted $R^2$ reported by Minitab, only differing in the simplicity of its calculation.  Whereas predicted $R^2$ performs implicit leave-one-out cross-validation, we use a simple approximate that avoids both cross-validation and the computation of leverages.
+
+}
+
+%------------------------------------------------------------------------
+\vspace{0.15in}
+
+\noindent
+{\it Key Phrases:  cross-validation, leverage} 
+
+\clearpage
+
+% ----------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+% ----------------------------------------------------------------------
+
+ Fitting large regression models has become common in many applications of statistics.  As an example, the regression models summarized in Table 1 predict the prices of  7,384 real estate properties listed in Chicago.  The regressors are features constructed from only the text of these listings as described in\citep{fosterstine14a}.  The 1,000 features in the first model count the frequency of the most common 1,000 words in the text of all the listings.  This large model explains about 67\% percent of the variation in prices, with $\ars = 0.62$.  The second model uses 500 features that are essentially principal components of the  frequency counts used in the larger model.  The second model uses half as many predictors with $R^2 = 0.66$ and $\ars = 0.63$.  If we compare the models using adjusted $R^2$, we might expect them to be similarly predictive.  In fact, the smaller second model is noticeably more predictive.
+
+
+\begin{table}
+\caption{ \label{tab:r2}  \sl
+  Comparison of three versions of the r-squared statistic for two large regression models.}
+  \begin{center}
+  \begin{tabular}{rc|ccc}
+     Model   &  Features &  $R^2$ & \ars & \prs  \cr \hline
+     Word frequencies        &  1,000     & 0.671  &  0.620  & 0.550  \cr
+     Principal components &     500     & 0.655   & 0.630  & 0.600   \cr \hline
+  \end{tabular}
+  \end{center}
+\end{table}
+
+%--------------------------------------------------------------------------
+% References
+%--------------------------------------------------------------------------
+
+\bibliography{../../../references/stat}
+\bibliographystyle{../bst/ims}
+
+\end{document} %==========================================================
+

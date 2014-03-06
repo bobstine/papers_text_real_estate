@@ -32,6 +32,7 @@
 
 % --- Customized commands, abbreviations
 \newcommand{\TIT}{{\it  {\tiny Featurizing Text (DRAFT, \today)}}}
+\newcommand{\ars}{\mbox{$\bar{\bar{R}}^2}}  
 
 % --- Header
 \pagestyle{myheadings}
@@ -95,17 +96,6 @@
 
 \begin{description}
 
-\item{LSA regression} \\ 
-
- 
-  Centroid connection useful if doing transcendent cross validation, so the
- averaging/centroid connection is useful here.
-
-\item{Bigrams and context matrix} \\ 
- 
- Revisit term-document matrix as word-context matrix.  Develop the statistical
- sense of CCA between token/type and token/document.  then do that perspective
- of the bigram matrix.  Issue: Those CCA weights don't seem to help.
 
 \item{Relate to topic models} \\ 
  Simulation
@@ -118,9 +108,7 @@ Lighthouse variables combine regular expression variables and linguistic variabl
 
 \end{description}
 
- Theme of co-occurrence within a window of varying length, document or
-adjancency.  Alternative weights such as TF-IDF rather than entropy.
-
+ 
  Software packages, such as (very elaborate, comprehensive) those in R
  \citep[tm][]{feinerer08} or Stanford NLP or openNLP.
 
@@ -276,8 +264,7 @@ adjancency.  Alternative weights such as TF-IDF rather than entropy.
  variation, followed by the number of bathrooms.  Unlike the marginal
  associations, the log of the number of square feet and its missing indicator
  are highly significant.  The missing indicators for bedrooms and bathrooms are
- not.  The model obtains adjusted R-squared $\ol{R}^2 = 0.232$, with residual
- standard deviation $s_e =1.06$.
+ not.  The model explains about one-fifth of the variation in prices;  adjusted R-squared $\ol{R}^2 = 0.232$ and, when adjusted for prediction, $\ars = 0.231$.  \ars adjusts $\R^2$ for predicting out-of-sample,
 
  
  \begin{table}[ht]
@@ -529,7 +516,15 @@ The use of LSA to create features for regression models essentially reproduces p
  \label{eq:Wk}
  \end{equation}
  $U_k$ and $V_k$ hold the first $k$ columns of $U$ and $V$, respectively, and $D_k$ is the corresponding leading portion of $D$.  Because of the size of $W$, the computation
- of $W_k$ can be very slow.  Since we only require the portion of the range of $W$ captured by $U_k$, however, we can 
+ of $W_k$ can be very slow.  
+ It is worthwhile to take note of two properties of these calculations that are
+ important in practice.  First, one needs to take advantage of sparsity in  $W$ to reduce memory usage and to increase the speed of
+ computing matrix products.  Second, even leveraging sparsity, the computation of the SVD of a large
+ matrix can be quite slow. 
+  To speed this calculation, we exploit random projection algorithms defined and
+ analyzed in \citet{tropp10}.
+
+Since we only require the portion of the range of $W$ captured by $U_k$, however, we can 
  exploit the algorithms based on random projection \citep{tropp10}.  
  
  
@@ -565,10 +560,10 @@ The use of LSA to create features for regression models essentially reproduces p
  \vspace{0.2in}
  \end{figure}
    
-The conversion of words into LSA components produces a qualitative change in the structure of the $t$-statistics.  Figure \ref{fig:lsatstats} summarizes (in the same format as Figure \ref{fig:aictstats}) the $|t|$-statistics from a regression using the first 1,000 LSA component features. (As with words, the model includes a polynomial in document length.) Unlike the regression directly on frequencies, the $|t|$-statistics are roughly monotonically decreasing, with the most significant effects present in the initial components and gradually falling off. Sorting based on singular value is far more useful than sorting on word frequency.  The fitted model obtains $R^2 = 0.718$ with $\ol{R}^2 =  0.674$, compared to $\ol{R}^2 = 0.654$ for the previous regression on 1,089 words.  Though the $t$-statistics are more conveniently positioned by LSA than those in the regression directly on word frequencies, these models share similar explanatory power.  Alternatively, $AICc$ selects the model that uses 523 LSA components, obtaining $R^2 = 0.677$ and $\ol{R}^2  = 0.652$.  
+The conversion of words into LSA components produces a qualitative change in the structure of the $t$-statistics.  Figure \ref{fig:lsatstats} summarizes (in the same format as Figure \ref{fig:aictstats}) the $|t|$-statistics from a regression using the first 1,000 LSA component features. (As with words, the model includes a polynomial in document length.) Unlike the regression on frequencies of word types, the average magnitude of the $|t|$-statistics in this regression decline roughly monotonically, with the most significant effects present in the initial components and gradually falling off. Some signal remains in the smaller components (the slope in the half-normal plot is 1.8), but sorting based on singular value is far more useful than sorting on word frequency.  The fitted model obtains $R^2 = 0.718$ with $\ol{R}^2 =  0.674$, compared to $\ol{R}^2 = 0.654$ for the previous regression on 1,089 words.  Consequently, with more signal in the earlier components, $AIC_c$ finds a more predictive model with fewer coefficients.  The sequence of $AIC_c$ statistics for this model lies well below that for the regression on word frequencies in Figure \ref{fig:aic}.  $AICc$ selects the model that uses 523 LSA components, obtaining $R^2 = 0.677$ and $\ol{R}^2  = 0.652$.  
 
-% figure lsaaic.pdf has the plot of the R2 for this model.
-
+[ Though the $t$-statistics are more conveniently positioned by LSA than those in the regression directly on word frequencies, these models share similar explanatory power.  ]
+ 
 \begin{figure}
 \caption{  \label{fig:lsatstats}  
   {\sl Absolute $t$-statistics from the regression of log prices on the first 1,000 LSA components with column weighting.}  }
@@ -579,48 +574,71 @@ The conversion of words into LSA components produces a qualitative change in the
 
  
 %--------------------------------------------------------------------------
-\section{Featurizing with Latent Semantic Analysis (LSA)}
+\section{A Numerical Representation and More Features}
 \label{sec:cca}
 %--------------------------------------------------------------------------
 
+We can recast the frequencies in the document-word matrix $W$ as covariances between two types of indicator variables. This alternative perspective provides a basis for creating a wide range of features from text.  The key notion that distinguishes this alternative perspective is to think of text data as defining a large binary matrix.  Recall that we have $n$ documents, with $n_i$ word tokens in document $i$ chosen from a vocabulary of $m$ word types.  Begin by concatenating the word tokens of every document (real estate listing) into a list, say
+\begin{equation*}
+   \ell = \underbrace{w_{11},\,w_{12},\ldots,w_{1n_1}}_{\mbox{doc 1}},\,
+            \underbrace{w_{21},\ldots,w_{2n_2}}_{\mbox{doc 2}}, \,
+            \ldots, \underbrace{w_{n1},\ldots,w_{n_nn}}_{\mbox{doc }n},
+\end{equation*}
+with length $N = \sum n_i$ word tokens.  From this sequence, define the $N \times m$ indicator matrix $X$ for which $X_{ij} = 1$ if the $i$th word token in $\ell$ is of type $j$.  $X$ is large a very sparse, with a single 1 in each row, 
+\begin{equation}
+  X =   \left( \rule{0em}{8em} \right.
+  \begin{array}{cccccccc}
+            \mbox{\scriptsize $w_1$} &
+            \mbox{\scriptsize $w_2$} &
+            \mbox{\scriptsize $w_3$} &
+            \mbox{\scriptsize $w_4$} &
+            \mbox{\scriptsize $w_5$} &
+            \mbox{\scriptsize $w_6$} &   \cdots &
+            \mbox{\scriptsize $w_m$}  \cr
+            0  & 0 & 1 & 0 & 0 & 0 & \cdots & 0 \cr
+            0  & 0  & 0 & 0 & 1 & 0 & \cdots & 0 \cr
+             &&&  \vdots &&&&                                 \cr
+            0  & 1  & 0 & 0 & 0 & 0 & \cdots & 0 \cr \hline
+            0  & 0 & 0 & 0 & 1 & 0 & \cdots & 0 \cr
+              &&&  \vdots &&&&                                 \cr
+            1  & 0 & 0 & 0 & 0 & 0 & \cdots & 0 \cr \hline
+              &&&  \vdots &&&\ddots&                                 \cr
+              \\
+           \end{array}
+        \left. \rule{0em}{8em} \right)
+        \;.
+\end{equation}
+This matrix {\em is} the text data.  Given this numerical representation, we are back in familiar territory.  The data are numerical rather than text.  To obtain the counts used in LSA, define an $N \times n$ context matrix $L$  that identifies the documents,
+\begin{equation}
+  L =  \left(  
+           \begin{array}{ccccc}
+            1  & 0 & 0 & \cdots & 0 \cr
+            1  & 0 & 0 & \cdots & 0 \cr
+             &&  \vdots &&                       \cr
+            1 & 0 &  0 & \cdots & 0 \cr \hline
+            0 & 1 & 0  & \cdots & 0 \cr
+              &&  \vdots &&                        \cr
+            0 & 1& 0 & \cdots & 0 \cr \hline
+              &&  \vdots  &\ddots&             \cr
+            0 & 0& 0 & \cdots & 1 \cr \hline        
+           \end{array}
+         \right) = I_n \otimes \one{n_i}  \;,
+\end{equation}
+where $\one{n}$ denotes a column vector of $n$ 1s. (Here we abuse the usual Kronecker product and allow the constant vectors to have unequal length.)  The document-word matrix $W$ is then $N-1$ times the observed covariance matrix between $X$ and $L$,
+\begin{equation*}
+   W = (N-1) \cov(L,X) = L'X  \;.
+\end{equation*}
+Once we think of $W$ as a covariance matrix, it becomes natural to associate LSA with canonical correlation analysis (CCA) rather than PCA.  In order for the SVD of $W$ to produce canonical vectors, however, we have to standardize the columns of $L$ and $X$.  Let $S_L = L'L/(N-1) = \mbox{diag}(n_i)$ and $S_X = X'X/(N-1)$ denote the uncentered covariance matrices.  \ras{Why not centered?}  The SVD of $S_L^{-1/2} W S_X^{-1/2}$ then yields the canonical correlations and vectors. \ras{cite Dean and Sham}  Standardizing $L$ is easy because its columns are orthogonal (when uncentered), but those of $X$ are not.  Commonly, then, one uses the approximation $\widetilde{S}_X = \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word type $j$.  As explained in Section \ref{sec:topic}, we use partial standardization and work with $\widetilde{W} =X \widetilde{S}_X^{-1/2}$.
 
 
- The second matrix narrows the context and relies entirely upon ordering.  The bigram matrix $B$ counts how often words  appear adjacent to each other, narrowing the context from a document to a pair of words.  The document/word and bigram matrices thus represent two extremes of a common approach:  Associate words that co-occur within some context.  $W$ uses the wide window provided by a document, whereas $B$ uses the narrowest window. The wide context afforded by a document hints that $W$ emphasizes semantic similarity, whereas the narrow window of adjacency that defines $B$ places more emphasis on local syntax.  Curiously, we find either approach effective and use both.
-
-
- The bigram matrix counts how often word types occur adjacent to each other.
-  Let $B$ define the $M \times M$ matrix produced from the sequence of tokens
- for all documents combined (the corpus).  $B_{ij}$ counts how often word-type
- $i$ precedes work-type $j$ within the corpus.  Whereas $W$ ignores word
- placement (sequencing) within a document, $B$ combines counts over all documents and relies on the sequence of word tokens.
+ Now that we have a numerical representation of text, a variety of other featurizations become apparent.  The sequential nature of the rows of $X$ suggest ideas from time series analysis, particularly lags.  For instance, we might find interesting patterns in the association between the word type that appears next to each other in positions $i-1$ and $i$.  Let $X_{-1}$ denote the lag of $X$ obtained by inserting a leading row of zeros and removing the final row.  Rather than use documents to define context, we use the previous word.  The counts that produce the covariance between this context and the word at location $i$ define a bigram matrix $B$,
+ \begin{equation}
+   B = X_{-1}' X
+\end{equation}
+Using the prior word to define a context removes the role of documents and treats the list $\ell$ as a stochastic process.  Where $W$ uses the wide context defined by the extent of documents in the text, $B$ uses the narrow, very local context defined by the prior word. Notice that $W$ ignores word placement (sequencing) within a document (treating a document as a bag of words); in contrast $B$ combines the documents and relies only on the sequence of word tokens. The wide context afforded by a document hints that $W$ emphasizes semantic similarity, whereas the narrow context of adjacency suggests $B$ emphasizes syntax.  Either approach can be effective.
 
  
- A second application of the SVD produces regressors from the bigram matrix $B$.
-  Let
- \begin{equation}
-       B = \tilde{U}_B \tilde{D}_B \tilde{V}_B'
- \label{eq:svdB}
- \end{equation}
- define the SVD of $B$, and again use matrices without $\sim$ to denote components of the truncated SVD:  $U_B$ and $V_B$ denote the first $k_B$ columns of $\tilde{U}_B$ and $\tilde{V}_B$, respectively.  As in the
- decomposition of $W$, the number of singular vector to retain is a user-defined choice.  We generally keep $k_W = k_B$.  Because $B$ is $M
- \times M$, these singular vectors define points in $\R^M$ and are sometimes referred to as ``eigenwords'' because of the way in which they form directions in word space \ras{cite}.  The $i$th row of $U_B$  locates the word type $w_i$ within $\R^{k_B}$  (all of the following applies  to $V_B$ as well).  To build regressors, we locate each document at a point within this same space.  We can think of this location in two, nearly equivalent ways that emphasize either the rows or columns of $U_B$.  The two methods differ in a sum is normalized.  The row-oriented motivation is particularly simple: a document is positioned at the average of the positions of its words.  For example, the $i$th document is located at $w_i'U_B/m_i$.  Alternatively, emphasizing columns, we can compute the correlation between the columns of $U_B$ with the bag-of-words representations of the documents.  Because the columns of $U_B$  and $V_B$ are orthonormal, these correlations are given by
- \begin{equation}
-     C = [C_l C_r] 
-         = \mbox{diag}(\norm{w_i}^{-1})W[U_B \; V_B]   \;, 
-            \quad \mbox{ where } \quad  \normsq{x} = \sum x_i^2  \;.
- \label{eq:C}
- \end{equation}
- The $i$th row of of the $n \times 2k_B$ matrix $C$ is the vector of correlations between the bag-of-words representation $w_i$ and the singular vectors of $B$.  In our models for real-estate listings, the columns of $C$ form the second bundle of regressors.
-
-
- It is worthwhile to take note of two properties of these calculations that are
- important in practice.  First, one needs to take advantage of sparsity in the
- matrices $W$ and $B$ to reduce memory usage and to increase the speed of
- computing matrix products.  Second, the computation of the SVD of a large
- matrix can be quite slow.  For example, computing the SVD of $B$ is of order
- $O(M^3)$ and one can easily have vocabulary of $M=$10,000 or more word types.
-  To speed this calculation, we exploit random projection algorithms defined and
- analyzed in \citet{tropp10}.
+ As in LSA, we obtain features from the leading singular vectors of $B$.  Again, random projection speeds this calculation.  Let $\widetilde{U}_{B,k}$ denote the leading $k$ singular vectors obtained from the approximate SVD of the standardized bigram matrix $S_X^{-1/2} B S_X^{-1/2}$.  The columns of $\widetilde{U}_{B,k}$ are sometimes called ``eigenwords'' because of the way in which they form directions in word space \ras{cite lyle or someone using this name}.  Each row of $\widetilde{U}_{B,k}$ represents a word type as a point in $\R^k$.   To build features for regression, we simply locate each document at the average position of its words, $(I_n \otimes \one{n_i}/n_i)'\widetilde{U}_{B,k}$. 
 
 
 %--------------------------------------------------------------------------
@@ -631,6 +649,7 @@ The conversion of words into LSA components produces a qualitative change in the
  The next model uses regressors created from the SVD of the document/word
  count matrix $W$ defined in equation \eqn{svdW}.  We retained $k_W = 100,\, 200, \, \ldots, 500$ singular vectors of $W$.   Our analysis suggests each of these collections of singular vectors both retains too many insignificant features while at the same time omits others that are predictive.  Broadly speaking, the leading singular vectors (those with larger singular values) are more predictive than subsequent singular vectors.  That said, not all of the leading vectors are statistically significant nor do all of the later singular vectors have coefficients near zero.   As a result, variable selection from a yet larger collection of singular vectors may provide a better fit, a task we defer to Section \ref{sec:cv}.  
  
+ \citet[do CCA before regression][]{fosterkakade07}
 
 Each collection of singular vectors explains more variation than the simple model derived from several parsed words, but none find all of the signal captured by the larger collection of 2,000 word indicators.  A regression of log prices on the 100 leading singular vectors attains $\ol{R}^2 = 0.49$, more than twice that of the model with parsed variables.  Adding more singular vectors produces statistically significant, though diminishing improvements.  The collection of 500 singular vectors of $W$ produces $\ol{R}^2 = 0.61$, which is less than the $\ol{R}^2 = 0.68$ derived from individual word counts.  Table \ref{tab:regrW}  shows several of the estimated coefficients and summarizes the overall fits of these models.  As often seen in principal components regression, the statistical significance of the singular vectors is not monotonic in the order of the singular vectors. That said, the leading singular vectors tend to be more relevant than those that follow. Figure \ref{fig:svdregr} summarizes the significance of the estimated coefficients in the same fashion as Figure \ref{fig:regrInd} with a plot of the absolute $t$-statistics and a half-normal plot. Most of the main leading singular vectors are significant, with an increasing proportion of insignificant variables as the position in the decomposition increases.  In comparison to the significance for the coefficients of the word indicators, these singular vectors by-and-large are more consistently predictive with less noise.  The slope of the fit in the half-normal plot (using the least significant 200 estimates) is 2.9.  Residual analysis again finds fat tails with only a hint of heteroscedasticity.
  
@@ -735,7 +754,7 @@ How well does combining both sets of variables perform?  To find out, we start w
 
 %--------------------------------------------------------------------------
 \section{Probability models}
-\label{sec:topicmodels}
+\label{sec:topic}
 %--------------------------------------------------------------------------
 
  To provide some explanation for the evident success of this direct approach to building regressors from text, we offer a hypothetical data generating process for text and study the implications of this DGP for regression modeling.  The DGP is essentially that used in topic modeling \citep{blei12}.  In machine learning, topic modeling is an unsupervised technique that  clusters documents based on the presence of shared, underlying ``topics'' revealed by a hierarchical Bayesian  model.  Our method of featurizing text is also unsupervised,  but we seek to predict an explicit response rather than uncover latent clusters.  Nonetheless, we can study how our procedure would perform were there an underlying topic model.
