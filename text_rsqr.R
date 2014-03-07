@@ -8,7 +8,6 @@ source("/Users/bob/C/text/functions.R")
 #   Raw word regression
 #
 ##################################################################################
-word.regression <- function () {
 	
 	path <- "/Users/bob/C/text/text_src/temp/ChicagoOld3/"
 	YM <- as.matrix(read.table(paste(path,"lsa_ym.txt",sep=""),header=T,as.is=T))
@@ -22,24 +21,49 @@ word.regression <- function () {
 	W <- W[,-7]
 	colnames(W)[c(1,2,5)] <- c(".period.",".comma.",".exclamation.")
 	colnames(W)[1:10]
-
-
 	
 # --- check some fits; 5th degree from C++ with centering gets diff R2
 
 	sr.1000 <- summary(r.1000<-lm(logPrice ~ W[,1:1000])); sr.1000
 	predictive.r2(r.1000)
-}
+	
+	cv.1000 <- cross.validate.mse(data, n.reps=10)
+	
+# --- too slow in the function, so try directly
 
+	y <- logPrice
+	X <- W[,1:1000]; rownames(X) <- NULL; colnames(X) <- NULL
+	data <- data.frame(y=y,X=X)
+	
+	n.folds<-10; seed <- 21342; n.reps <- 2
+	
+	n <- length(y); 
+	i <- rep(1:n.folds,ceiling(n/n.folds))
+	if (length(i) != n) cat("Note: n is not multiple of # folds.\n");
+	i <- i[1:n]
+	set.seed(seed)
+	mse <- rep(0,n.folds*n.reps)
+	
+	for(kk in 1:n.reps) {
+		ii <- sample(i, n)   # permute fold indices
+		for(fold in 1:n.folds) {
+			cat(fold,"\n");
+			train <- (fold != ii)
+			r <- lm(y ~ ., data=data[train,])
+			test  <- (fold == ii)
+			err <- y[test] - predict(r, newdata=data[test,]);
+			mse[fold+(kk-1)*n.folds] <- sum(err^2)/sum(test)
+		}}
+	mse
 
+	mse.words <- mse
+	
+	
 ##################################################################################
 #
 #     LSA
 #
 ##################################################################################
-
-
-lsa.analysis <- function() {
 
 	nProj   <- 500
 	weights <- "raw"
@@ -56,6 +80,28 @@ lsa.analysis <- function() {
 	sr.lsa <- summary(regr.lsa <- lm(logPrice ~ poly(nTokens,5) + lsa , x=TRUE, y=TRUE)); sr.lsa
 	
 	predictive.r2(regr.lsa)
+	
+		X <- W[,1:1000]; rownames(X) <- NULL; colnames(X) <- NULL
+	data <- data.frame(y=y,X=X)
+	
+	n.folds<-10; seed <- 21342; n.reps <- 2
+	
+	n <- length(y); 
+	i <- rep(1:n.folds,ceiling(n/n.folds))
+	if (length(i) != n) cat("Note: n is not multiple of # folds.\n");
+	i <- i[1:n]
+	set.seed(seed)
+	mse <- rep(0,n.folds*n.reps)
+	
+	for(kk in 1:n.reps) {
+		ii <- sample(i, n)   # permute fold indices
+		for(fold in 1:n.folds) {
+			cat(fold,"\n");
+			train <- (fold != ii)
+			r <- lm(y ~ ., data=data[train,])
+			test  <- (fold == ii)
+			err <- y[test] - predict(r, newdata=data[test,]);
+			mse[fold+(kk-1)*n.folds] <- sum(err^2)/sum(test)
+		}}
+	mse
 
-
-}

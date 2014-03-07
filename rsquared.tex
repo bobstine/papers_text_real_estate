@@ -31,7 +31,7 @@
 \hyphenation{among}
 
 % --- Customized commands, abbreviations
-\newcommand{\TIT}{{\it  {\tiny Predictive R-Squared, \today)}}}
+\newcommand{\TIT}{{\it  {\tiny Predictive R-Squared, \today}}}
 \newcommand{\ars}{\mbox{$\ol{R}^2$}}  
 \newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}  
 
@@ -60,7 +60,7 @@
 \vspace{-.5in}
 \abstract{  
 
- Fitting large regression models has become common. The $R^2$ statistic is perhaps the most popular summary of a regression, and its faults are well-known to all but the most casual users.  Adjusted $R^2$, written \ars remedies the omission of degrees of freedom from $R^2$, but estimates a quantity most users would probably find unnatural.  A  further, small adjustment produces the predictive $R^2$ that we define in this short note.  Written \prs, the predictive $R^2$ estimates the variation explained when predicting new data.  As the similarity of the name implies, predictive $R^2$ is nearly the same as predicted $R^2$ reported by Minitab, only differing in the simplicity of its calculation.  Whereas predicted $R^2$ performs implicit leave-one-out cross-validation, we use a simple approximate that avoids both cross-validation and the computation of leverages.
+ Fitting large regression models has become common. The $R^2$ statistic is perhaps the most popular summary of a regression, and its faults are well-known to all but the most casual users.  Adjusted $R^2$, or \ars, remedies the omission of degrees of freedom from $R^2$, but estimates a quantity most users would probably find unnatural.  A  further, small adjustment produces the predictive $R^2$ that we define in this short note.  Written \prs,  predictive $R^2$ estimates the variation explained when predicting new data rather than variation in the data used to estimate the fit.  As the similarity of the name implies, predictive $R^2$ is nearly the same as the predicted $R^2$ reported by Minitab, only differing in the simplicity of its calculation.  Whereas predicted $R^2$ performs implicit leave-one-out cross-validation, we use a simple approximation that avoids both cross-validation and the computation of leverages.
 
 }
 
@@ -77,20 +77,97 @@
 \label{sec:intro}
 % ----------------------------------------------------------------------
 
- Fitting large regression models has become common in many applications of statistics.  As an example, the regression models summarized in Table 1 predict the prices of  7,384 real estate properties listed in Chicago.  The regressors are features constructed from only the text of these listings as described in\citep{fosterstine14a}.  The 1,000 features in the first model count the frequency of the most common 1,000 words in the text of all the listings.  This large model explains about 67\% percent of the variation in prices, with $\ars = 0.62$.  The second model uses 500 features that are essentially principal components of the  frequency counts used in the larger model.  The second model uses half as many predictors with $R^2 = 0.66$ and $\ars = 0.63$.  If we compare the models using adjusted $R^2$, we might expect them to be similarly predictive.  In fact, the smaller second model is noticeably more predictive.
+ Fitting large regression models has become common in many applications of statistics.  As an example, the two, large regression models summarized in Table 1 predict the prices of  7,384 real estate properties listed in Chicago.  The regressors are features constructed directly from  the text of these listings as described in \citet{fosterstine14a}.   If we compare the models using adjusted $R^2$, we would expect them to be similarly predictive. The first model uses 1,000 features that count the frequency of the most common words in the text of  the listings.  This large model explains about two-thirds of the variation in prices, with $\ars = 0.62$.  The second model uses 500 features that are essentially principal components of the frequency counts used in the larger model.  With half as many predictors, this model achieves almost the same adjusted R-squared ($\ars = 0.61$).  Though inferior by these measures, the smaller second model is actually more predictive.  The predictive $R^2$ denoted \prs  in Table 1 suggests we should not be surprised. It indicates that the smaller model ought to be slightly more predictive than the larger model --- and it is.
 
 
 \begin{table}
 \caption{ \label{tab:r2}  \sl
   Comparison of three versions of the r-squared statistic for two large regression models.}
   \begin{center}
-  \begin{tabular}{rc|ccc}
-     Model   &  Features &  $R^2$ & \ars & \prs  \cr \hline
-     Word frequencies        &  1,000     & 0.671  &  0.620  & 0.550  \cr
-     Principal components &     500     & 0.655   & 0.630  & 0.600   \cr \hline
+  \begin{tabular}{cc|ccc|c}
+   \multicolumn{2}{c|}{Context} & \multicolumn{3}{c|}{R-Squared}& 10-fold CV  \cr
+   Features   &  $p$ &  $R^2$ & \ars & \prs                 &     PMSE       \cr \hline
+   Word frequencies        & 1,000 & 0.671  &  0.620 & 0.550    & 6.55  \cr
+   Principal components &   500  & 0.639  & 0.613  & 0.582    & 6.17  \cr \hline
   \end{tabular}
   \end{center}
 \end{table}
+
+
+ To compare the predictive accuracy of these models, we performed 10-fold cross-validation. Leave-one-out cross-validation has well-known limitations \citep[\eg with nonlinearity and model selection][]{efron87,shao93}, so we use 10-fold cross-validation to estimate the actual out-of-sample predictive error.  Rather than rely on one split into ten folds, we repeated the splitting process 10 times.  Table 1 shows the prediction mean squared error (PMSE) over the 100 estimated models.
+
+
+% ----------------------------------------------------------------------
+\section{Predictive R-squared}
+\label{sec:prs}
+% ----------------------------------------------------------------------
+
+ To see the problem with adjusted R-squared, it helps to think about what happens for very large samples.  Consider the usual linear regression model for which 
+ \begin{equation}
+     Y = X \, \beta + \ep   \;,
+ \label{eq:model}
+ \end{equation}
+  where $Y$ is an $n$ vector,  $X$ is a $n \times p$ matrix with a leading column of 1s followed by $p-1$ explanatory variables (\aka, regressors, features), and $\ep$ is independent,  mean zero, homoscedastic noise with variance $\sigma^2$.  Let $x_i$ denote the rows of $X$.  When estimated, the expression for adjusted R-squared is
+ \begin{equation}
+  \ars = 1 - \frac{ \sum (Y_i - x_i'\hat\beta)^2/(n-p) }
+                        { \sum (Y_i - \ol{Y})^2/(n-1) }
+         = 1 - \frac{ \mbox{RSS}/(n-p)} {\mbox{TSS}/(n-1)}
+\label{eq:ars}
+\end{equation}
+The numerator in the fraction converges to $\sigma^2$.  
+
+
+To appreciate the flaw in $\ars$, it is helpful to think of $\sigma^2$ as a measure of a prediction error rather than error variance.  In particular, we can write $\sigma^2$ as
+ \begin{equation}
+     \sigma^2 = \ev (Y_\nu - x_\nu \beta)^2  \;,
+ \end{equation}
+where the expectation is over pairs $(Y_\nu, x_\nu)$ that form an independent observation that is consistent with the model \eqn{model}.  In this sense, $\sigma^2$ is the expected squared error of predicting a new observation using a model built with infinite data (so that $\beta$ is known).  Consequently, $\ars$ ignores the effects of estimation error in $\hat\beta$.  $\ars$ adjusts for the degrees of freedom in the residual sum-of-squares, but that leaves an estimate of $\sigma^2$ rather than the error when predicting a new observation with a fitted model. 
+
+
+  A variety of methods do adjust for the error when predicting a new observation. These statistics estimate $\ev(Y_\nu - x_\nu'\hat\beta)^2$, the error when predicting a new observation with a fitted model.  Such statistics have a long history and include Mallows $C_p$ \citep{mallows73}, Akaike's Final Prediction Error \citep{akaike69}, and the prediction sum-of-squares PRESS \citep{allen74}.  The most relevant of these for revising the adjusted R-squared is PRESS, which is defined as
+  \begin{equation}
+     \mbox{PRESS} = \sum(Y_i - x_i'\hat\beta_{(-i)})^2 = \sum e_{(-i)}^2  \;,
+ \label{eq:press}
+  \end{equation}
+where $\hat\beta_{(-i)}$ is the estimate of $\beta$ obtained when the $i$th observation is omitted from the model.  PRESS is easily computed without explicitly refitting $n$ regressions by using the well-known expression \citep[\eg][]{belsley80,tarpey00}
+\begin{equation}
+  \hat\beta - \hat\beta_{(-i)} = (X'X)^{-1} x_i'e_i/(1-h_i) \;,
+ \label{eq:cv}
+ \end{equation}
+where $e_i = Y_i - x_i'\hat\beta$ is the $i$th residual and $h_i = x_i'(X'X)^{-1}x_i$ is the leverage.  Minitab uses PRESS to define a different adjustment to $R^2$ called the predicted R-squared statistic,
+\begin{equation}
+  \mbox{Predicted } R^2 = 1 - \frac{\mbox{PRESS}}{\mbox{TSS}}  \;.
+\end{equation}
+
+
+Our predictive R-squared is similar but replaces PRESS with an approximation that avoids computing leverages or manipulating large matrices.  Using the expression \eqn{cv}, we can write the difference between the $i$th residual and the leave-one-out error $e_{(-i)}$ defined in \eqn{press}:
+\begin{equation}
+  e_{(-i)} = Y_i - x_i' \hat\beta_{(-i)} = e_i + x_i'(\hat\beta - \hat\beta_{(-i)}) 
+              = e_i/(1-h_i) \;.
+\end{equation}
+The leverages are the diagonal elements of the hat matrix $X(X'X)^{-1}X'$ and sum to its rank, $p$.  Predictive R-squared replaces PRESS by setting $h_i$ to the average $p/n$, obtaining
+\begin{equation}
+  \sum e_{(-i)}^2 = \sum \left( \frac{1}{1-h_i} \right)^2 e_i^2
+               \approx \sum \left( \frac{1}{1-p/n} \right)^2 e_i^2
+               = \left(\frac{n}{n-p}\right)^2 \mbox{RSS}
+\end{equation}
+This approximation will be accurate so long as no observation has excessively large leverage.  A further approximation produces $\prs$ which more closely resembles $\ars$.   Simply approximate $((n-p)/n)^2$ by $(n-2p)/n$ (so long as $p \ll n$), and we arrive at the definition of predictive R-squared
+\begin{equation}
+  \prs = 1 - \frac{\mbox{RSS}/(n-2p)}
+                        {\mbox{TSS}/(n-1) } \; .
+\end{equation}
+This expression closely resembles equation \eqn{ars} for $\ars$, but replaces the divisor in the numerator $n-p$ by $n-2p$.   
+
+
+
+% ----------------------------------------------------------------------
+\section{Discussion}
+\label{sec:disc}
+% ----------------------------------------------------------------------
+
+Statistics such as $C_p$ and PRESS that capture the effects of estimation on the predictions from regression have been around for years, but $R^2$ remains the most common assessment of a model.  Adjusted $R^2$ is an improvement and is routinely computed by software.  Our hope is that by constructing a very similar statistic that more completely adjusts for estimation, users will be less surprised when the predictions from a model fail to meet the expectations from a fitted equation.
+
+Of course, \prs is only a partial adjustment.  Predictive R-squared appropriate when one fits a model to data that was not used to pick that model.  Like the other statistics discussed here, \prs  does not compensate for model selection.  Such adjustments would depend on the nature of the selection process and would likely be far more dramatic than the adjustment that produces \prs.
 
 %--------------------------------------------------------------------------
 % References
