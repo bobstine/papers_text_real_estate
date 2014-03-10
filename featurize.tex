@@ -32,7 +32,7 @@
 
 % --- Customized commands, abbreviations
 \newcommand{\TIT}{{\it  {\tiny Featurizing Text (DRAFT, \today)}}}
-\newcommand{\ars}{\mbox{$\bar{\bar{R}}^2}}  
+\newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}
 
 % --- Header
 \pagestyle{myheadings}
@@ -264,7 +264,12 @@ Lighthouse variables combine regular expression variables and linguistic variabl
  variation, followed by the number of bathrooms.  Unlike the marginal
  associations, the log of the number of square feet and its missing indicator
  are highly significant.  The missing indicators for bedrooms and bathrooms are
- not.  The model explains about one-fifth of the variation in prices;  adjusted R-squared $\ol{R}^2 = 0.232$ and, when adjusted for prediction, $\ars = 0.231$.  \ars adjusts $\R^2$ for predicting out-of-sample,
+ not.  The model explains about one-fifth of the variation in prices;  
+ if adjusted for prediction, the predictive R-squared \citep{fosterstine14b} is
+ \begin{equation}
+   \prs = 1 - \frac{\mbox{RSS}/(n-2p)}{\mbox{TSS}/(n-1)} = 0.231.
+ \end{equation}
+ \prs adjusts for the effects of estimation when predicting out-of-sample.
 
  
  \begin{table}[ht]
@@ -288,7 +293,7 @@ Lighthouse variables combine regular expression variables and linguistic variabl
   Bathrooms       & 0.4015 & 0.0300 & 13.37 & 0.0000 \\ 
   Bathrooms obs   & -0.0199 & 0.0336 & -0.59 & 0.5537 \\ 
    \hline
-   \multicolumn{5}{c}{$\ol{R}^2 = 0.232, \; s_e = 1.06$}\\
+   \multicolumn{5}{c}{\prs = 0.231, \; $s_e = 1.06$}\\
    \hline
 \end{tabular}
 \end{table}
@@ -460,8 +465,12 @@ The slow growth of $R^2$ after the first hundred or so frequencies suggests that
 \begin{equation}
     AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
 \end{equation}
-where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a strong penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aicwords} plots $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency to the initial polynomial in log of the number of words.   The best fit  occurs with $k=1,089$ words, giving $R^2 =  0.705$ and $\ol{R}^2=0.654$. (The final model summarized in Figure \ref{fig:cumr2} with 3,000 words reaches $R^2 =  0.832, \, \ol{R}^2  0.719$.)  Residual plots show fat tails (consistent with the distribution of log prices in Figure \ref{fig:prices}), but no evidence of heteroscedasticity
+where $k$ is the number of estimated parameters in the regression.  Rather than try to pick the best subset -- which would require a strong penalty against over fitting -- we use $AIC_c$ to pick the best stopping point in the single sequence of models determined by word frequency, much as one might pick the order of an autoregression.  Figure \ref{fig:aic} graphs $AIC_c$ for the sequence of models obtained by adding words in order of decreasing frequency when added to the initial polynomial in the log of the number of words.   The minimum of $AIC_c$ occurs with $k=1,089$ words, giving \prs = 0.580.   Residual plots show fat tails (consistent with the distribution of log prices in Figure \ref{fig:prices}), but no evidence of heteroscedasticity
  that might be anticipated due to the differences among the lengths of documents.
+
+\noindent
+{\it Remark.}  A note will help explain our preference for reporting \prs in the context of large regression models.   For the regression with 1,089 words, the more familiar $R^2 =  0.705$ and $\ol{R}^2=0.654$.  By way of comparison, the final model summarized in Figure \ref{fig:cumr2} with 3,000 words reaches $R^2 =  0.832, \, \ol{R}^2  = 0.719$.  Superficially, then, both $R^2$ and $\ol{R}^2$ give the misleading impression that this very large model is better than the model chosen by $AIC_c$.  Predictive R-squared provides a more useful assessment of the very large model, namely its \prs = 0.15.
+
 
 \begin{figure}
 \caption{  \label{fig:aic}  
@@ -481,11 +490,11 @@ Although the model selected by $AIC_c$ explains a great deal of variation in pri
  the coefficient for the word ``vacant'' has $t=-8.1$; not  surprisingly, the
  addition of this word to a listing lowers the expected price.  In
  contrast, the presence of additional out-of-vocabulary words
- suggest with higher than average prices ($t=5.0$).   Though these stand out, these few words explain only a small portion of the fit.  A regression restricted to the 16 words that exceed the Bonferroni bound obtains
- $\ol{R}^2 = 0.236$. The half-normal plot in the right panel of
+ suggest with higher than average prices ($t=5.0$).   Though these stand out, a model limited to these clearly significant words explains only a small portion of the fit.  A regression restricted to the 16 words that exceed the Bonferroni bound obtains
+ $R^2 = 0.236$. The half-normal plot in the right panel of
  Figure \ref{fig:aictstats} confirms the diffuse signal: the fitted $t$-statistics are inconsistent with noise, but not by much.  The dashed line in the half-normal plot is the diagonal; the red
  line is a  regression fit to the smallest 20\% of the $|t|$-statistics.  For a sample from a standard normal distribution, the slope should be 1.  The slope of these estimates is significantly larger, but clearly the signal is
- widely spread.   
+ widely spread over many words rather than concentrated in a few.
    
 
  \subsection{ Regressions using LSA }  % ------------------
@@ -524,9 +533,6 @@ The use of LSA to create features for regression models essentially reproduces p
   To speed this calculation, we exploit random projection algorithms defined and
  analyzed in \citet{tropp10}.
 
-Since we only require the portion of the range of $W$ captured by $U_k$, however, we can 
- exploit the algorithms based on random projection \citep{tropp10}.  
- 
  
  Suppose in the ideal case that $W$ essentially has rank $k$ in the sense that $\la_k \gg 0$ and $\la_{k+1} \approx 0$.  Let $\ell$
  denote an integer slightly larger than $k$ \citep[see][for the
@@ -560,9 +566,7 @@ Since we only require the portion of the range of $W$ captured by $U_k$, however
  \vspace{0.2in}
  \end{figure}
    
-The conversion of words into LSA components produces a qualitative change in the structure of the $t$-statistics.  Figure \ref{fig:lsatstats} summarizes (in the same format as Figure \ref{fig:aictstats}) the $|t|$-statistics from a regression using the first 1,000 LSA component features. (As with words, the model includes a polynomial in document length.) Unlike the regression on frequencies of word types, the average magnitude of the $|t|$-statistics in this regression decline roughly monotonically, with the most significant effects present in the initial components and gradually falling off. Some signal remains in the smaller components (the slope in the half-normal plot is 1.8), but sorting based on singular value is far more useful than sorting on word frequency.  The fitted model obtains $R^2 = 0.718$ with $\ol{R}^2 =  0.674$, compared to $\ol{R}^2 = 0.654$ for the previous regression on 1,089 words.  Consequently, with more signal in the earlier components, $AIC_c$ finds a more predictive model with fewer coefficients.  The sequence of $AIC_c$ statistics for this model lies well below that for the regression on word frequencies in Figure \ref{fig:aic}.  $AICc$ selects the model that uses 523 LSA components, obtaining $R^2 = 0.677$ and $\ol{R}^2  = 0.652$.  
-
-[ Though the $t$-statistics are more conveniently positioned by LSA than those in the regression directly on word frequencies, these models share similar explanatory power.  ]
+The conversion of words into LSA components produces a qualitative change in the structure of the $t$-statistics.  Figure \ref{fig:lsatstats} summarizes (in the same format as Figure \ref{fig:aictstats}) the $|t|$-statistics from a regression using the first 1,000 LSA component features. (As with words, the model includes a polynomial in document length.) Unlike the regression on frequencies of word types, the average magnitude of the $|t|$-statistics in this regression decline roughly monotonically, with the most significant effects present in the initial components and gradually falling off. Some signal remains in the smaller components (the slope in the half-normal plot is 1.8), but sorting based on singular value is far more useful than sorting on word frequency.  The fitted model obtains $R^2 = 0.718$ with \prs = 0.613, compared to \prs = 0.580$ for the previous regression on 1,089 words.  Consequently, with more signal in the earlier components, $AIC_c$ finds a more predictive model with fewer coefficients.  The sequence of $AIC_c$ statistics for this model lies well below that for the regression on word frequencies in Figure \ref{fig:aic}.  $AICc$ selects the model that uses 523 LSA components, obtaining $R^2 = 0.677$ and $\prs  = 0.622$.  
  
 \begin{figure}
 \caption{  \label{fig:lsatstats}  
