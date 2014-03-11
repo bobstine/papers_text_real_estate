@@ -1,0 +1,66 @@
+
+\subsection {Topic Models}  % -------------------------------------------
+
+ We begin with the simplifying assumption that real estate properties possess
+ varying amounts of $K$ unobserved traits that influence both the value of
+ a property as well as the language used to describe the property.  For example,
+ such traits might include the quality of construction, presence of renovations,
+ proximity to desirable conveniences and so forth.  In the context of topic models, these traits define the underlying topics shared by an ensemble of documents.  In what follows, the subscript $i$ indexes documents ($i = 1,\ldots,n$), $m$ denotes words ($m=1,\ldots,M$), and $k$ indexes traits ($k = 1,\ldots,K$).  Recall that words are tokens identified in the preprocessing of the text, not words in the usual sense.   Let $y = (y_1,\ldots,y_n)'$ denote the column vector that holds the response that is to be modeled by regression analysis.    In our application, $y$ is the vector of the log of prices of real estate. (All vectors are column vectors.)
+
+
+ Within this model, traits influence the response via a familiar regression
+ equation.  The connection between traits and documents is given by an unobserved $n \times K$ matrix of latent features $\zeta = [\zeta_{ik}]$.  Each row of $\zeta$ defines a mixture of traits that defines the distribution of words that appear in each document.  To avoid further notation, we use subscripts to distinguish the rows and columns of $\zeta$.  The vector $\zeta_{i*}$ identifies the row of $\zeta$ associated with document $i$, and $\zeta_{*k}$ identifies the column of $\zeta$ associated with topic $k$:
+ \begin{displaymath}
+   \zeta = \left( \begin{array}{c}
+                    \zeta_{1*}' \cr \zeta_{2*}' \cr \vdots \cr \zeta_{n*}'
+                  \end{array}
+           \right) 
+         = \left( \zeta_{*1} \; \zeta_{*2} \; \cdots \; \zeta_{*K} \right).
+ \end{displaymath}
+ $\zeta_{i*}$ specifies the distribution of traits present in the $i$th real-estate property; $0 \le \zeta_{ik} \le 1$ with $\sum_k \zeta_{ik} = 1$.  We assume that the allocation of traits within each document is an independent realization of a Dirichlet random variable, 
+ \begin{equation}
+  \zeta_{i*} \sim \mbox{Dir}(K, \al_K) \;,
+  \label{eq:zeta}
+\end{equation}
+where $\al_m$ denotes the $K$-dimensional parameter vector of distribution.    Given $\zeta$, the $K$ traits  influence the response through a linear equation of the familiar form
+ \begin{equation}
+    \ev y_i = \zeta_{i*}' \, \beta \;.
+ \label{eq:regr}
+ \end{equation}
+ The coefficients $\beta$ determine how the traits influence the response.  
+
+
+These traits also determine the distribution of words that appear in documents.  This connection allows us to recover $\zeta$ --- which is not observed --- from the associated text.  Assume that a trait defines a probability distribution over the word types in the vocabulary $V$.  Let $P_k$ denote the distribution of word-types used when describing trait $k$; in particular, $P_{km}$ is the probability of using word type $m$ when describing trait $k$.  Our DGP models these distributions over word types as another set of independent Dirichlet random variables,
+ \begin{equation}
+   P_k \sim \mbox{Dir}(M, \al_M),
+   \label{eq:Pk}
+ \end{equation}
+where $\al_M$ is the $M$-dimensional parameter vector for the distribution.
+ Collect these discrete
+ distributions in the $K \times M$ matrix
+ \begin{equation}
+    P = \left(  \begin{array}{c} 
+                    P_1' \cr P_2' \cr  \vdots \cr P_K'
+                \end{array}
+        \right) \;.
+ \label{eq:P}
+ \end{equation}
+ 
+ 
+The Dirichlet variables $\zeta$ and $P$ together determine a distribution for the counts of words that appear in each document (its bag-of-words).  First, we assume that the number of words in each document is another independent random variable, and for our simulation we use a negative binomial, formed by mixing Poisson distributions with parameters that have a Gamma distribution,
+\begin{equation}
+  m_i|\la_i \sim \mbox{Poisson}(\la_i), \quad \la_i \sim \mbox{Gamma}(\al),
+\end{equation}
+independently over documents.  To `construct' the $i$th document from this model, we sample $m_i$ words from the underlying $K$ topics by the following mechanism.  Let $w_{im}$ denote the $m$th word in the $i$th document.  For this word, pick a topic at random (and independently) from the topic distribution identified by $\zeta_{i*}$, say $k_{im} \sim \mbox{Multi}(\zeta_{i*})$.  Then choose $w_{im}$ from the multinomial distribution with these probabilities, 
+\begin{equation}
+  w_{im} \sim \mbox{Mult}(P_{k_{im}}), \quad i = 1,\ldots,m_i \;.
+  \label{eq:wim}
+\end{equation}
+Hence, the vector of counts $w_i$ for the $i$th document has a multinomial distribution whose parameters are determined by its mixture of traits:
+ \begin{equation}
+   w_i' \sim \mbox{Multi}(m_i, \zeta_i' P)   
+ \label{eq:di}
+ \end{equation}
+ implying that $\ev w_i' | m_i = m_i \; \zeta_i'P$.  
+ 
+ \remark{ According to this DGP, the length of a document $m_i$  does not affect the response; only the mixture of traits is relevant.  Our results with real text summarized in the regression (Table \ref{tab:parsed}) provide contradictory evidence: Document length has a significant impact on price. }
