@@ -687,17 +687,14 @@ Although topic models are a natural means to motivate vector space models, stand
 
 The overall perspective of our DGP is that of a topic model: each property described by a real-estate listing possesses a set of attributes that collectively influence its listed price.   Examples of attributes are a fireplace or various types of hardwood floors.  We describe the model in the context of real-estate listings, but the methods are general.
  
-To begin, this model links the presence of a set of unobserved attributes to the price of a property.  Let $y_i, \, i = 1\,,\ldots, n,$ denote the log of the price of the $i$th simulated property.  In keeping with the observed lognormal distribution (Figure \ref{fig:prices}), define
+To begin, this model links the presence of a set of unobserved attributes to the price of a property.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the set of  all possible attributes and assign value $\beta_k$ to attribute $a_k$.  The set ${\cal L}_i \subset {\cal A}$ denotes the attributes of the $i$th listing.  The attributes for each property are then obtained by sampling attributes from $\cal A$ (without replacement) until the sum of assigned values exceeds $\mu$, the target mean for the response.  In this sense, the set ${\cal L}_i$ is budget constrained. The owner of each property is limited by her wealth in choosing to purchase attributes for her property.  If we let $\pi(1), \ldots, \pi(K)$ denote a random permutation of attributes, then the number of attributes $k_i$ assigned to $\mu_i$ is 
 \begin{equation}
-	\mu_i \sim N(\tilde\mu, \tilde\sigma^2)
-\end{equation}
-with $\tilde\mu$ and $\tilde\sigma^2$ chosen so that the mean and variance of the simulated prices approximate the observed mean and variance of properties listed in Chicago.  We then associate this price with a set of attributes.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the set of  all possible attributes and assign value $\beta_k$ to attribute $a_k$.  The set ${\cal L}_i \subset {\cal A}$ denotes the attributes of the $i$th listing.  The attributes for each property are then obtained by sampling attributes from $\cal A$ (without replacement) until the sum of assigned values exceeds $\mu_i$.  In this sense, the ${\cal L}_i$ is budget constrained. The owner of each property is limited by her wealth in choosing to purchase attributes for her property.  If we let $\pi(1), \ldots, \pi(K)$ denote a random permutation of attributes, then the number of attributes $k_i$ assigned to $\mu_i$ is 
-\begin{equation}
-	k_i = \min \{ \kappa:  \mu_i \le \sum_{k=1}^{\kappa} \beta_{\pi(k)} \} - b_i \;,
+	k_i = \min \{ \kappa:  \mu \le \sum_{k=1}^{\kappa} \beta_{\pi(k)} \} - b_i \;,
 	\mbox{ with }
 	{\cal L}_i = \{a_{\pi(1)}, \ldots, a_{\pi(k_i)} \} \;,
+\label{eq:ki}
 \end{equation}
-where $b_i$ is a random 0/1 Bernoulli r.v.  The addition of $b_i$ to the index $\kappa$ implies that the sum of attribute values is equally likely to be larger or smaller than $\mu_i$.  For convenience,  collect the indicators that identify which attributes appear in which properties into the $n \times K$ binary matrix $A$,
+where $b_i$ is a random 0/1 Bernoulli r.v.  The addition of $b_i$ to the index $\kappa$ implies that the sum of attribute values is equally likely to be larger or smaller than $\mu$.  For convenience,  collect the indicators that identify which attributes appear in which properties into the $n \times K$ binary matrix $A$,
 \begin{equation}
   \underset{n \times K}{A} = \left[ A_{ij} =
               \left\{ \begin{array}{cc} 1 & \mbox{ if } a_j \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
@@ -706,7 +703,7 @@ where $b_i$ is a random 0/1 Bernoulli r.v.  The addition of $b_i$ to the index $
 The $i$th row of $A$ gives the attributes in the $i$th document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover some sense of this matrix from text. The expected price of a property is the sum of the values of its attributes,
 \begin{equation}
 	y_i = \sum_k A_{ik} \beta_k + \sigma \ep_i, \quad \ep_i \sim N(0,1) \;.
-\label{eq:y}
+\label{eq:yi}
 \end{equation}
 The amount of noise, reflecting other unmeasured small effects, added  in \eqn{y} controls the fit of the idealized regression of $y$ on the latent attributes $A$.  
 
@@ -714,28 +711,25 @@ The amount of noise, reflecting other unmeasured small effects, added  in \eqn{y
 The collection of attributes also determines the text of the associated listing.  As in a familiar topic model, each attribute defines a multinomial distribution over the vocabulary of words, and so we identify the distribution for attribute $k$ by a point $p_k$ on the $m$-dimensional simplex.  The words in a listing are then sampled according to the mixture of distributions determined by its attributes.  
 
 
-The distribution for each attribute has two components, one for common words that appear in all topics and a second for words that are more likely to be topic-specific.  Divide the vocabulary of $m$ words into a $m_c$ common words shared by topics and $m - m_c$ words that are randomly sampled for each topic.  The distribution over common words for an attribute convolves a Zipf distribution with a topic-specific multinomial distribution over the $m_c$ common words. Let 
+The distribution for each attribute has two components.  All attributes share a Zipf distribution over the entire vocabulary.  The attributes are distinguished by a second, attribute specific distribution.  Divide the vocabulary of $m$ words into $m_c$ common words shared by topics and $m - m_c$ words that are randomly sampled for each topic.  The distribution for an attribute convolves a Zipf distribution over the vocabulary with a topic-specific multinomial distribution over the $m - m_c$ attribute-specific words. Let 
 \begin{equation*}
-     p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m_c} 1/i 
+     p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m} 1/i 
 \end{equation*}
-denote a vector of probabilities that decay as in a Zipf distribution. The distribution over common words for topic $k$ mixes $p^z$ with a multinomial drawn from a Dirichlet,
-\begin{equation}
-  p^c_k = q \; p^z + (1-q) \; p,  \quad p \sim \mbox{Dir}(\alpha_c,m_c) \;, 0 \le q \le 1.
-  \label{eq:pck}
-\end{equation}
-We set the Zipf proportion to $q = 0.4$ in the subsequent examples.  The Zipf component $p^z$ is common to attributes and hence not useful to distinguish the attributes in a document. The multinomial component in \eqn{pck} is randomly sampled from a Dirichlet distribution of dimension $m_c$, independently for each topic.  The second component of the distribution over words for an attribute is also randomly generated by again sampling from a very spiked Dirichlet distribution over the remaining $m-m_c$ words. 
+denote a vector of probabilities that decay as in a Zipf distribution with exponent -1. The Zipf component $p^z$ is common to attributes and hence not useful to distinguish the attributes in a document. The second component of the distribution over words for an attribute is randomly generated by  sampling from a spiked Dirichlet distribution over words $m_c+1, \ldots,m$  
  \begin{equation*}
-     p^s_k =  \mbox{Dir}(\alpha_s,m-m_c)
+     p^s_{m_c+1:m,k} \sim  \mbox{Dir}(\alpha,m-m_c)  \;, \quad \mbox{ with } p^s_{ik} = 0, i = 1,\ldots,m_c.
 \end{equation*}
-This second distribution is specific to each attribute and allows one to recognize an attribute from the text.  The distribution over attribute-specific words is rather spiked to avoid too many words being shared by attributes.  
- (To simulate a sample of $n$ from a Dirichlet distribution with parameter $\al>0$, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and return $x_i/S$ with $S = \sum_i x_i$.  Small values of $\al$ produce very skewed distributions and so concentrate the multinomial distribution on a limited set.)  
-The final distribution over the full vocabulary simply concatenates the probability vectors that define the distributions over common and specific words, $p_k = (p_k^c, p_k^s)/2$.
+Because we set $m_c = m/10$ in our simulations,  starting the support of the attribute-specific distribution at $m_c+1$ implies that this distribution does not put mass on words given large probability by $p^z$. This second distribution is specific to each attribute and allows one to recognize an attribute from the text.  We choose a small value of the parameter $0 < \alpha$ of the Dirichlet to produce a rather spiked distribution.   To appreciate how $\al$ affects the Dirichlet distribution, consider how to simulate a sample of size $m$ from a Dirichlet distribution with parameter $\al$.  First, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and compute the sum $S = \sum_i x_i$.  Then $x_1/S,\ldots,x_m/S \sim \mbox{Dir}(\al,m)$.  A gamma distribution for small $\al$ is very skewed and so the resulting probabilities concentrate on a few coordinates. The distribution over the full vocabulary mixes the probability vectors over common and specific words, 
+\begin{equation}
+  p_k = (q_z \; p_k^z, (1-q_z) \; p_k^s)  \quad \mbox{ where } \quad 0 \le q_z \le 1.
+  \label{eq:pk}
+\end{equation}
 
 
-The expected word frequencies for a document are then sums of selected rows of $P$, further scaled by a parameter $\la$.   $\la$ determines the average number of words per attribute.     Arrange the distributions for the attributes into a $K \times m$ matrix $P$, putting $p_k$ into row $k$.   Let $W$ denote the $n \times m$ matrix with the frequencies of word types (the document/word matrix), defined as
+The expected word frequencies for a document are proportional to sums of selected rows of $P$.  A scaling parameter  $\la$ determines the average number of words per attribute.   Arrange the distributions for the attributes into a $K \times m$ matrix $P$, putting $p_k$ into row $k$.   Let $W$ denote the $n \times m$ matrix with the frequencies of word types (the document/word matrix), simulated as
 \begin{equation}
 	W \sim \mbox{Poisson} \left(\la \, A \, P \right) \;.
-	\label{eq:simW}
+  \label{eq:simW}
 \end{equation}
 In this expression, $\mbox{Poisson}(M)$ denotes a matrix of independent Poisson random variables with means determined by the corresponding elements of the like-sized matrix $M$.
 
@@ -746,6 +740,10 @@ In this expression, $\mbox{Poisson}(M)$ denotes a matrix of independent Poisson 
   \label{eq:EW}
 \end{equation}
 The matrix product factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{jj} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} are related to the allocation of attributes over documents defined by $A$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  To obtain a good fit with regression, however, does not require that we either find $P$ or recover $A$.  Referring back to the model \eqn{y}, we need only recover the range of $A$.  And that is precisely what the random projection SVD produces.
+
+\vspace{0.5in}
+
+{\bf Does this bigram part remain? }
 
 
 The connection of this DGP to bigrams is less obvious and relies more on stronger assumptions.  Bigrams count the frequency of the adjacent word types, a property we associate with the sequence of words rather than co-occurrence within a document.  To see how the analysis of bigrams can nonetheless produce useful regressors, we need to add either stronger assumptions to our DGP or incorporate some type of sequential dependence.  For example, we might assume that words associated with attributes appear in short phrases.   As in the bag-of-words model, words within a phrase are drawn independently from the distribution defined by a trait, but the generating process samples within an attribute for some length of time before transitioning to another attribute (as in an HMM).  If these phrases are relatively long, then we can approximate the expected counts in the bigram matrix as a weighted outer product of the probability vectors for the attributes.  We can obtain the same heuristic in our DGP by assuming that the probability distributions $p_k$ for the attributes  have (nearly) singular support on words.  That is, most words are associated with a unique trait (implying $P_{k_1}'P_{k_2}  \approx 0$).  In either case, the marginal probability of finding adjacent words types reveals the underlying probability distribution.  
@@ -783,14 +781,12 @@ Again, a constrained factorization that produced probability vectors would be mo
 
 
 
-%--------------------------------------------------------------------------
-\subsection{Examples: Simulated Data from Topic Models}
+%--------------------------------------------------------------------------------
+\subsection{Examples of Simulated Data}
 
- To get a better handle on how the singular value decomposition works, consider
- a simulated world in which a topic model generates text from a vocabulary of $M
- = 2,000$ words types.  Assume that words in $n = 6,000$ documents are generated by mixture of $K=10$ topics, with each topic defined by  one of $K$ distributions $P_1,\ldots, P_{10}$ over the 2,000 word types.  
- Hence, $p_1$ lies in the $M$-dimensional
- simplex.     Similarly, the distribution of topics within the $i$th document is distributed as $\zeta_{i*} \sim \mbox{Dirichlet}(K, \al_k=0.1)$.  The response for a document is a weighted sum of the mix of topics within the document.  We consider two situations, first the idealized case in which topic distributions are essentially disjoint, and then with topic distributions share common words.
+In the following two examples, we simulate $n = 5,000$ documents with words chosen from a vocabulary of $m = 1500$ words.  The simulation generates the response and text of these documents by sampling $K = 50$ attributes.  The attribute mean effects $\beta_k$ are independent draws from a gamma distribution with shape parameter 1 and scale parameter 1.  The response and attribute effects $\beta$ are the same in both cases.  The target mean response $\mu = 12$.   After forming  the random sums \eqn{ki} and measurement noise $\sigma = 0.5$ in \eqn{eq:yi},  the observed response has mean 12.0 with standard deviation 1.6 (compared to 12.2 and 1.2, respectively, for the actual log price). Figure \ref{fig:kernel} shows kernel densities for the two distributions.
+
+ In both cases, the Zipf share of the attribute distribution $p_k$ is $q_z = 0.4$.  In the first simulation, the attributes are rather distinct, with Dirichlet parameter $\alpha = 0.01$.  The second simulation blurs the distinction among attributes by increasing $\alpha$ to 0.2. 
  
  \subsubsection{Nearly Disjoint Topic Distributions} % -----------------
  
