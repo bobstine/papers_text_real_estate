@@ -640,7 +640,12 @@ where $\one{n}$ denotes a column vector of $n$ 1s. (This definition abuses the K
 \begin{equation*}
    W = (N-1) \cov(L,X) = L'X  \;.
 \end{equation*}
-Once we think of $W$ as a covariance matrix, it becomes natural to associate LSA with canonical correlation analysis (CCA) rather than PCA.  In order for the SVD of $W$ to produce canonical vectors, however, we have to standardize the columns of $L$ and $X$.  Let $S_L = L'L/(N-1) = \mbox{diag}(n_i)$ and $S_X = X'X/(N-1)$ denote the uncentered covariance matrices.  \ras{Why not centered?}  The SVD of $S_L^{-1/2} W S_X^{-1/2}$ then yields the canonical correlations and vectors. \ras{cite Dean and Sham}  Standardizing $L$ is easy because its columns are orthogonal (when uncentered), but those of $X$ are not.  Commonly, then, one uses the approximation $\widetilde{S}_X = \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word type $j$.  As explained in Section \ref{sec:topic}, we use partial standardization and work with $\widetilde{W} =W \widetilde{S}_X^{-1/2}$.
+Once we think of $W$ as a covariance matrix, it becomes natural to associate LSA with canonical correlation analysis (CCA) rather than PCA.  In order for the SVD of $W$ to produce canonical vectors, however, we have to standardize the columns of $L$ and $X$.  Let 
+\begin{equation}
+  S_L = L'L/(N-1) = \mbox{diag}(n_i) \quad \mbox{ and  } \quad S_X = X'X/(N-1)
+\label{eq:SL}
+\end{equation}
+denote the uncentered covariance matrices given by the columns of $L$ and $X$, respectively.  \ras{Why not centered?}  The SVD of $S_L^{-1/2} W S_X^{-1/2}$ then yields the canonical correlations and vectors. \ras{cite Dean and Sham}  Standardizing $L$ is easy because its columns are orthogonal (when uncentered), but those of $X$ are not.  Commonly, then, one uses the approximation $\widetilde{S}_X = \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word type $j$.  As explained in Section \ref{sec:topic}, we use partial standardization and work with $\widetilde{W} =W \widetilde{S}_X^{-1/2}$.
 
 
 The numerical representation \eqn{X} also supports a variety of other common featurizations.  The sequential nature of the rows of $X$ suggest ideas from time series analysis, particularly lags.  For instance, we might find interesting patterns in the association between adjacent word types in positions $i-1$ and $i$.  Let $X_{-1}$ denote the lag of $X$ obtained by inserting a leading row of zeros and removing the final row.  Rather than use the document matrix $L$ to define the context of a word, this featurization uses the prior word.  The counts that produce the covariance between $X$ and $X_{-1}$ define the bigram matrix $B$,
@@ -687,7 +692,12 @@ Although topic models are a natural means to motivate vector space models, stand
 
 The overall perspective of our DGP is that of a topic model: each property described by a real-estate listing possesses a set of attributes that collectively influence its listed price.   Examples of attributes are a fireplace or various types of hardwood floors.  We describe the model in the context of real-estate listings, but the methods are general.
  
-To begin, this model links the presence of a set of unobserved attributes to the price of a property.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the set of  all possible attributes and assign value $\beta_k$ to attribute $a_k$.  The set ${\cal L}_i \subset {\cal A}$ denotes the attributes of the $i$th listing.  The attributes for each property are then obtained by sampling attributes from $\cal A$ (without replacement) until the sum of assigned values exceeds $\mu$, the target mean for the response.  In this sense, the set ${\cal L}_i$ is budget constrained. The owner of each property is limited by her wealth in choosing to purchase attributes for her property.  If we let $\pi(1), \ldots, \pi(K)$ denote a random permutation of attributes, then the number of attributes $k_i$ assigned to $\mu_i$ is 
+To begin, this model links the presence of a set of unobserved attributes to the price of a property.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the set of  all possible attributes and assign value $\beta_k$ to attribute $a_k$.  The set ${\cal L}_i \subset {\cal A}$ denotes the attributes of the $i$th listing.  The attributes for each property are then obtained by sampling attributes from $\cal A$ (without replacement) until the sum of assigned values exceeds $\mu_i$, the target mean for the response.  In this sense, the set ${\cal L}_i$ is budget constrained. The owner of each property is limited by a budget amount $\mu_i$ in choosing to purchase attributes for her property.  The budget amounts in this model are
+\begin{equation}
+  \mu_i  \sim N(\tilde\mu, \tilde\sigma^2)
+\label{eq:mui}
+\end{equation}
+in order to produce a distribution of shape similar to that of the observed log prices. If we let $\pi(1), \ldots, \pi(K)$ denote a random permutation of attributes, then the number of attributes $k_i$ obtained with budget $\mu_i$ is 
 \begin{equation}
 	k_i = \min \{ \kappa:  \mu \le \sum_{k=1}^{\kappa} \beta_{\pi(k)} \} - b_i \;,
 	\mbox{ with }
@@ -716,9 +726,10 @@ The distribution for each attribute has two components.  All attributes share a 
      p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m} 1/i 
 \end{equation*}
 denote a vector of probabilities that decay as in a Zipf distribution with exponent -1. The Zipf component $p^z$ is common to attributes and hence not useful to distinguish the attributes in a document. The second component of the distribution over words for an attribute is randomly generated by  sampling from a spiked Dirichlet distribution over words $m_c+1, \ldots,m$  
- \begin{equation*}
+ \begin{equation}
      p^s_{m_c+1:m,k} \sim  \mbox{Dir}(\alpha,m-m_c)  \;, \quad \mbox{ with } p^s_{ik} = 0, i = 1,\ldots,m_c.
-\end{equation*}
+\label{eq:ps}
+\end{equation}
 Because we set $m_c = m/10$ in our simulations,  starting the support of the attribute-specific distribution at $m_c+1$ implies that this distribution does not put mass on words given large probability by $p^z$. This second distribution is specific to each attribute and allows one to recognize an attribute from the text.  We choose a small value of the parameter $0 < \alpha$ of the Dirichlet to produce a rather spiked distribution.   To appreciate how $\al$ affects the Dirichlet distribution, consider how to simulate a sample of size $m$ from a Dirichlet distribution with parameter $\al$.  First, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and compute the sum $S = \sum_i x_i$.  Then $x_1/S,\ldots,x_m/S \sim \mbox{Dir}(\al,m)$.  A gamma distribution for small $\al$ is very skewed and so the resulting probabilities concentrate on a few coordinates. The distribution over the full vocabulary mixes the probability vectors over common and specific words, 
 \begin{equation}
   p_k = (q_z \; p_k^z, (1-q_z) \; p_k^s)  \quad \mbox{ where } \quad 0 \le q_z \le 1.
@@ -739,7 +750,7 @@ In this expression, $\mbox{Poisson}(M)$ denotes a matrix of independent Poisson 
     \ev W = \la \sum_k A_k p_k' \;.
   \label{eq:EW}
 \end{equation}
-The matrix product factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{jj} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} are related to the allocation of attributes over documents defined by $A$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  To obtain a good fit with regression, however, does not require that we either find $P$ or recover $A$.  Referring back to the model \eqn{y}, we need only recover the range of $A$.  And that is precisely what the random projection SVD produces.
+The matrix product factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{j} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} are related to the allocation of attributes over documents defined by $A$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  To obtain a good fit with regression, however, does not require that we either find $P$ or recover $A$.  Referring back to the model \eqn{y}, we need only recover the range of $A$.  And that is precisely what the random projection SVD produces.
 
 \vspace{0.5in}
 
@@ -784,115 +795,72 @@ Again, a constrained factorization that produced probability vectors would be mo
 %--------------------------------------------------------------------------------
 \subsection{Examples of Simulated Data}
 
-In the following two examples, we simulate $n = 5,000$ documents with words chosen from a vocabulary of $m = 1500$ words.  The simulation generates the response and text of these documents by sampling $K = 50$ attributes.  The attribute mean effects $\beta_k$ are independent draws from a gamma distribution with shape parameter 1 and scale parameter 1.  The response and attribute effects $\beta$ are the same in both cases.  The target mean response $\mu = 12$.   After forming  the random sums \eqn{ki} and measurement noise $\sigma = 0.5$ in \eqn{eq:yi},  the observed response has mean 12.0 with standard deviation 1.6 (compared to 12.2 and 1.2, respectively, for the actual log price). Figure \ref{fig:kernel} shows kernel densities for the two distributions.
+In the following two examples, we simulate $n = 5,000$ documents with words chosen from a vocabulary of $m = 1500$ words.  The simulation generates the response and text of these documents by sampling $K = 50$ attributes.  The budget parameters in \eqn{eq:mii} are $\tilde\mu = 12.2$ and $\tilde\sigma = 0.8$.  The attribute mean effects $\beta_k$ are independent draws from a gamma distribution with shape parameter 2 and scale parameter 1/2.  On average, each document is associated with 16 attributes. After forming  the random sums \eqn{ki}, we add enough measurement noise in \eqn{eq:yi} so that 80\% of the variance in the response is explained by a linear regression on the attribute matrix $A$.  After rescaling to match the standard deviation of log prices, the simulated density of the response is similar to that of prices, but more Gaussian in shape.  Figure \ref{fig:density} shows the kernel density of the log of real-estate prices along with several simulated distributions following this procedure.  For simulating the words, the Zipf share of the attribute distribution in both of the following sections is $p_k$ is $q_z = 0.4$, and the expected number of words per attribute is $\la = 6$.  
 
- In both cases, the Zipf share of the attribute distribution $p_k$ is $q_z = 0.4$.  In the first simulation, the attributes are rather distinct, with Dirichlet parameter $\alpha = 0.01$.  The second simulation blurs the distinction among attributes by increasing $\alpha$ to 0.2. 
+
+\begin{figure}
+\caption{  \label{fig:density}  
+  {\sl The density function of a several simulated distribution (gray) matches the location and shape of the density of the log prices of Chicago real estate (black), but is more Gaussian in shape.}  }
+  \centerline{ \includegraphics[width=4in]{figures/density.pdf} }
+\end{figure}
+ 
+ 
+ The following examples show an illustrative simulation under different circumstances.  The simulated results shown here were chosen to show properties that persist over replications of the simulation. 
+ 
  
  \subsubsection{Nearly Disjoint Topic Distributions} % -----------------
- 
   
- For this example, we simulate $P_k$ by independently drawing from a Dirichlet distribution with parameters $M$ and $\al_m = 0.05$ for all $m = 1,\ldots,M$.  Small values of $\al_m$ lead to `spiky' distributions with little overlap.  For example, Figure \ref{fig:simdist}(a) graphs the probabilities assigned by two of the 10 distributions for this first simulation.  The defining constants for this first example are:
- \begin{displaymath}
-    M = 2000 \mbox{ word types}, \quad
-    n = 4000 \mbox{ documents},  \quad
-    K = 10 \mbox{ topics}   
- \end{displaymath}
- with random variables defined by
- \begin{eqnarray*}
-    m_i           &\sim& \mbox{Pois}(\la_i), \la_i \sim \mbox{Gamma}(30,1)\;,
-                     i = i,\ldots, n, \quad \mbox{ (Negative Binomial) }       \cr
-    P_k                &\sim& \mbox{Dir}(M, \al_m=0.05), \quad k=1,\ldots,K,  \cr
-    \zeta_{i*}        &\sim& \mbox{Dir}(K, \al_k=0.10),\quad i=1,\ldots,n,  \cr
-    k_{im}             &\sim& \mbox{Mult}(\zeta_{i*}), \quad m=1,\ldots,m_i,    \cr 
-    w_{im}|k_{im} &\sim& \mbox{Mult}(P_{k_{im}}), \quad i=1,\ldots,n \;, \cr
-    y_i                  &\sim& N(\zeta'\beta, 0.5^2), \quad i = 1,\ldots,n \;.
- \end{eqnarray*}
- With these choices, $\ol{R}^2 \approx 0.92$ for the regression of $y$ on $\zeta$.
+In this first example, we consider how well estimation methods work when documents are generated by attributes with nearly disjoint specific words.  All attributes share the common Zipf distribution in this context, but have little overlap in the choice of specific words.  To obtain this behavior, we set the Dirichlet parameter in \eqn{ps} to $\al = 0.01$.   
 
- 
-\begin{figure}
- \caption{ \label{fig:simdist}
-  \sl Probabilities assigned to words by two simulated topic distributions with (a) nearly disjoint support and (b) with overlapping words.}  
-  \centerline{   
-     \includegraphics[width=3in]{figures/simdist}    
-     \includegraphics[width=3in]{figures/simdistB}    }
-\end{figure}
-
-
-The distribution of words produced by this topic model  loosely resembles the distribution found in real estate ads.  Compare Figure \ref{fig:simzipf}(a) to Figure \ref{fig:zipf} from the real estate data.  Though a good match for the less common words, the most common words are not as common as one might want.  The common words do not have a high enough frequency (disjoint topics lack common words like `a' and `the' and punctuation as found in the real-estate listings shown in Figure \ref{fig:zipf}), and the frequencies for rare words drop off too quickly.  
-
+The distribution of words produced by this model  reproduce features of distribution found in real estate listings.  The average document has about 80 words.  Figure \ref{fig:zipfcorr} plots the frequencies of all word types in the collection of simulated documents.  These frequencies resemble those in Figure \ref{fig:zipf}, but produce a slope (-0.6) that a is closer to zero than observed in the listings.  Figure \ref{fig:zipfcorr} also graphs the simulated response on the length of the simulated documents.  The squared correlation is 0.16 in this example.  The smooth trend in the plot highlights a slight degree on no linearity in the association, though as in Figure \ref{fig:parsed}, most of the curvature occurs in the extremes of the range.
 
 \begin{figure}
-\caption{ \label{fig:simzipf} { \sl Distribution of word frequencies for simulated
-topic data, based on (a) disjoint word distributions and (b) over-lapping distributions.}}
+\caption{ \label{fig:zipfcorr}
+{ \sl Simulated documents produce a Zipf-like distribution over word frequencies (left) and have lengths that are correlated with the response.}}
  \centerline{
  \vspace{0.1in}
- \includegraphics[width=2.5in]{figures/simzipfA}  
- \includegraphics[width=2.5in]{figures/simzipfB} }
-  \vspace{0.2in}
+ \includegraphics[width=7.5in]{figures/zipfcorr} }
  \end{figure}
 
+ A major objective of having a probability model that can reproduce the stylized facts observed in the real estate listings was to gain some insight as to the best normalization of the LSA and bigram matrices.  We focus here on the choices for normalizing the word counts prior to computing the thin SVD in \eqn{Wk}.   To explore this here, Figure \ref{fig:spectra} shows the spectra obtained from four standardizations defined by \eqn{SL}  of $W$: none (raw frequencies), columns $WS_X^{-1/2}$), rows $S_L^{-1/2}W$, and both as used in the quick approximation to CCA  $S_L^{-1/2}WS_X^{-1/2}$.  (To better show the break, these plots omit the first singular value associated with a mean effect.) Evidently, the break that correctly detects $K=50$ attributes requires column standardization.  Row standardization alone does not show the break, and the combination of both row and column standardization does not improve, and may slightly conceal, the gap.  This plot would suggest using either column or CCA standardization for determining the number of latest attributes.
+ 
+ 
+\begin{figure}
+\caption{ \label{fig:spectra} 
+{ \sl Spectra obtained for the document/word matrix $W$ with no standardization, column standardization, row standardization, and both row and column standardization.} All plots omit a large, first singular value in order to focus on the gap visible in two plots that indicates $K=50$ attributes.}
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=6.0in]{figures/spectra} }
+ \end{figure}
 
-Table \ref{tab:simregr} summarizes the fits using $k_W = 100$ singular vectors and $k_B=100$ left and right singular vectors of $B$.  The fits recover much, but certainly not all of the underlying regression structure (for which $R^2 \approx 0.92$).  The fitted models produce similar fitted values, as shown in Figure \ref{fig:simfits}.  The two fits, however, deviate for documents with either lower or higher values of $y$. 
-
-% \ras{ Would measurement error produce this tail curvature?}
-
-\begin{table} 
-\caption{ \label{tab:simregr}
-\sl Fits to regression in simulated topic data using singular vectors of $W$ and $B$ for two topic distributions.}
-\begin{center} 
-\begin{tabular}{|c|ccc|}
-\hline
-  Topic Structure & Num Regressors & Origin & $\ol{R}^2$ \cr \hline \hline
-   Disjoint            &         100              &  $W$  &  0.746        \cr
-                           &         200              &  $B$  &   0.788        \cr \hline \hline
-   Overlapping    &          100              &  $W$ &   0.516       \cr
-                           &          200             &  $B$  &   0.626        \cr \hline
-\end{tabular}
-\end{center}
-\end{table}
+Our objective in modeling text is, however, not to determine the latent variables or probability distributions, but rather lies in building regression models for the response from text.  Although it  appears either column or CCA normalization are equally useful, CCA  standardization produces a much better set of regressors.  Figure \ref{ccawins} convinced us to use CCA standardization.  The figure contrasts the absolute values of the $t$-statistics of the estimated coefficients from regressions of the simulated response on document length and  the first 250 row-standardized singular vectors to the results obtained for the first 250 CCA-standardized singular vectors. In both models, document length is not statistically significant when included with these singular vectors.  Although the overall fit obtained by these two collections of features is very similar ($R^2 = 0.268$ and $0.267$), the significant estimates produced by the CCA standardization concentrate in the leading singular vectors rather than spread out many components.  
 
 
 \begin{figure}
-\caption{ \label{fig:simfits}  
-{\sl Scatterplot of fitted values for the two regressions based on singular vectors of $W$ and $B$.}  The shown smooth curve is the lowess fit, and the correlation $r \approx 0.97$.}
-\centerline{  \includegraphics[width=4in]{figures/simfits}  }
-\end{figure}
-
-
-Because the topic distributions are nearly disjoint, one can identify the number of topics $K$ from the singular value decompositions.  The value of $K$ is most apparent in a canonical correlation analysis of the singular vectors of $B$.  Figure \ref{fig:simccab} graphs the canonical correlations for the left and right singular vectors
-of the bigram matrix for the simulated text.  The clear break in the sequence of singular vectors confirms the presence of $K=10$ topics.  
-
- \begin{figure}
-  \caption{ \label{fig:simccab} { \sl Canonical correlations for left and right
- singular vectors of the bigram matrix $B$ of simulated topic data.} (a) The underlying topics are nearly disjoint in support. (b) The underlying topics overlap.}
-\vspace{0.1in}
+\caption{ \label{fig:ccawins} 
+{ \sl Absolute $t$ statistics produced by column standardization of $W$ and CCA standardization of $W$.}
+  Both models include document length, which is not significant.}
  \centerline{
-      \includegraphics[width=3in]{figures/simccab}  
-      \includegraphics[width=3in]{figures/simccabb}   }
-  \end{figure}
- 
+ \vspace{0.1in}
+ \includegraphics[width=6.0in]{figures/ccawins} }
+ \end{figure}
+
  
  \subsubsection{Overlapping Topic Distributions} % -----------------
  
- The ability to recover the underlying regression structure is diminished in the presence of overlapping topics.  The simulation in this section is virtually identical to the previous one, but for overlapping topics.  The simulation again has a vocabulary of $M=2,000$ words, $n=6,000$ documents, and $K=10$ topics.  Rather than simulate the topics distributions independently, however, we introduce a common structure.  The topic distributions share 150 ``common words'' that follow with probabilities from a Dirichlet distribution.  Let $X \sim \mbox{Dir}(150, 2)$ and let $\xi$ denote the vector obtained by concatenating $M$ - 150 zeros onto $X$, $\xi' = (X, 0 , \ldots, 0)$.  The distribution that defines the $k$th trait is then $P_k = \xi/2 + Z/2$ with $Z \sim \mbox{Dir}(\al_m)$.  Figure \ref{fig:simdist}(b) plots the probabilities of two distributions generated in this manner.  The diagonal points show the substantial overlap.  The number of topics per document and the marginal distribution of words per document are both similar to the prior simulation and are not materially influenced by the introduction of this overlap.
+Increasing the Dirichlet parameter to $\al=0.025$ produces substantially more overlap between the support of the distributions $p_k$.  All distributions share the Zipf probabilities, but are nonetheless distinguishable with $\al=0.01$.  With $\al$ set 2.5 times higher, the distinction disappears.  Figure \ref{fig:spectratwo} shows the spectra obtained with the various standardizations of $W$.  None show the gap evident in Figure \ref{fig:spectra} for $\al=0.01$.  The absence of a gap draws attention to a feature of the spectra that is less apparent in Figure \ref{fig:spectra}.  In particular, any form of column standardization reduces the spread among the singular values.  Without column standardization (top row of plots), the singular values drop rapidly.  With column standardization, the singular values decay more gradually, roughly linearly with index on this log scale.  Though suggestive, singular vectors are more predictive with column standardization.
+
  
- 
- The same cannot be said for the regressors produced from singular value decompositions.  The lower portion of Table \ref{tab:simregr} summarizes these fits.  The regression on 100 singular vectors from $W$ now captures $\ol{R}^2 = 0.516$ of the variation in the response, and the regressors from the bigram obtain $\ol{R}^2 = 0.626$.  The correlation between fitted values falls to 0.86 (down from 0.97 when no overlap was introduced).  Curiously, the bigram is less influenced by the overlap.  
- Canonical correlation of the singular vectors of $B$ also no longer reveals the number of topics (Figure \ref{fig:simccab}(b)).   The canonical correlations between left and right singular vectors of $B$ now provide no hint as to the choice of $K$.  
- 
- 
- Figure \ref{fig:simregr} summarizes the statistical significance of the coefficient estimates in this model.  The distribution of significance is rather different from that seen in the real estate models (Figure \ref{fig:svdregr}).  For example, statistical significance decays in the real estate model as one moves from the leading singular vectors of $W$ down to smaller vectors.  The simulated results show no hint of greater significance in the leading singular vectors and have a diffuse signal.
-  Also, both half-normal plots are very nearly linear, with little of the ``superstar'' character seen in the $t$-statistics from the regression models for real estate.  What is similar to the model for prices is that the signal is more diffuse in the regression using correlation regressors derived from $B$.  The slope of the line fitted to the half-normal plot of the $t$-statistics for the singular vectors of $W$ is 8.8, whereas that for the regressors derived from $B$ is 3.6.  
- 
- 
- \begin{figure}
- \caption{ \label{fig:simregr}
-  {\sl Distribution of statistical significance in the regression with simulated, overlapping topic models.} Results first for the regression on singular vectors from $W$, then those derived from the bigram matrix $B$.}
-   \centerline{ \includegraphics[width=5in]{figures/simregrW}  }
-   \centerline{ \includegraphics[width=5in]{figures/simregrB}  }
+\begin{figure}
+\caption{ \label{fig:spectratwo} 
+{ \sl Spectra obtained for the document/word matrix $W$ with no standardization, column standardization, row standardization, and both row and column standardization with Dirichlet parameter $\al = 0.025$.} All plots omit a large, first singular value in order to focus on the gap visible in two plots that indicates $K=50$ attributes.}
+ \centerline{
+ \vspace{0.1in}
+ \includegraphics[width=6.0in]{figures/spectra2} }
  \end{figure}
 
+Although the ability to detect the number of attributes is lost with the increase in $\al$, the singular vectors remain predictive.  With $\al=0.025$, $R^2$ falls only slightly to 0.222 in this typical example.
+ 
 %--------------------------------------------------------------------------
 \section{Variable Selection and Cross Validation}
 \label{sec:cv}
