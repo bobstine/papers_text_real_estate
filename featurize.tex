@@ -97,6 +97,16 @@
 \begin{description}
 
 
+
+\item{Implications of Montanari}  Can you find little components?  
+
+\item{Heuristic for ordered search} Since the higher indexed SVD components have little variation, Montanari's results suggest these may be below the noise floor.  That would explain, for example, why we don't see much signal from these in the sense that a full stepwise search focuses on those among the first 100. Though only heuristic (we have a richer environment), it does provide further motivation for the ordered search via AIC.  Also, what is $n$ for the modeling?  The number of tokens, or the number of documents.
+
+\item{Parts of speech}  The plan is (a) find the nouns (b) remove the other words (c) redo the modeling.  Does the use of parts of speech help?
+
+\item{Bigrams} Less useful here, though valuable in the identification of parts of speech as used in the prior step.  Bigrams (as in Dean's figure) identify syntactically similar words, which is a less useful context in our modeling as we demonstrate.  You can do more to build features that are predictive (earlier version of manuscript), but still don't match up to what we obtain from LSA.
+
+
 \item{Relate to topic models} \\ 
  Simulation
 
