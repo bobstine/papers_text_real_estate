@@ -918,10 +918,10 @@ The different contexts that produce either word frequencies or bigram counts off
 %--------------------------------------------------------------------------
 
 
-A common probability model used in Bayesian models for text offers an explanation for  evident success of this approach to building regressors from text.  We were surprised that features derived from word counts should be so useful for predicting real estate prices.  It did not initially seem plausible to us that features that merely count which words appear in a listing should be able to explain two-thirds of the variation in prices.  A class of generative probability models known as topic models offers one explanation.  Within our context, a topic is a probability distribution over a vocabulary of words.  Topic models for text propose that the observed text of a document was produced by sampling words according to the mixture of distributions produced by the topics in this document. Topic models treat words as exchangeable and model the text of a document as a multiset, just as in LSA.  The data generating process we associate with our regression models is essentially that described by \citet{blei12}.    
+A common probability model used in Bayesian models for text offers an explanation for  the evident success of our approach to building regressors from text.  We were surprised that features derived from word counts should be so useful for predicting real estate prices.  It did not initially seem plausible to us that features that merely count which words appear in a listing should be able to explain two-thirds of the variation in prices.  A class of generative probability models known as topic models offers one explanation.  Within our context, a topic is a probability distribution over a vocabulary of words.  Topic models for text propose that the observed text of a document was produced by sampling words according to a mixture of distributions associated with the topics in the document. Topic models treat words as exchangeable and model the text of a document as a multiset,  as in LSA.     
 
 
-The following probability model reproduces many characteristics of the real estate listings.   We constructed this model so that data simulated from the model would reproduce these characteristics of the observed data:
+The following probability model reproduces many characteristics of the real estate listings.   We constructed this model so that data simulated from the model  reproduces these characteristics of the observed in the real-estate listings:
 \begin{enumerate}
  \item  A normally distributed response (Figure \ref{fig:prices}).
   \item Correlation between the length of the document and the response
@@ -932,7 +932,7 @@ The following probability model reproduces many characteristics of the real esta
 \end{enumerate}
 
 
-The presence of a response distinguishes our model from topic models.  In machine learning, topic modeling is an unsupervised algorithm typically used to cluster documents based on the presence of latent topics revealed by a hierarchical Bayesian  model.  Our method of featurizing text is also unsupervised,  but our goal is to predict the explicit response rather than identify latent clusters. Topic models do not describe a response.  For example, standard topic models do not describe the connection between document length and the response.  In a topic model, the length of a document does not reveal the number of topics  present in the document.  This characteristics is pronounced, however,  in real estate listings.  Authors of listings write more about valuable properties than cheaper properties, and are motivated to write more about expensive properties, those with numerous attractive attributes worth mentioning.  A listing summarizes desirable attributes that are present, such as a fireplace, not those that are missing.   An ad would not mention that a property did not have a fireplace.  The  model developed in the following section captures this length effect as well as the other stylized facts observed in the listings.  We describe the model in the context of real-estate listings, and generalization to other applications is straightforward.
+The presence of a response distinguishes our model from typical topic models.  In machine learning, topic modeling is an unsupervised algorithm typically used to cluster documents based on the presence of latent topics revealed by a hierarchical Bayesian  model.  \citet{blei12} provides a recent survey.  Our method of featurizing text is also unsupervised,  but our goal is to predict the explicit response rather than identify latent clusters. Topic models do not describe a response and consequently would not describe the connection between document length and the response.  In a topic model, the length of a document does not reveal the number of topics  present in the document.  This characteristic is pronounced, however,  in real-estate listings.  Authors of listings write more about valuable properties than cheaper properties, and are motivated to write more about expensive properties, those with numerous attractive attributes worth mentioning.  A listing summarizes desirable attributes that are present, such as a fireplace, not those that are missing.   An ad would not mention that a property did not have a fireplace.  The  model developed in the following section captures this length effect as well as the other listed stylized facts.  We describe the model in the context of real-estate listings; generalization to other applications is straightforward.
 
 
 \subsection{ An Alternative Topic Model } % -------------------------
@@ -956,6 +956,7 @@ where $b_i$ is a random 0/1 Bernoulli r.v.  The addition of $b_i$ to the count $
   \underset{n \times K}{A} = \left[ A_{ij} =
               \left\{ \begin{array}{cc} 1 & \mbox{ if } a_j \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
                        \end{array} \right. \right]  \;.
+   \label{eq:A}
 \end{equation}
 The \ith\ row of $A$ gives the attributes in the \ith\ document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover some sense of this matrix from text. The expected price of a property is the sum of the values of its attributes,
 \begin{equation}
@@ -965,85 +966,52 @@ The \ith\ row of $A$ gives the attributes in the \ith\ document; for example, $\
 The amount of noise, reflecting the influence of unmeasured attributes, added in \eqn{yi} controls the fit of the idealized regression of $y$ on the latent attributes $A$.  
 
 
-The collection of attributes also determines the text of the associated listing, providing the link that allows one to predict the price given the text of a listing.  As in a standard topic model, each attribute defines a multinomial distribution over the vocabulary of words.  The words in a listing are then sampled according to the mixture of distributions determined by its attributes.  
-
-HERE
-
-We model the distribution over words for each attribute with two components.  One component is related to the response, and the other captures common words shared by all attributes.  This common distribution is a Zipf distribution over the vocabulary.  A second, distribution distinguishes the attributes.  Divide the vocabulary of $m$ words into $m_c$ common words shared by topics and $m - m_c$ words that are randomly sampled for each topic.  The distribution for an attribute convolves a Zipf distribution over the vocabulary with a topic-specific multinomial distribution over the $m - m_c$ attribute-specific words. Let 
+The collection of attributes determines the text of the associated listing, providing the link that allows one to predict  price from the text.  As in a standard topic model, each attribute defines a multinomial distribution over the vocabulary of words.  The words in a listing are then sampled according to the mixture of distributions determined by its attributes.  We model the distribution over words for each attribute as a mixture of two components, one that is common to every topic and one that is unique to each topic.  Regardless of the subject, most text mixes punctuation and articles such as ``'a' and ``the'' with words specific to the topic.  The common component in our model is the Zipf distribution over the full vocabulary,
 \begin{equation*}
-     p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m} 1/i 
+     p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m} 1/i \;.
 \end{equation*}
-denote a vector of probabilities that decay as in a Zipf distribution with exponent -1. The Zipf component $p^z$ is common to attributes and hence not useful to distinguish the attributes in a document. The second component of the distribution over words for an attribute is randomly generated by  sampling from a spiked Dirichlet distribution over words $m_c+1, \ldots,m$  
+The Zipf component $p^z$ is thus not useful to distinguish one attribute from another and guarantees overlap in the support among the distributions of the attributes in a document.  The topic-specific  distribution is multinomial over a sample of randomly selected words.  These words are sampled from  positions $m_c+1, \ldots, m$, avoiding the first $m_c$ words assigned highest probability by $p_z$. We set $m_c = m/10$ in our simulations. The probabilities for the multinomial distribution for attribute $k$ are randomly generated by sampling from a Dirichlet distribution,  
  \begin{equation}
-     p^s_{m_c+1:m,k} \sim  \mbox{Dir}(\alpha,m-m_c)  \;, \quad \mbox{ with } p^s_{ik} = 0, i = 1,\ldots,m_c.
+     p^s_{m_c+1,k},p^s_{m_c+2,k}, \ldots, p^s_{m,k} \sim  
+         \mbox{Dir}(\alpha,m-m_c)  \;, \quad \mbox{ with } p^s_{ik} = 0, i = 1,\ldots,m_c.
 \label{eq:ps}
 \end{equation}
-Because we set $m_c = m/10$ in our simulations,  starting the support of the attribute-specific distribution at $m_c+1$ implies that this distribution does not put mass on words given large probability by $p^z$. This second distribution is specific to each attribute and allows one to recognize an attribute from the text.  We choose a small value of the parameter $0 < \alpha$ of the Dirichlet to produce a rather spiked distribution.   To appreciate how $\al$ affects the Dirichlet distribution, consider how to simulate a sample of size $m$ from a Dirichlet distribution with parameter $\al$.  First, generate $x_1,\ldots,x_n \sim \mbox{Gamma}(\al)$ and compute the sum $S = \sum_i x_i$.  Then $x_1/S,\ldots,x_m/S \sim \mbox{Dir}(\al,m)$.  A gamma distribution for small $\al$ is very skewed and so the resulting probabilities concentrate on a few coordinates. The distribution over the full vocabulary mixes the probability vectors over common and specific words, 
+A small value of the parameter $0 < \alpha$ causes the Dirichlet distribution to produce a rather spiked distribution, essentially concentrating the probabilities on few words.   To appreciate how $\al$ affects the Dirichlet distribution, consider one method for simulating a sample of size $n$ from a Dirichlet distribution with parameter $\al$.  First, generate $X_1,\ldots,X_n \sim \mbox{Gamma}(\al)$ and compute the sum $S = \sum_i X_i$.  Then $X_1/S,\ldots,X_m/S \sim \mbox{Dir}(\al,m)$.  Because the Gamma distribution is highly skewed if $\al$ is small,  the resulting probabilities concentrate on a few coordinates. The distribution over the vocabulary for each topic combines the Zipf distribution with the topic-specific multinomial distribution,
 \begin{equation}
-  P_k = (q_z \; p_k^z, (1-q_z) \; p_k^s)  \quad \mbox{ where } \quad 0 \le q_z \le 1.
+  P_k = q_z \; p_k^z + (1-q_z) \; p_k^s  \quad \mbox{ where } \quad 0 \le q_z \le 1.
   \label{eq:Pk}
 \end{equation}
+In the following examples, we set $q_z = 0.4$.  Larger values reduce the distance between the attribute distributions and imply that the resulting text is less useful for recovering the attributes.   Arrange the distributions for the attributes into a $K \times m$ matrix $P$, putting $P_k$ into row $k$.
 
 
-The expected word frequencies for a document are proportional to sums of selected rows of $P$.  A scaling parameter  $\la$ determines the average number of words per attribute.   Arrange the distributions for the attributes into a $K \times m$ matrix $P$, putting $P_k$ into row $k$.   Let $W$ denote the $n \times m$ matrix with the frequencies of word types (the document/word matrix), simulated as
+Given $P$, we model the text of a document as a sample of words from the attributes associated with the document held in the matrix $A$ defined in \eqn{A}.   A scaling parameter $\la$ determines the average number of words sampled per attribute.  The $n \times m$ document/word matrix of  frequencies of word types is simulated as
 \begin{equation}
 	W \sim \mbox{Poisson} \left(\la \, A \, P \right) \;.
   \label{eq:simW}
 \end{equation}
-In this expression, $\mbox{Poisson}(M)$ denotes a matrix of independent Poisson random variables with means determined by the corresponding elements of the like-sized matrix $M$.
+In this expression, $\mbox{Poisson}(A\,P)$ denotes a matrix of independent Poisson random variables with means determined by the elements of the matrix $A\,P$.
 
  
- Given that the document/word matrix $W$ has been  generated by the process defined in \eqn{simW}, the success of latent semantic analysis is particularly easy to see. Intuitively, LSA is well-matched to this DGP because both treat a document as a bag-of-words.  Let $D_m$ denote an $n \times n$ diagonal matrix with the  word counts $m_i$ along the diagonal.  Then the expected value of the document/word matrix $W$ is the sum of $K$ outer products:
+ If the document/word matrix $W$ has been generated as in \eqn{simW}, then it is easy to anticipate the success of LSA. LSA is well-matched to this model because both treat a document as a bag-of-words with the expected response determined by a linear function of the underlying mixture of attributes.  Let $D_m$ denote an $n \times n$ diagonal matrix with the  word counts $m_i$ along the diagonal.  Then the expected value of $W$ is a sum of $K$ outer products:
 \begin{equation}
-    \ev W = \la \sum_k A_k \, P_k' \;.
+    \ev W = \la A\, P = \la \sum_k A_k \, P_k' \;,
   \label{eq:EW}
 \end{equation}
-The matrix product factors as an outer product, just as an SVD represents a matrix. That is, if we write $X = UDV'$, then we can express the matrix product as the sum $X = \sum_j d_{j} u_j v_j'$ where $u_j$ and $v_j$ are the columns of $U$ and $V$, respectively.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} are related to the allocation of attributes over documents defined by $A$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  To obtain a good fit with regression, however, does not require that we either find $P$ or recover $A$.  Referring back to the model \eqn{y}, we need only recover the range of $A$.  And that is precisely what the random projection SVD produces.
-
-\vspace{0.5in}
-
-{\bf Does this bigram part remain? }
+as in the SVD.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} capture the allocation of attributes over documents.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  For instance, the right singular vectors of $W$ do not typically define a stochastic matrix.  Obtaining good regressors, however, does not require that recover $P$ or $A$.  Referring back to the model \eqn{yi}, we need only recover the range of $A$.
 
 
-The connection of this DGP to bigrams is less obvious and relies more on stronger assumptions.  Bigrams count the frequency of the adjacent word types, a property we associate with the sequence of words rather than co-occurrence within a document.  To see how the analysis of bigrams can nonetheless produce useful regressors, we need to add either stronger assumptions to our DGP or incorporate some type of sequential dependence.  For example, we might assume that words associated with attributes appear in short phrases.   As in the bag-of-words model, words within a phrase are drawn independently from the distribution defined by a trait, but the generating process samples within an attribute for some length of time before transitioning to another attribute (as in an HMM).  If these phrases are relatively long, then we can approximate the expected counts in the bigram matrix as a weighted outer product of the probability vectors for the attributes.  We can obtain the same heuristic in our DGP by assuming that the probability distributions $P_k$ for the attributes  have (nearly) singular support on words.  That is, most words are associated with a unique trait (implying $P_{k_1}'P_{k_2}  \approx 0$).  In either case, the marginal probability of finding adjacent words types reveals the underlying probability distribution.  
-
-
-For instance, suppose the traits have disjoint support on words and that documents have common length $n_i \equiv n_1$. Then the probability of finding  word types  $w_{m_1}$ and $w_{m_2}$ from trait $k$ adjacent to each other is 
+The connection of this topic model to bigrams is less obvious and relies on stronger assumptions.  Bigrams count the frequency of the adjacent word types, a property of the sequence of words rather than co-occurrence within a document.  To see why bigrams can nonetheless produce useful regressors, we need to add either stronger assumptions to our topic model or incorporate some type of sequential dependence into the model.  For example, we might assume that words associated with attributes appear in short phrases that would place the words that describe an attribute adjacent to each other.   To do this, the generating process would need to produce a sequence of words sampled from the attribute distribution $P_k$ before transitioning to another attribute (as in a hidden Markov model).  If these phrases are relatively long, then we can approximate the expected counts in the bigram matrix as a weighted outer product of the probability vectors for the attributes.  For example, set $q_z = 0$ in \eqn{Pk} so that the probability distributions over words associated with topics have essentially disjoint support.  For simplicity, assume documents have common length $n_i \equiv n_1$ and attributes have equal value $\beta_1$ (so as to be equally likely of appearing in a document). Under these conditions, consider the frequency in the complete corpus of the sequence of words $w_{m_1}$ and $w_{m_2}$ that describe topic $k$ (so that $P_k(w_{m_1}) > 0$ and $P_k(w_{m_2}) > 0$).  The expected count for such a pair of words is then
  \begin{equation}
-  P(w_{m_1},w_{m_2}) = \sum_i \left(\zeta_{ik}^2/n \right) P_{km_1} P_{km_2} 
-                                     = h_k P_{km_1} P_{km_2}  \;.
-  \label{eq:joint}
+  \ev B_{m_1,m_2} = \frac{N}{K} P_{m_1,k} P_{m_2,k}  \;.
+  \label{eq:Pwm}
 \end{equation}
-Let $N = \sum m_i$ denote the total number of observed words. Using the expression \eqn{eq:joint}, the expected value of the bigram matrix factors as
- \begin{equation}
-    \smfrac{1}{N} \ev B \approx \sum h_k P_k\; P_k' = P' H P \;, 
-                     \qquad  H = \mbox{diag}(h_k)\;,
- \label{eq:B2}
- \end{equation}
-Again, a constrained factorization that produced probability vectors would be more appropriate if one truly believed this model.  In an ideal world, the singular values of the SVD would capture the unobserved marginal probabilities  $h_k$.  Expression \eqn{B2} also suggests why the left and right singular vectors of $B$ should match, or at least define a common subspace.
-
- 
- Of course, even in expectation, the factorization of the bigram $B$ will not
- match  \eqn{eq:B2}; the SVD  only recovers a basis for the range of $B$.  Thus, the 
- singular vectors will mix the probability vectors.  We can
- then think about $U_B = P'O$ for some orthonormal matrix $O$.  That is, ideally
- the singular vectors span the correct space, but in a different basis so that
- we observe (again, in expectation)
- \begin{displaymath}
-   w_i'U_b \approx (m_i \zeta_i'P)(P'O) = m_i \zeta_i \mbox{diag}(P_k'P_k) O
- \end{displaymath}
- Hence, when computing the correlations between the observed counts $w_i$ and the
- singular vectors, the norm of the probability distributions cancel and we
- obtain a rotation of  $\zeta_{i*}$ vector.  The rotation is the same, however,
- for all rows, and consequently our collection of regressors spans the same
- space as the unrotated $\zeta$.
-
+so that we can  write the expected counts for all words as the outer product, $N\,P_k P_k'/K$. \ras{The rest of this section is hokey... Omit or tighten up?} Ideally, then, a factorization of $B$, at least in expectation, produces a collection of singular vectors for which words associated with topic $k$ have a non-zero coefficient, and words associated with other topics have value 0. Averaging these coordinates over the words in a document then produces a vector whose elements are proportional to the mixture of attributes in the document.  We will not pursue this utopian scenario further and defer further analysis of bigram structures to applications more suited to syntactic analysis.
 
 
 %--------------------------------------------------------------------------------
 \subsection{Examples of Simulated Data}
 
-In the following two examples, we simulate $n = 5,000$ documents with words chosen from a vocabulary of $m = 1500$ words.  The simulation generates the response and text of these documents by sampling $K = 50$ attributes.  The budget parameters in \eqn{eq:mii} are $\tilde\mu = 12.2$ and $\tilde\sigma = 0.8$.  The attribute mean effects $\beta_k$ are independent draws from a gamma distribution with shape parameter 2 and scale parameter 1/2.  On average, each document is associated with 16 attributes. After forming  the random sums \eqn{ki}, we add enough measurement noise in \eqn{yi} so that 80\% of the variance in the response is explained by a linear regression on the attribute matrix $A$.  After rescaling to match the standard deviation of log prices, the simulated density of the response is similar to that of prices, but more Gaussian in shape.  Figure \ref{fig:density} shows the kernel density of the log of real-estate prices along with several simulated distributions following this procedure.  For simulating the words, the Zipf share of the attribute distribution $P_k$ in both of the following sections is $q_z = 0.4$, and the expected number of words per attribute is $\la = 6$.  
+In the following two examples, we simulate $n = 5,000$ documents with words chosen from a vocabulary of $m = 1,500$ words.  The simulation generates the response and text of these documents by sampling $K = 50$ attributes.  The budget parameters in \eqn{mui} are $\tilde\mu = 12.2$ and $\tilde\sigma = 0.8$.  The attribute mean effects $\beta_k$ are independent draws from a gamma distribution with shape parameter 2 and scale parameter 1/2.  On average, each document is associated with about $16$ attributes.  We add enough measurement noise in \eqn{yi} so that the $R^2 =0.80$ in the linear regression of the response on the true attribute composition.  After rescaling to match the standard deviation of log prices, the simulated density of the response is similar to that of prices, but more Gaussian in shape.  Figure \ref{fig:density} shows the kernel density of the log of real-estate prices along with simulated distributions.  For simulating the words, the Zipf share of the attribute distribution $P_k$ in both of the following sections is $q_z = 0.4$, and the expected number of words per attribute is $\la = 6$.  The following examples vary the amount of overlap between the distributions over words associated with the topics.
 
 
 \begin{figure}
@@ -1051,14 +1019,11 @@ In the following two examples, we simulate $n = 5,000$ documents with words chos
   {\sl The density function of a several simulated distribution (gray) matches the location and shape of the density of the log prices of Chicago real estate (black), but is more Gaussian in shape.}  }
   \centerline{ \includegraphics[width=4in]{figures/density.pdf} }
 \end{figure}
- 
- 
- The following examples show an illustrative simulation under different circumstances.  The simulated results shown here were chosen to show properties that persist over replications of the simulation. 
- 
+  
  
  \subsubsection{Nearly Disjoint Topic Distributions} % -----------------
   
-In this first example, we consider how well estimation methods work when documents are generated by attributes with nearly disjoint specific words.  All attributes share the common Zipf distribution in this context, but have little overlap in the choice of specific words.  To obtain this behavior, we set the Dirichlet parameter in \eqn{ps} to $\al = 0.01$.   The probability distributions $P_k$ are not very distinct.  Figure \ref{fig:P} plots the probability vectors of two of the attribute distributions.  The points along the diagonal are the shared support probabilities for common words that follows a Zipf distribution.
+This first example illustrates the performance of LSA in building regressors when documents are generated by attributes with nearly disjoint specific words.  All attributes share the common Zipf distribution in this context, but have limited overlap in the choice of specific words.  To obtain this behavior, we set the Dirichlet parameter $\al = 0.01$ in \eqn{ps}.   Figure \ref{fig:P} plots the probability vectors of two of the attribute distributions.  The points along the diagonal are the shared support probabilities for common words from the Zipf distribution $p_z$ in \eqn{Pk}.
 
 
 \begin{figure}
@@ -1070,7 +1035,7 @@ In this first example, we consider how well estimation methods work when documen
  \end{figure}
 
 
-The distribution of words produced by this model  reproduce features of distribution found in real estate listings.  The average document has about 80 words.  Figure \ref{fig:zipfcorr} plots the frequencies of all word types in the collection of simulated documents.  These frequencies resemble those in Figure \ref{fig:zipf}, but produce a slope (-0.6) that a is closer to zero than observed in the listings.  Figure \ref{fig:zipfcorr} also graphs the simulated response on the length of the simulated documents.  The squared correlation is 0.16 in this example.  The smooth trend in the plot highlights a slight degree on no linearity in the association, though as in Figure \ref{fig:parsed}, most of the curvature occurs in the extremes of the range.
+The simulated marginal distribution of words reproduces many features of distribution found in real estate listings.  The average document has about 80 words.  Figure \ref{fig:zipfcorr} plots the frequencies of all word types in the collection of simulated documents.  These frequencies resemble those in Figure \ref{fig:zipf}, but produce a slope (-0.6) that a is closer to zero than observed in the listings.  Figure \ref{fig:zipfcorr} also graphs the simulated response on lengths of the simulated documents.  The squared correlation is 0.16 in this example.  The smooth trend in the plot highlights a slight degree curvature; as in Figure \ref{fig:parsed}, most of the curvature occurs in the extremes.
 
 \begin{figure}
 \caption{ \label{fig:zipfcorr}
@@ -1080,8 +1045,8 @@ The distribution of words produced by this model  reproduce features of distribu
  \includegraphics[width=7.5in]{figures/zipfcorr} }
  \end{figure}
 
- A major objective of having a probability model that can reproduce the stylized facts observed in the real estate listings was to gain some insight as to the best normalization of the LSA and bigram matrices.  We focus here on the choices for normalizing the word counts prior to computing the thin SVD in \eqn{Wk}.   To explore this here, Figure \ref{fig:spectra} shows the spectra obtained from four standardizations defined by \eqn{SL}  of $W$: none (raw frequencies), rows $S_L^{-1/2}W$, columns $WS_X^{-1/2}$), and both as used in the quick approximation to CCA  $S_L^{-1/2}WS_X^{-1/2}$.  (The spectra are scaled to fit all four into one plot. The spectra of the row (column) standardized versions was multiplied by 10 (50), and the spectrum with both normalizations was multiplied by 500.) Evidently, the break that correctly detects $K=50$ attributes requires column standardization, but is barely detectible in this figure.  Figure \ref{fig:gap} zooms in on the singular values of the versions with column standardization.  A discontinuity occurs at $K=50$.  Row standardization alone does not detect the break, and the combination of both row and column standardization does not improve, and may slightly conceal, the gap.  This plot would suggest using either column or CCA standardization for determining the number of latest attributes.  As in Figure \ref{spectrum}, the presence of row standardization flattens the spectrum of $W$.  In this example, if we again approximate the singular values $\la_i \propto i^{-\eta}$, then the use of column standardization -- which reveals the gap -- reduces $\eta$ from about 0.3 to 0.1.
- 
+
+ One of our reasons for developing a probability model that could reproduce the stylized facts of the real estate listings was to gain some insight as to the best normalization $W$ prior to performing LSA as in \eqn{Wk}.   To explore this here, Figure \ref{fig:spectra} shows the spectra obtained from four normalizations of $W$ (see equation \eqn{SL}): none (raw frequencies), rows $S_L^{-1/2}W$, columns $WS_X^{-1/2}$), and both as used in the approximation to CCA  $S_L^{-1/2}WS_X^{-1/2}$.  (The spectra are scaled to fit all four into one plot. The spectra of the row (column) standardized versions was multiplied by 10 (50), and the spectrum with both normalizations was multiplied by 500.) The break that signals that there are 50 underlying attributes is more evident with column standardization, but rather subtle.  Figure \ref{fig:gap} zooms in on the singular values with column standardization, revealing a discontinuity occurs at $K=50$.  These results suggest using either column or CCA standardization for finding the number of latent attributes.  
  
 \begin{figure}
 \caption{ \label{fig:spectra} 
@@ -1100,7 +1065,7 @@ The distribution of words produced by this model  reproduce features of distribu
  \includegraphics[width=6.0in]{figures/gap} }
  \end{figure}
 
-Our objective in modeling text is, however, not to determine the latent variables or probability distributions, but rather lies in building regression models for the response from text.  Although it  appears either column or CCA normalization are equally useful, CCA  standardization produces a much better set of regressors.  Figure \ref{ccawins} convinced us to use CCA standardization.  The figure contrasts the absolute values of the $t$-statistics of the estimated coefficients from regressions of the simulated response on document length and  the first 250 row-standardized singular vectors to the results obtained for the first 250 CCA-standardized singular vectors. In both models, document length is not statistically significant when included with these singular vectors.  Although the overall fit obtained by these two collections of features is very similar ($R^2 = 0.268$ and $0.267$), the significant estimates produced by the CCA standardization concentrate in the leading singular vectors rather than spread out many components.  
+Our objective in modeling text, however, is not to determine the precise number of latent variables (as if these exist in actual text), but rather lies in building regression models.  Although it  appears either column or CCA normalization are equally useful, CCA  standardization produces a much better set of regressors.  Figure \ref{fig:ccawins} convinced us to use CCA standardization.  The figure contrasts the absolute values of the $t$-statistics of the estimated coefficients from regressions of the simulated response on document length and  the first 250 column-standardized singular vectors to the results obtained for the first 250 CCA-standardized singular vectors. In both models, document length is not statistically significant when included with these singular vectors.  Although the overall fit obtained by these two collections of features is  similar ($R^2 = 0.268$ and $0.267$), the significant estimates produced by the CCA standardization concentrate in the leading singular vectors rather than spread out many components.  
 
 
 \begin{figure}
@@ -1115,10 +1080,7 @@ Our objective in modeling text is, however, not to determine the latent variable
  
  \subsubsection{Overlapping Topic Distributions} % -----------------
  
-Increasing the Dirichlet parameter to $\al=0.025$ produces substantially more overlap between the support of the distributions $P_k$.  All distributions share the Zipf probabilities, but are nonetheless distinguishable with $\al=0.01$.  With $\al$ set 2.5 times higher, the distinction disappears.  Figure \ref{fig:spectratwo} shows the spectra obtained with the various standardizations of $W$.  None show the gap evident in Figure \ref{fig:spectra} for $\al=0.01$, and we again see that column standardization (with or without row standardization) flattens the spectrum.  
-
-
-The absence of a gap draws attention to a feature of the spectra that is less apparent in Figure \ref{fig:spectra}.  In particular, any form of column standardization reduces the spread among the singular values.  Without column standardization (top row of plots), the singular values drop rapidly.  With column standardization, the singular values decay more gradually, roughly linearly with index on this log scale.  Though suggestive, singular vectors are more predictive with column standardization.
+Increasing the Dirichlet parameter to $\al=0.025$ produces substantially more overlap between the support of the distributions $P_k$ (Figure \ref{fig:P}).  With $\al$ set 2.5 times higher, the distinction among the methods for standardizing  $W$ disappears.  Figure \ref{fig:spectratwo} shows the spectra obtained with the various standardizations of $W$.  None show the gap evident in Figure \ref{fig:spectra} for $\al=0.01$, and we again see that column standardization (with or without row standardization) flattens the spectrum.  The absence of a gap draws attention to a feature of the spectra that is less apparent in the prior example (Figure \ref{fig:spectra}).  Although the ability to detect the number of attributes is lost with the increase in $\al$, the singular vectors remain predictive.  With $\al=0.025$, $R^2$ obtained with CCA normalization falls only slightly to 0.222 in this example.
 
  
 \begin{figure}
@@ -1129,14 +1091,13 @@ The absence of a gap draws attention to a feature of the spectra that is less ap
  \includegraphics[width=6.0in]{figures/spectra2} }
  \end{figure}
 
-Although the ability to detect the number of attributes is lost with the increase in $\al$, the singular vectors remain predictive.  With $\al=0.025$, $R^2$ falls only slightly to 0.222 in this typical example.
  
 %--------------------------------------------------------------------------
 \section{Variable Selection and Cross Validation}
 \label{sec:cv}
 %--------------------------------------------------------------------------
 
-The previous examples routinely estimate regression models with hundreds of explanatory variables.  Though large by traditional standards, these models do not suffer from the problems associated with over fitting because we have not used the data to pick the model.  We simply fit a large collection of regressors.  Evaluating such models is thus the province of classical statistical tests and criteria such as adjusted r-squared.  
+The previous examples routinely estimate regression models with hundreds of explanatory variables.  Though large by traditional standards, these models do not suffer from the problems associated with over-fitting because we have not used the data to pick the model.  We simply fit a large collection of regressors.  Evaluating such models is thus the province of classical statistical tests and criteria such as adjusted r-squared.  
 
 As evidence that these models are not over fit, we offer the following example.  Consider the LSA regression that uses 500 principal components of $W$.  Adjusting for the effects of estimating the 500 coefficients and the intercept anticipates the out-of-sample mean squared error of prediction to be $s_e^2 (1+(p+1)/n)$.  This simple approximation averages over the regression design, ignoring leverage effects.  Plugging in the unbiased estimate $s_e^2 = 0.5649$ gives $0.5649 (1+501/7384) = 0.603$.  Because the values of the regressors in the test data do not match those in the training data, this estimator is typically smaller than the observed MSE by an amount depending on variation in the regressors.  
 
