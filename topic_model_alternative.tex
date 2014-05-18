@@ -1,0 +1,181 @@
+%-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
+\documentclass[12pt]{article}
+\usepackage[longnamesfirst]{natbib}
+\usepackage[usenames]{color}
+\usepackage{graphicx}     % Macintosh pdf files for figures
+\usepackage{amssymb}   % Real number symbol {\Bbb R}
+\usepackage{amsmath}
+\usepackage{bbm}
+\input{../../standard}
+
+% --- margins
+\usepackage{../sty/simplemargins}
+\setleftmargin{1in}   % 1 inch is NSF legal minimum
+\setrightmargin{1in}  % 1 inch is NSF legal minimum
+\settopmargin{1in}    % 1 inch is NSF legal minimum
+\setbottommargin{1in} % 1 inch is NSF legal minimum
+
+% --- Paragraph split, indents
+\setlength{\parskip}{0.00in}
+\setlength{\parindent}{0in}
+
+% --- Line spacing
+\renewcommand{\baselinestretch}{1.5}
+
+% --- page numbers
+\pagestyle{empty}  % so no page numbers
+
+% --- Hypthenation
+\sloppy  % fewer hyphenated
+\hyphenation{stan-dard}
+\hyphenation{among}
+
+% --- Customized commands, abbreviations
+\newcommand{\TIT}{{\it  {\tiny Alternative Topic Model (DRAFT, \today)}}}
+\newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}
+
+% --- Header
+\pagestyle{myheadings}
+\markright{\TIT}
+
+% --- Title
+
+\title{ An Alternative Topic Model with Wealth Constraints }
+\author{
+        Dean P. Foster\footnote{Research supported by NSF grant 1106743} 
+        \ \ Robert A. Stine\footnotemark[\value{footnote}]   \\
+        Department of Statistics                             \\
+        The Wharton School of the University of Pennsylvania \\
+        Philadelphia, PA 19104-6340                          
+}
+
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\vspace{-0.5in}
+\maketitle 
+%------------------------------------------------------------------------
+\vspace{-.5in}
+\abstract{  
+
+ Capture association between response and length of the document.
+
+}
+
+%------------------------------------------------------------------------
+\vspace{0.15in}
+
+\noindent
+{\it Key Phrases:  latent semantic analysis} 
+
+\clearpage
+
+% ----------------------------------------------------------------------
+\section{Motivation}
+\label{sec:motivation}
+% ----------------------------------------------------------------------
+
+
+
+The following probability model reproduces many characteristics of the real estate listings.   We constructed this model so that data simulated from the model  reproduces these characteristics of the observed in the real-estate listings:
+\begin{enumerate}
+ \item  A normally distributed response 
+  \item Correlation between the length of the document and the response.
+ \item An approximate Zipf distribution for word frequencies.
+  \item Predictive signal concentrated for LSA components but diffuse for words.
+  \item Skewed distribution of document lengths.
+\end{enumerate}
+
+
+The presence of a response distinguishes our model from typical topic models.  In machine learning, topic modeling is an unsupervised algorithm typically used to cluster documents based on the presence of latent topics revealed by a hierarchical Bayesian  model.  \citet{blei12} provides a recent survey.  Our method of featurizing text is also unsupervised,  but our goal is to predict the explicit response rather than identify latent clusters. Topic models do not describe a response and consequently would not describe the connection between document length and the response.  In a topic model, the length of a document does not reveal the number of topics  present in the document.  This characteristic is pronounced, however,  in real-estate listings.  Authors of listings write more about valuable properties than cheaper properties, and are motivated to write more about expensive properties, those with numerous attractive attributes worth mentioning.  A listing summarizes desirable attributes that are present, such as a fireplace, not those that are missing.   An ad would not mention that a property did not have a fireplace.  The  model developed in the following section captures this length effect as well as the other listed stylized facts.  We describe the model in the context of real-estate listings; generalization to other applications is straightforward.
+
+
+% ----------------------------------------------------------------------
+\section{ An Alternative Topic Model } 
+% ----------------------------------------------------------------------
+
+Our model begins with the assumption that each property described by a real-estate listing possesses a set of attributes that collectively influence its listed price.   Examples of attributes are a fireplace or hardwood floors. 
+ 
+Our model links the presence of a set of unobserved attributes to the price of a property.  Let ${\cal A} = \{a_1,\ldots, a_K\}$ denote the set of  all possible attributes and assign value $\beta_k$ to attribute $a_k$.  The set ${\cal L}_i \subset {\cal A}$ denotes the attributes of the \ith\ listing.  We model the attributes for each property as a sample from $\cal A$ (without replacement) until the sum of assigned values exceeds $\mu_i$, the target mean for the response.  In this sense, the choice of attributes ${\cal L}_i$ is budget constrained. Every property owner has a budget  $\mu_i$ available to purchase attributes for her property.  The budget amounts in the model are
+\begin{equation}
+  \mu_i  \sim N(\tilde\mu, \tilde\sigma^2) \;.
+\label{eq:mui}
+\end{equation}
+Let $\pi$ denote a random permutation $\pi_1,\ldots,\pi_K$ of the integers $1, \ldots, K$.  Then the number of attributes for the \ith\ listing constrained by budget $\mu_i$ is 
+\begin{equation}
+	k_i = \min \{ \kappa:  \mu \le \sum_{k=1}^{\kappa} \beta_{\pi_k} \} - b_i \;,
+	\mbox{ with }
+	{\cal L}_i = \{a_{\pi_1}, \ldots, a_{\pi_{k_i}} \} \;,
+\label{eq:ki}
+\end{equation}
+where $b_i$ is a random 0/1 Bernoulli r.v.  The addition of $b_i$ to the count $k_i$ implies that the sum of attribute values is equally likely to be larger or smaller than $\mu$ and reduces skewness in the response produced by the model.  For convenience,  collect the indicators that identify which attributes appear in which listings into the $n \times K$ binary matrix $A$,
+\begin{equation}
+  \underset{n \times K}{A} = \left[ A_{ij} =
+              \left\{ \begin{array}{cc} 1 & \mbox{ if } a_j \in {\cal L}_i \cr 0 & \mbox{otherwise.} 
+                       \end{array} \right. \right]  \;.
+   \label{eq:A}
+\end{equation}
+The \ith\ row of $A$ gives the attributes in the \ith\ document; for example, $\sum_j A_{ij} = |{\cal L}_i|$. The matrix $A$ is not observed in practice; the whole point of featurizing text is to recover some sense of this matrix from text. The expected price of a property is the sum of the values of its attributes,
+\begin{equation}
+	y_i = \sum_k A_{ik} \beta_k + \sigma \ep_i, \quad \ep_i \sim N(0,1) \;.
+\label{eq:yi}
+\end{equation}
+The amount of noise, reflecting the influence of unmeasured attributes, added in \eqn{yi} controls the fit of the idealized regression of $y$ on the latent attributes $A$.  
+
+
+The collection of attributes determines the text of the associated listing, providing the link that allows one to predict  price from the text.  As in a standard topic model, each attribute defines a multinomial distribution over the vocabulary of words.  The words in a listing are then sampled according to the mixture of distributions determined by its attributes.  We model the distribution over words for each attribute as a mixture of two components, one that is common to every topic and one that is unique to each topic.  Regardless of the subject, most text mixes punctuation and articles such as ``'a' and ``the'' with words specific to the topic.  The common component in our model is the Zipf distribution over the full vocabulary,
+\begin{equation*}
+     p^z_i = \frac{1}{c\;i}, \qquad c = \sum_{i=1}^{m} 1/i \;.
+\end{equation*}
+The Zipf component $p^z$ is thus not useful to distinguish one attribute from another and guarantees overlap in the support among the distributions of the attributes in a document.  The topic-specific  distribution is multinomial over a sample of randomly selected words.  These words are sampled from  positions $m_c+1, \ldots, m$, avoiding the first $m_c$ words assigned highest probability by $p_z$. We set $m_c = m/10$ in our simulations. The probabilities for the multinomial distribution for attribute $k$ are randomly generated by sampling from a Dirichlet distribution,  
+ \begin{equation}
+     p^s_{m_c+1,k},p^s_{m_c+2,k}, \ldots, p^s_{m,k} \sim  
+         \mbox{Dir}(\alpha,m-m_c)  \;, \quad \mbox{ with } p^s_{ik} = 0, i = 1,\ldots,m_c.
+\label{eq:ps}
+\end{equation}
+A small value of the parameter $0 < \alpha$ causes the Dirichlet distribution to produce a rather spiked distribution, essentially concentrating the probabilities on few words.   To appreciate how $\al$ affects the Dirichlet distribution, consider one method for simulating a sample of size $n$ from a Dirichlet distribution with parameter $\al$.  First, generate $X_1,\ldots,X_n \sim \mbox{Gamma}(\al)$ and compute the sum $S = \sum_i X_i$.  Then $X_1/S,\ldots,X_m/S \sim \mbox{Dir}(\al,m)$.  Because the Gamma distribution is highly skewed if $\al$ is small,  the resulting probabilities concentrate on a few coordinates. The distribution over the vocabulary for each topic combines the Zipf distribution with the topic-specific multinomial distribution,
+\begin{equation}
+  P_k = q_z \; p_k^z + (1-q_z) \; p_k^s  \quad \mbox{ where } \quad 0 \le q_z \le 1.
+  \label{eq:Pk}
+\end{equation}
+In the following examples, we set $q_z = 0.4$.  Larger values reduce the distance between the attribute distributions and imply that the resulting text is less useful for recovering the attributes.   Arrange the distributions for the attributes into a $K \times m$ matrix $P$, putting $P_k$ into row $k$.
+
+
+Given $P$, we model the text of a document as a sample of words from the attributes associated with the document held in the matrix $A$ defined in \eqn{A}.   A scaling parameter $\la$ determines the average number of words sampled per attribute.  The $n \times m$ document/word matrix of  frequencies of word types is simulated as
+\begin{equation}
+	W \sim \mbox{Poisson} \left(\la \, A \, P \right) \;.
+  \label{eq:simW}
+\end{equation}
+In this expression, $\mbox{Poisson}(A\,P)$ denotes a matrix of independent Poisson random variables with means determined by the elements of the matrix $A\,P$.
+
+ 
+ If the document/word matrix $W$ has been generated as in \eqn{simW}, then it is easy to anticipate the success of LSA. LSA is well-matched to this model because both treat a document as a bag-of-words with the expected response determined by a linear function of the underlying mixture of attributes.  Let $D_m$ denote an $n \times n$ diagonal matrix with the  word counts $m_i$ along the diagonal.  Then the expected value of $W$ is a sum of $K$ outer products:
+\begin{equation}
+    \ev W = \la A\, P = \la \sum_k A_k \, P_k' \;,
+  \label{eq:EW}
+\end{equation}
+as in the SVD.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} capture the allocation of attributes over documents.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  For instance, the right singular vectors of $W$ do not typically define a stochastic matrix.  Obtaining good regressors, however, does not require that recover $P$ or $A$.  Referring back to the model \eqn{yi}, we need only recover the range of $A$.
+
+
+The connection of this topic model to bigrams is less obvious and relies on stronger assumptions.  Bigrams count the frequency of the adjacent word types, a property of the sequence of words rather than co-occurrence within a document.  To see why bigrams can nonetheless produce useful regressors, we need to add either stronger assumptions to our topic model or incorporate some type of sequential dependence into the model.  For example, we might assume that words associated with attributes appear in short phrases that would place the words that describe an attribute adjacent to each other.   To do this, the generating process would need to produce a sequence of words sampled from the attribute distribution $P_k$ before transitioning to another attribute (as in a hidden Markov model).  If these phrases are relatively long, then we can approximate the expected counts in the bigram matrix as a weighted outer product of the probability vectors for the attributes.  For example, set $q_z = 0$ in \eqn{Pk} so that the probability distributions over words associated with topics have essentially disjoint support.  For simplicity, assume documents have common length $n_i \equiv n_1$ and attributes have equal value $\beta_1$ (so as to be equally likely of appearing in a document). Under these conditions, consider the frequency in the complete corpus of the sequence of words $w_{m_1}$ and $w_{m_2}$ that describe topic $k$ (so that $P_k(w_{m_1}) > 0$ and $P_k(w_{m_2}) > 0$).  The expected count for such a pair of words is then
+ \begin{equation}
+  \ev B_{m_1,m_2} = \frac{N}{K} P_{m_1,k} P_{m_2,k}  \;.
+  \label{eq:Pwm}
+\end{equation}
+so that we can  write the expected counts for all words as the outer product, $N\,P_k P_k'/K$. \ras{The rest of this section is hokey... Omit or tighten up?} Ideally, then, a factorization of $B$, at least in expectation, produces a collection of singular vectors for which words associated with topic $k$ have a non-zero coefficient, and words associated with other topics have value 0. Averaging these coordinates over the words in a document then produces a vector whose elements are proportional to the mixture of attributes in the document.  We will not pursue this utopian scenario further and defer further analysis of bigram structures to applications more suited to syntactic analysis.
+
+
+
+%--------------------------------------------------------------------------
+% References
+%--------------------------------------------------------------------------
+
+\bibliography{../../../references/stat,../../../references/TextPapers/text}
+\bibliographystyle{../bst/ims}
+
+\end{document} %==========================================================
+
+
+
