@@ -1,0 +1,172 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[      4706,        162]
+NotebookOptionsPosition[      4161,        138]
+NotebookOutlinePosition[      4541,        155]
+CellTagsIndexPosition[      4498,        152]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"Series", "[", 
+  RowBox[{
+   FractionBox["1", 
+    RowBox[{"c", 
+     SqrtBox[
+      RowBox[{" ", "x"}]]}]], ",", 
+   RowBox[{"{", 
+    RowBox[{"x", ",", "\[Mu]", ",", "2"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.619189026495614*^9, 3.619189031521022*^9}, {
+  3.619189068411573*^9, 3.6191890973576612`*^9}, {3.619189606551077*^9, 
+  3.619189608319214*^9}}],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   FractionBox["1", 
+    RowBox[{"c", " ", 
+     SqrtBox["\[Mu]"]}]], "-", 
+   FractionBox[
+    RowBox[{"x", "-", "\[Mu]"}], 
+    RowBox[{"2", " ", 
+     RowBox[{"(", 
+      RowBox[{"c", " ", 
+       SuperscriptBox["\[Mu]", 
+        RowBox[{"3", "/", "2"}]]}], ")"}]}]], "+", 
+   FractionBox[
+    RowBox[{"3", " ", 
+     SuperscriptBox[
+      RowBox[{"(", 
+       RowBox[{"x", "-", "\[Mu]"}], ")"}], "2"]}], 
+    RowBox[{"8", " ", "c", " ", 
+     SuperscriptBox["\[Mu]", 
+      RowBox[{"5", "/", "2"}]]}]], "+", 
+   InterpretationBox[
+    SuperscriptBox[
+     RowBox[{"O", "[", 
+      RowBox[{"x", "-", "\[Mu]"}], "]"}], "3"],
+    SeriesData[$CellContext`x, $CellContext`\[Mu], {}, 0, 3, 1],
+    Editable->False]}],
+  SeriesData[$CellContext`x, $CellContext`\[Mu], {$CellContext`c^(-1) \
+$CellContext`\[Mu]^Rational[-1, 2], 
+    Rational[-1, 2] $CellContext`c^(-1) $CellContext`\[Mu]^Rational[-3, 2], 
+    Rational[3, 8] $CellContext`c^(-1) $CellContext`\[Mu]^Rational[-5, 2]}, 0,
+    3, 1],
+  Editable->False]], "Output",
+ CellChangeTimes->{3.61918909804434*^9, 3.619189406764661*^9, 
+  3.619189609402321*^9}]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"Normal", "[", 
+  InterpretationBox[
+   RowBox[{
+    FractionBox["1", 
+     RowBox[{"c", " ", 
+      SqrtBox["\[Mu]"]}]], "-", 
+    FractionBox[
+     RowBox[{"x", "-", "\[Mu]"}], 
+     RowBox[{"2", " ", 
+      RowBox[{"(", 
+       RowBox[{"c", " ", 
+        SuperscriptBox["\[Mu]", 
+         RowBox[{"3", "/", "2"}]]}], ")"}]}]], "+", 
+    FractionBox[
+     RowBox[{"3", " ", 
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{"x", "-", "\[Mu]"}], ")"}], "2"]}], 
+     RowBox[{"8", " ", "c", " ", 
+      SuperscriptBox["\[Mu]", 
+       RowBox[{"5", "/", "2"}]]}]], "+", 
+    InterpretationBox[
+     SuperscriptBox[
+      RowBox[{"O", "[", 
+       RowBox[{"x", "-", "\[Mu]"}], "]"}], "3"],
+     SeriesData[$CellContext`x, $CellContext`\[Mu], {}, 0, 3, 1],
+     Editable->False]}],
+   SeriesData[$CellContext`x, $CellContext`\[Mu], {$CellContext`c^(-1) \
+$CellContext`\[Mu]^Rational[-1, 2], 
+     Rational[-1, 2] $CellContext`c^(-1) $CellContext`\[Mu]^Rational[-3, 2], 
+     Rational[3, 8] $CellContext`c^(-1) $CellContext`\[Mu]^Rational[-5, 2]}, 
+    0, 3, 1],
+   Editable->False], "]"}]], "Input",
+ NumberMarks->False],
+
+Cell["\<\
+Expected sum of squares in a column is then about...  (plug in var as 2 \[Mu])\
+\>", "Text",
+ CellChangeTimes->{{3.619189676338408*^9, 3.619189711075439*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    FractionBox[
+     RowBox[{"3", " ", "100"}], 
+     RowBox[{"8", " ", "c", " ", 
+      SuperscriptBox["\[Mu]", 
+       RowBox[{"5", "/", "2"}]]}]], "+", 
+    FractionBox["1", 
+     RowBox[{"c", " ", 
+      SqrtBox["\[Mu]"]}]]}], "/.", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"\[Mu]", "\[Rule]", " ", "50"}], ",", 
+     RowBox[{"c", "\[Rule]", " ", "1000"}]}], "}"}]}], "//", "N"}]], "Input",
+ CellChangeTimes->{{3.619189619698964*^9, 3.619189647343335*^9}, {
+  3.6191896913812227`*^9, 3.619189695731448*^9}}],
+
+Cell[BoxData["0.00014354267658086913`"], "Output",
+ CellChangeTimes->{3.619189651087426*^9}]
+}, Open  ]]
+},
+WindowSize->{740, 867},
+WindowMargins->{{874, Automatic}, {Automatic, 258}},
+ShowSelection->True,
+FrontEndVersion->"9.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (November 20, \
+2012)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[579, 22, 390, 11, 54, "Input"],
+Cell[972, 35, 1155, 34, 55, "Output"]
+}, Open  ]],
+Cell[2142, 72, 1150, 34, 57, "Input"],
+Cell[3295, 108, 168, 3, 30, "Text"],
+Cell[CellGroupData[{
+Cell[3488, 115, 562, 17, 54, InheritFromParent],
+Cell[4053, 134, 92, 1, 28, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
