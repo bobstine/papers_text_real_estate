@@ -53,12 +53,18 @@
 
 \begin{itemize}
 
+ \item Basically a regression with 50 X's that only uses the other data when
+ collinearity becomes very severe.
+
+ \item Breiman citations
+
  \item Link back to earlier work in which CVSS and AIC were pointing to
  different models. The results here might be a good explanation of that
  phenomenon.
 
  \item Figure out what it means to have 'comparable' situations among IID,
- leveraged cases, and autoregressive models.
+ leveraged cases, and autoregressive models: plan is to (a) set condition number
+ (b) vary coefficients to obtain specified/target R2.
 
  \item Decide how to handle the intercept. It mucks up the comparison analysis
  later since $\ev X'X$ has that non-stochastic leading $n$.
@@ -263,13 +269,14 @@ the $n \times p$ matrix $X$ with elements$X_{ij}$, then the regression model is
  the question we need to answer.
 
 
- These problems vanish without the leverage points, even in models with
- collinearity among the features.  Figure \ref{fig:example2} shows the same
- statistics and random variables as Figure \ref{fig:example1}, but for data that
- lack the high leverage points. Again, $b=2000$ with $p=150$ possible features,
- of which the first 75 have non-zero coefficients.  Both versions of \aic\ align
- closely and pick the correct model with $75$ features, and all of the error
- measures in the second panel agree.
+ These problems vanish without the leverage points, even in common models used
+ to introduce collinearity among the features.  Figure \ref{fig:example2} shows
+ the same statistics and random variables as Figure \ref{fig:example1}, but for
+ ``ideal'' data that lack leverage points and the resulting
+ collinearities.  Again, $b=2000$ with $p=150$ possible features, of which the
+ first 75 have non-zero coefficients.  Both versions of \aic\ align closely and
+ pick the correct model with $75$ features, and all of the error measures in the
+ second panel agree.
 
  \begin{figure}
  \caption{ Simulation of \aic\ (normal in blue and heteroscedastic consistent,
@@ -290,13 +297,26 @@ leverage points. }
  \ref{fig:example1} and \ref{fig:example2}, but with autoregressive dependence
  among the columns of $X$.  Specifically, we set $\phi=0.935$ so that the
  condition number of $X$ approximates that produced by the leveraged outliers in
- the first example.  In this setting, the two versions of \aic\ closely agree,
- and both pick the correct model with $k = 75$ features.  The fixed- and
- random-design mean squared errors are also very similar with minimum values
- near $k=75$.  The difference lies in the trend produced by the squared loss in
- estimating $\beta$.  While the minimum loss occurs for a model near those that
- minimize the two forms of the MSE, the trend in the loss is rather different
- and more volatile.
+ the first example.  Although the condition numbers roughly match, the two
+ collinear design matrices produce different distributions of singular values,
+ as seen in Figure \ref{fig:svd}.  The $n_o=50$ leverage points produce 50 large
+ singular values, whereas autoregressive collinearity produces a geometrically
+ decaying collection.  (Notice also that adding more columns to the design
+ increases the collinearity produced by leverage, but not for autoregressive
+ dependence.  In the AR model with $s < t$, $X_s$ is independent of $X_t$ given
+ $X_{s+1}$.  As as result, leverage produced much higher VIFs for the full set
+ of $p=150$ features in the range of 150 to 200 in this example, compared to
+ 25-30 for the autoregressive model.)  In this setting, the performance of the
+ two versions of \aic\ shown in Figure \ref{fig:example3} closely agree, and
+ both pick the correct model with $k = 75$ features.  The sequences of fixed-
+ and random-design mean squared errors are also very similar with minimum values
+ near $k=75$.  The squared loss estimating $\beta$ is not proportional to the
+ fixed-design MSE in this case because $\ev X'X \ne c\,I$ -- the columns of $X$
+ are not independent in expectation.  As a result, $\ev \normsq{\hat\beta -
+ \beta}$ is rather different than $\ev \normsq{ X (\hat\beta - beta)}$.  The
+ minimum squared loss occurs for a model near those that minimize the two forms
+ of the MSE, the trend in the loss is rather different and more volatile.
+
 
  \begin{figure}
  \caption{ Simulation of \aic\ (normal in blue and heteroscedastic consistent,
@@ -304,6 +324,15 @@ leverage points. }
  model with autoregressive dependence among the explanatory features. }
  \label{fig:example3}
   \centerline{ \includegraphics[width=5in]{figures/leverage/example3.pdf} }
+ \end{figure}
+
+
+ \begin{figure}
+ \caption{ Singular values produced by leverage points (black) are larger, with
+ linear decay, compared to those produced by autoregressive collinearity
+ (red). Both matrices have approximately the same condition number. }
+ \label{fig:svd}
+  \centerline{ \includegraphics[width=5in]{figures/leverage/svd.pdf} }
  \end{figure}
 
 
