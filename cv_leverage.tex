@@ -343,11 +343,6 @@ leverage points. }
 %--------------------------------------------------------------------------
 
 
-%--------------------------------------------------------------------------
-\section{ xx }
-\label{sec:}
-%--------------------------------------------------------------------------
-
 
 
 %--------------------------------------------------------------------------
@@ -355,6 +350,53 @@ leverage points. }
 \label{sec:derive}
 %--------------------------------------------------------------------------
 
+
+%--------------------------------------------------------------------------
+\section{ Literature }
+\label{sec:lit}
+%--------------------------------------------------------------------------
+
+\citet{breiman92s} discuss variable selection in the random-design model and
+ point out possible ``startling'' differences from what occurs in the
+ fixed-design model.  They recommend cross validation and bootstrap resampling,
+ and note that smaller models are generally preferred with random designs. For
+ some analysis, they write the fixed-design MSE (which they call ``model
+ error'') as (for the correctly specified ``full'' model to avoid issues of
+ specification error)
+ \begin{displaymath}
+  (\hat\beta - \beta) G (\hat\beta - \beta) \quad \mbox{ for }
+     G = X'X \;. 
+ \end{displaymath}
+ They write random-design MSE as (after taking the expectation over the
+ distribution of the new $\widetilde{X}$ for which $\ev G = \Gamma$)
+ \begin{displaymath}
+   (\hat\beta - \beta) \Gamma (\hat\beta - \beta)
+  (\hat\beta - \beta) (\Gamma G^{-1}) G (\hat\beta - \beta),
+ \end{displaymath}
+ in order to capture the difference from the fixed-design in the product
+ $\Gamma\, G^{-1}$.  The larger $\Gamma\, G^{-1} - I$, the larger the difference
+ between the fixed and random-design errors.  
+
+ The rest of paper is simulation, with 40 features and $n = 60$ or 160 (done on
+ a Cray, no less).  Their emphasis is on variable selection via stepwise, using
+ CVSS, bootstrap or $C_p$-like methods to select the best subset of features.
+  Simulation uses AR collinear structure, either lognormal or normal.  The
+ lognormal case produces rancom number of {\bf leveraged observations}.  Nonzero
+ coefficients were in clusters of ``adjacent'' features, scaled so that $R^2 =
+ 0.75$.  Nice conclusion is preference for 10-fold CV over leave-one-out.
+
+ With {\bf leveraged observations}, they point out the importance of stratifying
+ on the leverage points when forming the folds.  (They sorted by leverages in
+ the full design, then sampled from these strata.)  Find that such adjustments
+ did not improve the estimates.  
+
+
+\citet{burman90} Gives a correction when using 10-fold cross validation to
+ estimate the MSE of a regression (cited in Breiman).
+
+
+\citet{efron86} notes that cross validation estimates the random-design MSE and
+ should not be used to estimate the MSE for fixed designs (unless in asymtopia).
 
 %--------------------------------------------------------------------------
 % References
