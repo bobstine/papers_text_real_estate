@@ -60,7 +60,10 @@
 
  \item Not a problem if the number of non-zero elements in $\beta$ is less than
  number of leverage points; in this case, selection works as in a typical
- regression.
+ regression.  In this case, the observation weights such as $w_{i1} =
+ e_1'(X'X)^{-1}x_i'$ have the same pattern, but it no longer induces a problem
+ because the specification error is gone by the time the $w_{i1}$ for
+ nonleveraged points increase.  Called a ``catcher matrix'' by Mostellor and Tukey.
 
  \item Link back to earlier work in which CVSS and AIC were pointing to
  different models. The results here might be a good explanation of that
