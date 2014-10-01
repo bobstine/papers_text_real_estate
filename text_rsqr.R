@@ -1,8 +1,6 @@
 
 source("/Users/bob/C/text/functions.R")
 
-
-
 ##################################################################################
 #  
 #   Raw word regression
@@ -46,7 +44,17 @@ source("/Users/bob/C/text/functions.R")
 	file    <- paste(path,city,"lsa_",weights,"_", nProj,"_p4.txt",sep="")
 	LSA     <- as.matrix(read.table(file, header=TRUE)); dim(LSA)
 
+# --- Check degree of heteroscedasticity among rows of LSA and W
+#		some documents have much more variance in word mix, related to doc length
 
+	s <- apply(W,1,sd)
+	c <- apply(W,1,sum)
+	plot(c,s)
+	
+	sl <- apply(LSA,1,sd)
+	plot(sl)
+	plot(s,sl)		# highly related, with those anmalous docs at s = 1/2
+	
 # --- LSA analysis from matrix W    adj R2=0.6567 with 1000 and log tokens
 
 	p      <- 500
