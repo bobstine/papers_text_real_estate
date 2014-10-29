@@ -6,10 +6,10 @@
 \usepackage{amssymb}   % Real number symbol {\Bbb R}
 \usepackage{amsmath}
 \usepackage{bbm}
-\input{../../standard}
+\input{../../../standard}
 
 % --- margins
-\usepackage{../sty/simplemargins}
+\usepackage{../../sty/simplemargins}
 \setleftmargin{1in}   % 1 inch is NSF legal minimum
 \setrightmargin{1in}  % 1 inch is NSF legal minimum
 \settopmargin{1in}    % 1 inch is NSF legal minimum
@@ -33,6 +33,7 @@
 % --- Customized commands, abbreviations
 \newcommand{\TIT}{{\it  {\tiny Outliers and Rotations (DRAFT, \today)}}}
 \newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}
+\newcommand{\aicc}{\mbox{\it AIC$_c$}}
 
 % --- Header
 \pagestyle{myheadings}
@@ -45,9 +46,9 @@
 \author{
         Dean P. Foster
         \ \ Mark Liberman
-        \ \ Robert A. Stine  \footnotemark[\value{Dean Foster and Robert Stine
+        \ \ Robert A. Stine  \footnote{Dean Foster and Robert Stine
 are members of the Department of Statistics. Mark Liberman is '???' of the
-Linguisitc Data Corportation.}]    \\
+Linguisitc Data Corportation.}    \\
         University of Pennsylvania \\
         Philadelphia, PA
 }
@@ -390,7 +391,7 @@ spread out.
  decreasing frequency (dots), and those in the two others are computed from either
  LSA (solid) or bigrams (dashed).}  Small circles mark the positions of the
  minimum $AIC_c$ statistic for each sequence.}  
- \centerline{\includegraphics[width=4in]{figures/aic.pdf} }
+%  \centerline{\includegraphics[width=4in]{figures/aic.pdf} }
 \end{figure}
 
  
@@ -700,7 +701,7 @@ The columns of  $\widetilde{U}_{B,k}$ are sometimes called ``eigenwords'' becaus
 \begin{figure}
 \caption{  \label{fig:bigramtstats}  
   {\sl Absolute $t$-statistics from the regression of log prices on the first 1,000 bigram centroids.}  }
-  \centerline{ \includegraphics[width=5in]{figures/bigram_tstats.pdf} }
+%  \centerline{ \includegraphics[width=5in]{figures/bigram_tstats.pdf} }
 \end{figure}
 
 
@@ -762,7 +763,7 @@ The two examples are distinguished by the degree of overlap among the 30 topic d
 { \sl  Probability distributions over words simulated from a Dirichlet distribution with parameter $\al = 0.01$ (left) are essentially disjoint, whereas with $\al = 0.10$ (right), the simulated distributions substantial common support.}}
  \centerline{
  \vspace{0.1in}
- \includegraphics[width=7.5in]{figures/P} }
+ % raphics[width=7.5in]{figures/P} }
  \end{figure}
 
 
@@ -771,9 +772,8 @@ The two examples are distinguished by the degree of overlap among the 30 topic d
 \begin{figure}
 \caption{ \label{fig:spectra} 
 { \sl Spectra obtained for the document/word matrix $W$ with no standardization or CCA standardization.}}
- \centerline{
  \vspace{0.1in}
- \includegraphics[width=6.0in]{figures/spectra} }
+% \centerline{ \includegraphics[width=6.0in]{figures/spectra} }
  \end{figure}
 
 
@@ -881,7 +881,7 @@ Though regression models are seldom causal, one is often tempted to interpret
  \caption{ \label{fig:wine} \sl Regression t-statistics from a model that predicts wine ratings using 250 principal components of $W$ based on 21,000 wine tasting notes.}
  
  \centerline{
-   \includegraphics[width=4in]{figures/wine.pdf}
+%   \includegraphics[width=4in]{figures/wine.pdf}
    }
   \end{figure} 
   
@@ -990,7 +990,7 @@ The authors thank Vanessa Villatoro from Trulia's PR Team for allowing us to scr
 % References
 %--------------------------------------------------------------------------
 
-\bibliography{../../../references/stat,../../../references/TextPapers/text}
+\bibliography{../../../../references/stat,../../../../references/TextPapers/text}
 \bibliographystyle{../bst/ims}
 
 \end{document} %==========================================================

@@ -152,7 +152,7 @@ source("~/C/text/functions.R")
 		text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
 		return(colnames(W)[w[1:20]])
 	}
-	par(mfrow=c(2,2))								[ lsa_components.pdf ]
+	par(mfrow=c(2,2))								# [ lsa_components.pdf ]
 		draw.pair(V,5) ; draw.pair(V,8)
 		draw.pair(V,23); draw.pair(V,27)
 	reset()
