@@ -144,20 +144,47 @@ source("~/C/text/functions.R")
 	#   27 shows the outlier problem
 	# Removed: "php?action=listingview&listingid=29" "20-04-416-028-0000" (both in 30)
 	# what is "kedvale" and "R3" (in 35,37)  Kedvale is a neighborhood, R3 is a zoning category
-	draw.pair <- function(V,j,k=NULL,label="Component") {
+	draw.pair <- function(V,j,k=NULL,label="Component",col="gray", show.names=T) {
 		if(is.null(k)) k <- j + 1;
+<<<<<<< HEAD
 		plot(V[,j],V[,k], col="gray", xlim=1.1*range(V[,j]), ylim=1.1*range(V[,k]),
 				xlab=paste(label,j), ylab=paste(label,k));
 		w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
 		text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
 		return(colnames(W)[w[1:20]])
 	}
+=======
+		plot(V[,j],V[,k], col=col, xlim=1.1*range(V[,j]), ylim=1.15*range(V[,k]),
+				xlab=paste(label,j), ylab=paste(label,k)); 
+		if (show.names) {
+			w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
+			text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
+			return(colnames(W)[w[1:20]])
+		}}
+	# adding 28 produces the huge jump
+>>>>>>> 737ae6c3c98afba12adb164b87280d95631cb51c
 	par(mfrow=c(2,2))								# [ lsa_components.pdf ]
 		draw.pair(V,5) ; draw.pair(V,8)
 		draw.pair(V,23); draw.pair(V,27)
 	reset()
+<<<<<<< HEAD
 	# adding 28 produces the huge jump
 
+=======
+	
+	# do the tips of the rays stand out?
+	i <- order(rowSums(V^2), decreasing=T)           
+	# colors <- topo.colors(nrow(V))[i]
+	v <- 1-log((1:nrow(V))/nrow(V))/log(1/nrow(V))
+	colors <- gray(v)               # 1 = white   [ try plot(v,col=colors) ]
+	colors[500:length(colors)] <-0  # just the largest, so black=most var
+	par(mfrow=c(1,2))
+		k <- 11;
+		draw.pair(V,k);
+		draw.pair(V[i,],k,col=colors, show.names=F)
+		points(V[i[1:50],k],V[i[1:50],k+1],pch=19,col="cyan",cex=0.5)
+	reset()
+>>>>>>> 737ae6c3c98afba12adb164b87280d95631cb51c
 
 # --- Rotate the leading k LSA components as in factor analysis
 	k <- 250
