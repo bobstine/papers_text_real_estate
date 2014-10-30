@@ -35,36 +35,36 @@ source("~/C/text/functions.R")
 	hist(log10(nTokens))
 
 # --- analysis of prices (thousands of $)
-	par(mfrow=c(1,2))                                           
+	par(mfrow=c(1,2))
 		y <- price
 		hist(log10(price), breaks=30, main=" ",xlab="log10(Price)")
 		qqnorm(log10(price), ylab="log10(Price)"); abline(a=mean(log10(y)),b=sd(log10(y)))
 	reset()
 
-# --- simple model for log of prices 
-	plot(logPrice ~ logTokens) 
+# --- simple model for log of prices
+	plot(logPrice ~ logTokens)
 	regr <- lm(logPrice ~ poly(logTokens,5)); summary(regr)
 	o <- order(nTokens)
 	lines(logTokens[o], fitted.values(regr)[o], col="magenta")
 
 
 ##################################################################################
-#  
+#
 #   Read word count matrix W
 #
 ##################################################################################
-	
+
 	path <- "~/C/text/text_src/temp/ChicagoOld3/"
-	
+
 	YM <- as.matrix(read.table(paste(path,"lsa_ym.txt",sep=""),header=T,as.is=T))
 	logPrice  <- YM[,1];
 	nTokens   <- YM[,2];
 	logTokens <- log(YM[,2])
-	
+
 	# fix column names when rebuild count matrix to remove embedded quote
 	W  <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
 	# read raw column names to avoid R translation (first line of w5704.txt)
-	names <- scan(paste0(path,"types_5704.txt"), what="character")  
+	names <- scan(paste0(path,"types_5704.txt"), what="character")
 	colnames(W) <- names
 	type.freq <- colSums(W)
 
@@ -113,27 +113,27 @@ source("~/C/text/functions.R")
 	r <- lm(y~x); coefficients(r)
 	pred <- predict(r, newdata=data.frame(x=log(1:400)))
 	lines(1:400, exp(pred), col="gray")
-	
+
 # --- LSA analysis from matrix W    adj R2=0.7105 with 500 and log tokens^5
 
 	p      <- nProj
 	lsa    <- as.matrix(LSA[,2:p])
 	sr.lsa <- summary(regr.lsa <- lm(logPrice ~ poly(logTokens,5) + lsa)); sr.lsa
 	predictive.r2(regr.lsa)
-	
+
 	quartz(width=6.5,height=3); reset()
-	coef.summary.plot(sr.lsa, "LSA Component", omit=6)			# [ lsa_tstats.pdf ]  
+	coef.summary.plot(sr.lsa, "LSA Component", omit=6)			# [ lsa_tstats.pdf ]
 
 
 # --- Which words make up the LSA components?
 
 	plot(V[,1]^2, type.freq)   # nails that one (note that these are CCA scaled)
-	
-	# plot a component in type freq order 
+
+	# plot a component in type freq order
 	x <- 1:nrow(V)
-	j <- 17; plot(V[,j],col="gray"); w<-order(abs(V[,j]),decreasing=T)[1:50]; 
+	j <- 17; plot(V[,j],col="gray"); w<-order(abs(V[,j]),decreasing=T)[1:50];
 	text(x[w],V[w,j],colnames(W)[w],cex=0.75)
-	
+
 	# 46 has very clear rays; 8/9 have the auction ray (sale process; also in 12-13)
 	# 14-15 is the almost 'ideal' with roughly orthogonal terms; 26-27,50-51 have oblique
 	# 18-19 is just interesting; 32-33 has several (weaker) rays
@@ -147,7 +147,7 @@ source("~/C/text/functions.R")
 	draw.pair <- function(V,j,k=NULL,label="Component") {
 		if(is.null(k)) k <- j + 1;
 		plot(V[,j],V[,k], col="gray", xlim=1.1*range(V[,j]), ylim=1.1*range(V[,k]),
-				xlab=paste(label,j), ylab=paste(label,k)); 
+				xlab=paste(label,j), ylab=paste(label,k));
 		w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
 		text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
 		return(colnames(W)[w[1:20]])
@@ -157,22 +157,22 @@ source("~/C/text/functions.R")
 		draw.pair(V,23); draw.pair(V,27)
 	reset()
 	# adding 28 produces the huge jump
-	
+
 
 # --- Rotate the leading k LSA components as in factor analysis
 	k <- 250
 	vm <- varimax(V[,2:k])				# skip first as its the logToken effect
 	v <- vm$loadings
-	
+
 	(V[,2:k] %*% vm$rotmat)[1:3,1:6]    # match: V T = new loading matrix
 	v[1:3,1:6]
-	
+
 	# rotated components are more orthogonal/interpretable in variables
 	# factor 1 is pretty cool, kitchen and amenities; #3 is hud, distressed
-	# 5-6 is particularly nice; 7-8 gets a clear auction factor; 16 is structure/rooms; 
+	# 5-6 is particularly nice; 7-8 gets a clear auction factor; 16 is structure/rooms;
 	#   abbreviated nice things
 	# clear structure (though without so much meaning perhaps) even for later terms 100
-	# asterisk * is 19; tilde ~ is factor 21 after rotation; --- is 23; 
+	# asterisk * is 19; tilde ~ is factor 21 after rotation; --- is 23;
 	#    26 is the outlier variable
 	par(mfrow=c(2,2))								# [ rot_components.pdf ]
 		draw.pair(v, 7,label="Rotated"); draw.pair(v,16,k=18,label="Rotated")
@@ -180,16 +180,16 @@ source("~/C/text/functions.R")
 	reset()
 
 
-# --- LSA analysis from rotated W  
+# --- LSA analysis from rotated W
 # create new regressors (first is not useful since singular)
 	lsa.vm <- LSA[,2:250] %*% vm$rotmat
 	colnames(lsa.vm) <- paste0("LVM",1:ncol(lsa.vm))
 
 	sr.rot <- summary(regr.rot <- lm(logPrice ~ poly(logTokens,5) + lsa.vm)); sr.rot
 	predictive.r2(regr.rot)    # r2 = 0.6770 with 249
-	
+
 	quartz(width=6.5,height=3); reset()
-	coef.summary.plot(sr.rot, "Rotated Component", omit=6)			# [ rot_tstats.pdf ]  
+	coef.summary.plot(sr.rot, "Rotated Component", omit=6)			# [ rot_tstats.pdf ]
 
 
 	# write these rotated scores out for use in seq_regr for CVSS... manually without " in names
@@ -210,18 +210,18 @@ source("~/C/text/functions.R")
 	write.table(poly, paste(path,"logtoken_poly_5.txt",sep=""), row.names=F)
 
 # --- read C++ CV results; note that these include the collinear term
-	cv.results.1.10 <- read.delim(paste(path,"cv_15242/aic_lsa_10f.txt",sep="")) 
+	cv.results.1.10 <- read.delim(paste(path,"cv_15242/aic_lsa_10f.txt",sep=""))
 	cv.results.2.10 <- read.delim(paste(path,"cv_24387/aic_lsa_10f.txt",sep=""))
 	cv.results.3.10 <- read.delim(paste(path,"cv_31427/aic_lsa_10f.txt",sep=""))
 	cv.results.4.10 <- read.delim(paste(path,"cv_53853/aic_lsa_10f.txt",sep=""))
 	cv.results.5.10 <- read.delim(paste(path,"cv_73241/aic_lsa_10f.txt",sep=""))
-		
-	cv.results.5.vmx<- read.delim(paste0(path,"cv_73241/aic_vmx_20_2_250.txt")) 
+
+	cv.results.5.vmx<- read.delim(paste0(path,"cv_73241/aic_vmx_20_2_250.txt"))
 
 
 # --- inset plot to show outlier impact					   #  [   cvss.pdf  ]
 	x <- 0:(nrow(cv.results.1.10)-1)
-	xlim <- NULL;   ylim <- c(3900,9000)	
+	xlim <- NULL;   ylim <- c(3900,9000)
 	par(new = FALSE)
 	plot (x,cv.results.1.10[,"AICc"]+2000, log="y", type="l",   xlim=xlim, ylim=ylim, col="red",
 			ylab="10-Fold CVSS", xlab="Component Added")   #  [   cvss.pdf  ]
@@ -236,7 +236,7 @@ source("~/C/text/functions.R")
 	par(new=TRUE)
 	par(fig = c(0.45, 0.90, 0.45, 0.90))
 	plot (x,cv.results.1.10[,"AICc"]+2000, log="y", type="l",   xlim=xlim, ylim=ylim, col="red",
-			ylab="", xlab="", cex.axis=0.75)  	
+			ylab="", xlab="", cex.axis=0.75)
 	lines(x,cv.results.1.10 [,"CVSS"], col="black")   # 10 fold
 	lines(x,cv.results.2.10 [,"CVSS"], col="black")
 	lines(x,cv.results.3.10 [,"CVSS"], col="black")
@@ -258,12 +258,12 @@ source("~/C/text/functions.R")
 ##################################################################################
 
 	set.seed(23743)
-	
-	n.folds <- 10	
+
+	n.folds <- 10
 	n <- length(logPrice)
 	folds <- c(rep(1:n.folds,ceiling(n/n.folds)))[1:n]
 	folds <- sample(folds,n, replace=F)
-	
+
 	# --- whole model, all cases
 	#     big outlier/influence point is 3646; most visible in plot of residuals on leverage
 	#	  words developmental, training, skills, saint, rose; these are in this and just few
@@ -272,13 +272,13 @@ source("~/C/text/functions.R")
 	outlier <- 3646
 	lsa     <- LSA[,2:30]; 				# avoid L0 which is purely collinear
 	# lsa     <- lsa.vm[,1:30]            # already removed L0; larger RSS
-	degree  <- 5; 
+	degree  <- 5;
 	r <- lm(logPrice ~ poly(logTokens,degree) + lsa);
 	summary(r); c(sum(residuals(r)^2), residuals(r)[outlier])	# 5259.908 for 2:29
-	
+
 	# --- via loop, does full sequence of models like seq_regression
 	#     use omit to remove special listings
-	omit <- NULL # outlier  
+	omit <- NULL # outlier
 	cv.r2 <- cv.sse <- matrix(NA, 1+ncol(lsa), n.folds)
 	for(fold in 1:n.folds) {
 		cat(fold," ");
@@ -296,7 +296,7 @@ source("~/C/text/functions.R")
 	#	  that excludes the outlier
 	out.fold <- folds[outlier]   # outlier fold
 	cv.sse
-	
+
 	# --- show calibration plot with the leverage point			# [   calibrate.pdf  ]
 	lsa <- LSA[,2:28]
 	i <- (out.fold != folds)
@@ -316,19 +316,19 @@ source("~/C/text/functions.R")
 	sr.28 <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:28]); summary(sr.28)$r.squared
 	sr.29 <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:29]); summary(sr.29)$r.squared
 	anova(sr.28,sr.29)
-	
+
 	# partial regr of L28 on L0:L28 is basically nil (R2 < 0.01, but is signficant)
 	p.28 <- lm(LSA[,28] ~ poly(logTokens,5) + LSA[,2:27]); summary(p.27)
 	p.29 <- lm(LSA[,29] ~ poly(logTokens,5) + LSA[,2:28]); summary(p.28)
-	
+
 	plot(sr.28)   # 3646 is highly leveraged (about 0.9)
 	plot(sr.29)   # 3646 remains highly leveraged
-	
+
 	# partial regression plots
 	pr.plot <- function(k) {
-		rx <- lm(LSA[,k]  ~ poly(logTokens,5) + LSA[,2:k-1]); 
-		ry <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:k-1]); 
-		plot(x<-residuals(rx), y<-residuals(ry), 
+		rx <- lm(LSA[,k]  ~ poly(logTokens,5) + LSA[,2:k-1]);
+		ry <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:k-1]);
+		plot(x<-residuals(rx), y<-residuals(ry),
 			xlab=paste("Partial Residuals, k =",k), ylab= "Partial Res log Price")
 		abline(r <- lm(y~x));
 		ii <- order(hat(x),decreasing=T)[1:5]
@@ -338,5 +338,5 @@ source("~/C/text/functions.R")
 	}
 	# 	observation 3646 is highly leveraged (esp for var 27)
 	par(mfrow=c(1,2)	);	mapply(pr.plot,  c(27,28));		reset()		# [ leverage_plots.pdf ]
-	
+
 ##################################################################################

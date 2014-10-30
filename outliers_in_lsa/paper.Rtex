@@ -1,4 +1,4 @@
-%-*- mode: LaTex; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
+%-*- mode: Rnw-mode; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
 %% begin.rcode setup, include=FALSE
 % library(knitr)
 % opts_chunk$set(fig.path='figures/latex-', cache.path='cache/latex-')
@@ -95,8 +95,63 @@ Linguisitc Data Corportation.}    \\
 \section{Outline}
 % ----------------------------------------------------------------------
 
-Review basic word types since these are not standard text.  Still have the Zipf
-distribution as usual, as shown in Figure \ref{fig:zipf}.
+<<>>=
+	source("~/C/text/functions.R")
+        city     <- "ChicagoOld3"
+	path     <- paste0("~/C/text/text_src/temp/",city,"/");
+	file     <- paste0(path,"parsed.txt")
+	Data     <- read.table(file, header=TRUE); dim(Data)
+	n         <- nrow(Data)
+	logPrice  <- Data[,"Y"]    # file holds log prices
+	price     <- exp(Data[,"Y"])
+	nTokens   <- Data[,"m"]
+	logTokens <- log(nTokens)
+
+@
+
+ On average, listings have about \Sexpr{round(mean(nTokens),1)}
+ tokens, but the average is a bit misleading due to skewness of the
+ distribution.  The median length is much smaller, about
+ \Sexpr{round(median(nTokens),2)} tokens.
+
+
+ As might be anticipated from the context, longer listings are
+ associated with more expensive prices.  There's more to say about a
+ nicer property. The fit is not amazing, but the following 5th degree
+ polynomial in listing length explains about 19\% of the variation in
+ log prices.  (One could use a more elaborate smoothing model to
+ similar effect.)  Later models based on the text content include the
+ following explicit polynomial in the log of the number of tokens.
+
+<<>>=
+	regr <- lm(logPrice ~ poly(logTokens,5));
+        summary(regr)
+
+@
+
+ Review basic word types since these are not standard text.  Still
+ have the Zipf distribution as usual, as shown in Figure
+ \ref{fig:zipf}.
+
+<<>>=
+	W  <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
+
+@
+<<zipf.plot, dev='zipf.pdf', fig.width=5, fig.height=5, out.width='.8\\textwidth'>>=
+
+	names <- scan(paste0(path,"types_5704.txt"), what="character")
+	colnames(W) <- names
+	type.freq <- colSums(W)
+	x<-1:length(type.freq); y<-type.freq
+	zipf.data <- data.frame(list(x=x,y=y,lx=log(x),ly=log(y)))
+	plot(y~x, xlab="Rank", ylab="Type Frequency", log="xy", data=zipf.data)
+	common.words <- c(".", ",", "and", "-", "in")
+	text(0.9*x[1:5],0.7*y[1:5],common.words,cex=c(1,1,0.5,1,0.5))
+	regr<-lm(ly~lx, data=zipf.data[1:500,]); coefficients(regr)
+	lx <- log(x<-c(1,5000)); y <- exp(predict(regr, data.frame(lx=lx)))
+	lines(x,y,col="gray")
+
+@
 
 
  \begin{figure}
@@ -109,8 +164,7 @@ distribution as usual, as shown in Figure \ref{fig:zipf}.
  \vspace{0.2in}
  \end{figure}
 
-
-The spectrum of the CCA scaled document/term matrix \Wt\ shown in Figure
+ The spectrum of the CCA scaled document/term matrix \Wt\ shown in Figure
  \ref{fig:spectrum} falls off slowly, with very little hint of a clear
  separation between ``large'' and ``small'' singular values.  The decay is more
  rapid at first, then slows to a level typical of random noise after about 100
