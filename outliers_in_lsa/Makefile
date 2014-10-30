@@ -6,9 +6,6 @@
 #
 ################################################################################
 
-default: quadratic_variables_VS_LDA.pdf
-	zsh -c "source ~/.zshrc;open quadratic_variables_VS_LDA.pdf"
-
 SOURCES = $(wildcard *.Rnw)
 
 .SECONDARY: $(SOURCES:.Rnw=.tex)
