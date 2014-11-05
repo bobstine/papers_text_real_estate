@@ -146,14 +146,6 @@ source("~/C/text/functions.R")
 	# what is "kedvale" and "R3" (in 35,37)  Kedvale is a neighborhood, R3 is a zoning category
 	draw.pair <- function(V,j,k=NULL,label="Component",col="gray", show.names=T) {
 		if(is.null(k)) k <- j + 1;
-<<<<<<< HEAD
-		plot(V[,j],V[,k], col="gray", xlim=1.1*range(V[,j]), ylim=1.1*range(V[,k]),
-				xlab=paste(label,j), ylab=paste(label,k));
-		w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
-		text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
-		return(colnames(W)[w[1:20]])
-	}
-=======
 		plot(V[,j],V[,k], col=col, xlim=1.1*range(V[,j]), ylim=1.15*range(V[,k]),
 				xlab=paste(label,j), ylab=paste(label,k)); 
 		if (show.names) {
@@ -162,12 +154,10 @@ source("~/C/text/functions.R")
 			return(colnames(W)[w[1:20]])
 		}}
 	# adding 28 produces the huge jump
->>>>>>> 737ae6c3c98afba12adb164b87280d95631cb51c
 	par(mfrow=c(2,2))								# [ lsa_components.pdf ]
 		draw.pair(V,5) ; draw.pair(V,8)
 		draw.pair(V,23); draw.pair(V,27)
 	reset()
-<<<<<<< HEAD
 	# adding 28 produces the huge jump
 
 =======
@@ -334,7 +324,6 @@ source("~/C/text/functions.R")
 	pred <- predict(r, newdata=data)
 	j <- sum((out.fold==folds)[1:3646]); (logPrice[i]-pred)[j]
 	col <- rep("black",sum(i)); col[j]<-"red"
-	plot(logPrice[i]-pred, col=col)
 	plot(pred, logPrice[i], col=col, xlab="Predicted Log Price", ylab="Log Price") # calibration
 
 # --- find the inversion (CVSS up, AICc down when add row 29 -- which is LSA 28)
@@ -363,6 +352,7 @@ source("~/C/text/functions.R")
 		x <- x[-ii]; y <- y[-ii]
 		abline(r <- lm(y~x), col="red");
 	}
+	pr.plot
 	# 	observation 3646 is highly leveraged (esp for var 27)
 	par(mfrow=c(1,2)	);	mapply(pr.plot,  c(27,28));		reset()		# [ leverage_plots.pdf ]
 

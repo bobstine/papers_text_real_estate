@@ -1,11 +1,13 @@
-%-*- mode: Rnw-mode; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 80; -*-
-%% begin.rcode setup, include=FALSE
-% library(knitr)
-% opts_chunk$set(fig.path='figures/latex-', cache.path='cache/latex-')
-%% end.rcode
+%-*- mode: Rnw-mode; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 95; -*-
+<<begin.rcode, include=FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path='figures/',fig.keep='last',dev='pdf',fig.align='center')
+opts_chunk$set(fig.width=6, fig.height=4, out.width='0.7\\textwidth')
+opts_chunk$set(cache.path='cache/', highlight=FALSE)
+@
 \documentclass[12pt]{article}
 \usepackage[longnamesfirst]{natbib}
-\usepackage[usenames]{color}
+% \usepackage[usenames]{color}  % causes problems in knitr
 \usepackage{graphicx}  % Macintosh pdf files for figures
 \usepackage{amssymb}   % Real number symbol {\Bbb R}
 \usepackage{amsmath}
@@ -14,8 +16,8 @@
 
 % --- margins
 \usepackage{../../sty/simplemargins}
-\setleftmargin{1in}   % 1 inch is NSF legal minimum
-\setrightmargin{1in}  % 1 inch is NSF legal minimum
+\setleftmargin{0.8in}   % 1 inch is NSF legal minimum
+\setrightmargin{0.8in}  % 1 inch is NSF legal minimum
 \settopmargin{1in}    % 1 inch is NSF legal minimum
 \setbottommargin{1in} % 1 inch is NSF legal minimum
 
@@ -24,7 +26,7 @@
 \setlength{\parindent}{0in}
 
 % --- Line spacing
-\renewcommand{\baselinestretch}{1.5}
+\renewcommand{\baselinestretch}{1.4}
 
 % --- page numbers
 \pagestyle{empty}  % so no page numbers
@@ -46,17 +48,13 @@
 
 % --- Title
 
-\title{ Outliers and Rotations in Latent Semantic Regression:
-          A Tutorial Example  }
-\author{
-        Dean P. Foster
-        \ \ Mark Liberman
-        \ \ Robert A. Stine  \footnote{Dean Foster and Robert Stine
-are members of the Department of Statistics. Mark Liberman is '???' of the
-Linguisitc Data Corportation.}    \\
+\title{ Outliers in Latent Semantic Regression: A Tutorial Example }
+ \author{ Dean P. Foster \ \ Mark Liberman \ \ Robert A. Stine
+ \footnote{Dean Foster and Robert Stine are members of the Department
+ of Statistics of the University of Pennsylvania.
+ Mark Liberman is at the Linguistic Data Corporation.}    \\
         University of Pennsylvania \\
-        Philadelphia, PA
-}
+        Philadelphia, PA }
 
 \date{\today}
 
@@ -65,446 +63,264 @@ Linguisitc Data Corportation.}    \\
 \begin{document}
 \vspace{-0.5in}
 \maketitle
-%------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
 \vspace{-.5in}
 
 \abstract{
 
- Latent semantic regression uses principal components derived from latent
- semantic analysis (LSA) as regressors.  As in conventional principal components
- analysis, rotations of these components produce more interpretable regressors.
-  Rotated components from LSA also behave differently in the presence of
- outlying text.  Our example shows how unrotated components easily lead to
- highly leveraged, influential outliers that obfuscate the results of model
- selection using cross-validation.  Rotation reduces these confounding effects,
- at the cost of spreading the captured structure over more components.
+ A single outlying document is able to exert a surprising influence
+ upon the structure of a latent semantic analysis (LSA).  The outlier
+ can influence several latent components, leading to surprising
+ effects when these components are used, for instance, as features in
+ a predictive model.  The outlier can easily lead to a highly
+ leveraged observation that distorts the influence of several latent
+ components.  Because of this mixing effect, the outlier contaminates
+ several variables, and the resulting model confounds useful structure
+ with that presented by the original outlying text.  These effects can
+ distort, for example, the use of cross-validation for selecting model
+ features.  In our case, a simple rotation of the latent components,
+ however, localizes the effects of the outlier.  Not only are these
+ rotated components more robust to the influence of the outlier,
+ rotated components are more interpret able as predictors in other
+ models.
 
 }
 
-%------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+
 \vspace{0.15in}
 
-\noindent
-{\it Key Phrases:  latent semantic analysis, random projection, singular value decomposition, text mining, topic models}
+\noindent {\it Key Phrases:
+
+ varimax rotation, singular value decomposition, text mining}
 
 \clearpage
 
 
 
-% ----------------------------------------------------------------------
-\section{Outline}
-% ----------------------------------------------------------------------
-
-<<>>=
-	source("~/C/text/functions.R")
-        city     <- "ChicagoOld3"
-	path     <- paste0("~/C/text/text_src/temp/",city,"/");
-	file     <- paste0(path,"parsed.txt")
-	Data     <- read.table(file, header=TRUE); dim(Data)
-	n         <- nrow(Data)
-	logPrice  <- Data[,"Y"]    # file holds log prices
-	price     <- exp(Data[,"Y"])
-	nTokens   <- Data[,"m"]
-	logTokens <- log(nTokens)
-
-@
-
- On average, listings have about \Sexpr{round(mean(nTokens),1)}
- tokens, but the average is a bit misleading due to skewness of the
- distribution.  The median length is much smaller, about
- \Sexpr{round(median(nTokens),2)} tokens.
-
-
- As might be anticipated from the context, longer listings are
- associated with more expensive prices.  There's more to say about a
- nicer property. The fit is not amazing, but the following 5th degree
- polynomial in listing length explains about 19\% of the variation in
- log prices.  (One could use a more elaborate smoothing model to
- similar effect.)  Later models based on the text content include the
- following explicit polynomial in the log of the number of tokens.
-
-<<>>=
-	regr <- lm(logPrice ~ poly(logTokens,5));
-        summary(regr)
-
-@
-
- Review basic word types since these are not standard text.  Still
- have the Zipf distribution as usual, as shown in Figure
- \ref{fig:zipf}.
-
-<<>>=
-	W  <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
-
-@
-<<zipf.plot, dev='zipf.pdf', fig.width=5, fig.height=5, out.width='.8\\textwidth'>>=
-
-	names <- scan(paste0(path,"types_5704.txt"), what="character")
-	colnames(W) <- names
-	type.freq <- colSums(W)
-	x<-1:length(type.freq); y<-type.freq
-	zipf.data <- data.frame(list(x=x,y=y,lx=log(x),ly=log(y)))
-	plot(y~x, xlab="Rank", ylab="Type Frequency", log="xy", data=zipf.data)
-	common.words <- c(".", ",", "and", "-", "in")
-	text(0.9*x[1:5],0.7*y[1:5],common.words,cex=c(1,1,0.5,1,0.5))
-	regr<-lm(ly~lx, data=zipf.data[1:500,]); coefficients(regr)
-	lx <- log(x<-c(1,5000)); y <- exp(predict(regr, data.frame(lx=lx)))
-	lines(x,y,col="gray")
-
-@
-
-
- \begin{figure}
- \caption{ \label{fig:zipf} { \sl The log of the frequency of word types in the
- listings for properties in Chicago is linear in the log of the rank of
- the most common 500 words with slope -0.92.}   }
-
- \vspace{0.1in}
- \centerline{   \includegraphics[width=3.5in]{figures/zipf} }
- \vspace{0.2in}
- \end{figure}
-
- The spectrum of the CCA scaled document/term matrix \Wt\ shown in Figure
- \ref{fig:spectrum} falls off slowly, with very little hint of a clear
- separation between ``large'' and ``small'' singular values.  The decay is more
- rapid at first, then slows to a level typical of random noise after about 100
- singular vectors.
-
-
- \begin{figure}
- \caption{
- 	\label{fig:spectrum}
-	{\sl The singular values $\la_i$ of the weighted document-term matrix
- $\widetilde{W}$ decay relatively slowly, following a power law $\la_i \propto
- i^{-\eta}$.  } The rate of decay $\eta \approx 0.2$. The leading singular value
- represents the effect of document length. }
-
- \vspace{0.1in}
- \centerline{   \includegraphics[width=4in]{figures/spectrum} }
- \vspace{0.2in}
- \end{figure}
-
-
-When used as regressors, the explanatory power (quantified by the absolute value
- of the coefficient $t$-statistics in Figure \ref{fig:lsa_tstats}) falls off
- monotonically with the magnitude of the singular values.
-  That is, the leading singular vectors are more predictive of log-prices than
- those that follow, even though these are constructed in an unsupervised
-manner.  One can use this tendency to construct slightly more efficient
-coefficient estimates by employing a version of the pooled-adjacent-violators
-algorithm \citep{zhuang}.
-
-\begin{figure}
-\caption{  \label{fig:lsatstats}
-  {\sl Absolute $t$-statistics from the regression of log prices on the first 500 LSA components of $\widetilde{W}$.}  }
-  \centerline{ \includegraphics[width=5in]{figures/lsa_tstats.pdf} }
-\end{figure}
-
-
-Now suppose we try to use CV to decide where to stop accumulation of variables
-Inversion, wild hop up and down in CV.
-
-\begin{figure}
-\caption{ \label{fig:cvss} {\sl Corrected AIC (red) and five replications of
- 10-fold cross-validation sum of squares for adding increasing numbers of LSA
- components to the regression for log price. }  The value of \aicc\ was shifted
- to fit on a common scale with the cross-validation sums.}
-  \centerline{ \includegraphics[width=5in]{figures/cvss.pdf} }
-\end{figure}
-
-
-Careful residual analysis shows a single outlier responsible for the huge
-increase in the CVSS when LSA component 28 is added to the model.
-
-\begin{figure}
-\caption{ \label{fig:calib} {\sl Predicted price for the outlying listing is
-exceptionally large, producing the spike in the CVSS seen in Figure
-\ref{fig:cvss}.}}
-  \centerline{ \includegraphics[width=5in]{figures/calibrate.pdf} }
-\end{figure}
-
-
-Partial regression residual plots show the exceptional leverage in one point.
-
-
-\begin{figure}
-\caption{ \label{fig:leverage} {\sl The leveraged case is evident in several
-partial regression leverage plots.}}
-  \centerline{ \includegraphics[width=5in]{figures/leverage_plots.pdf} }
-\end{figure}
-
-
-The listing for this property reads very different from others.
-
-\begin{verbatim}
-595000  Since fall of 1997 Saint Rose has been a center providing day training
-services to adults who have developmental disabilities. For over 40 years prior to
-becoming a day training center, we were a school who taught children with developmental
-disabilities. We provide developmental skills for people who wish to improve
-their lives.
-\end{verbatim}
-
-
-What do those leading components represent.  Hard to interpret.  First is the
-document length (even after scaling) and is collinear in the leading log-token
-counts (so omitted).  Several components related to the outlier case.
-
-
-\begin{figure}
-\caption{  \label{fig:lsacomponents}
-  {\sl Loadings of LSA components typically mix several underlying dimensions.}  }
-  \centerline{ \includegraphics[width=5in]{figures/lsa_components.pdf} }
-\end{figure}
-
-After rotation, clearer picture emerges.
-
-\begin{figure}
-\caption{  \label{fig:rotcomponents}
-  {\sl Rotated LSA components have simpler structure that confines word set to
-one variable.}
-}
-  \centerline{ \includegraphics[width=5in]{figures/rot_components.pdf} }
-\end{figure}
-
-
-But now explanatory power no longer so concentrated in leading terms, more
-spread out.
-
-\begin{figure}
-\caption{  \label{fig:rottstats}
-  {\sl Absolute $t$-statistics from the regression of log prices on varimax rotated LSA components of $\widetilde{W}$.}  }
-  \centerline{ \includegraphics[width=5in]{figures/rot_tstats.pdf} }
-\end{figure}
-
-
-
-
-
-
-
-% ----------------------------------------------------------------------
+% ------------------------------------------------------------------------------
 \section{Introduction}
 \label{sec:intro}
-% ----------------------------------------------------------------------
+% ------------------------------------------------------------------------------
 
-  Latent semantic regression is principal components regression, with the
- distinction being the origin of the principal components used as regressors.
-  Rather than derive these from familiar numerical regressors, latent semantic
- regression uses principal components obtained from counts of words -- latent
- semantic analysis.
-
-
- As a motivating example, we build a regression that predicts advertised prices
- of real estate properties from the text of the property listings.  Our data
- describe $n=$7,384 property listings for Chicago, IL, extracted (with
- permission) from trulia.com on June 12, 2013.  At the time, trulia.com showed
- 30,322 listings for Chicago, but most were foreclosures that we excluded from
- our analysis.  The response in our models is the log of the listed price.  The
- distribution of the listed prices is right skewed, so we transformed the
- response to a log scale.  The log transformation produces a roughly Gaussian
- distribution, with a hint of fat tails produced a cluster of inexpensive
- properties with prices near \$25,000.
+ The effects of outliers on data analysis are well known.  Simple
+ examples abound: a single positive outlying point can lead to a
+ positive average even if the rest of the data are negative.  Methods
+ for detecting outliers are well-developed in many domains,
+ particularly regression analysis \citep[see, for instance,]
+ []{belsley80}.  When combined with modern interactive graphics, these
+ methods simplify the task of isolating outliers in a regression
+ model.
 
 
- The listings that describe these properties are verbal, written in an
- idiosyncratic vernacular familiar to those who are house hunting. The following
- four listings are typical.  The initial value is the listed price.
+ Outliers in text are less easy to appreciate.  Unusual text can be
+ associated with the presence of different authors, vocabularies, or
+ writing styles.  \citet{guthrie08} approach this problem by
+ representing text using an ensemble of linguistic features.  They
+ employ 158 explicit characteristics, including sentence length, parts
+ of speech, and readability indices.  Once encoded by these features,
+ Guthrie {\it et al} employ methods for multivariate outlier detection.
+  Their objective is to produce homogeneous corpora by contrasting
+ these properties of new text to those of a collection of reference
+ documents.
+
+
+ In contrast, we focus on the impact of outliers within a specific
+ methodology, namely the use of features from an {\em unsupervised}
+ latent semantic analysis (LSA) as predictive features of a model.
+  Variations on LSA have been used to identify outlying clusters of
+ documents \citep[\eg][]{kobayashi02}.  Our objective here is rather
+ different.  Rather than isolate a subset of documents, we emphasize
+ the surprisingly large influence exerted by a {\em single} outlying
+ document when features from LSA are used as predictors in a
+ regression model.  The variance maximization used by LSA spreads the
+ impact of this outlying document over several features, complicating
+ model selection and cross validation.  Fortunately for us, a simple
+ rotation (known as varimax) that creates more interpretable features
+ also confines the outlier to a single latent variable.  Once
+ confined, the outlier has a benign impact on both model selection and
+ prediction.  The outlier remains leveraged -- that is, distinct from
+ the other listings -- but no longer influences the predictions of the
+ model.  The specific application developed here investigates how well
+ unsupervised features from LSA from the brief text of real-estate
+ listings predict the prices.  A single outlying listing complicates
+ both the choice of features for the model as well as the
+ interpretation of which features influence the price.
+
+
+% ------------------------------------------------------------------------------
+\section{Property Listings}
+\label{sec:listings}
+% ------------------------------------------------------------------------------
+
+ The data for this example describe $n=$7,384 property listings in
+ Chicago, IL, extracted (with permission) from trulia.com in 2013.  At
+ the time, Trulia offered more than 30,000 listings for Chicago, but
+ most were foreclosure announcements that we exclude from our
+ analysis.  The response of interest is the log of the listed price.
+  The log transformation produces roughly Gaussian variation.  Without
+ this transformation, predictive models typified by least squares
+ regression would focus on fitting the most highly valued properties.
+
+
+ The listings for these properties are written in an idiosyncratic
+ vernacular familiar to those who have recently shopped for a house.
+  These listings do not obey the grammatical rules of English.  Some
+ authors write in sentences, others not, and a variety of
+ abbreviations appear.  Punctuation and description vary from spartan
+ to effusive.  The following four listings are typical.
 
  \begin{verbatim}
-    $399000 Stunning skyline views like something from a postcard are yours
+    Stunning skyline views like something from a postcard are yours
     with this large 2 bed, 2 bath loft in Dearborn Tower!  Detailed
     hrdwd floors throughout the unit compliment an open kitchen and
     spacious living-room and dining-room /w walk-in closet, steam
     shower and marble entry.  Parking available.
 
-    $13000 4 bedroom, 2 bath 2 story frame home. Property features a
-    large kitchen, living-room and a full basement. This is a Fannie Mae
+    4 bedroom, 2 bath 2 story frame home. Property features a large
+    kitchen, living-room and a full basement. This is a Fannie Mae
     Homepath property.
 
-    $65000 Great short sale opportunity...  Brick 2 flat with 3 bdrm
-    each unit. 4 or more cars parking. Easy to show.
+    Great short sale opportunity...  Brick 2 flat with 3 bdrm each unit.
+    4 or more cars parking. Easy to show.
 
-    $29900 This 3 flat with all 3 bed units is truly a great
-    investment!! This property also comes with a full attic that has
-    the potential of a build-out-thats a possible 4 unit building in a
-    great area!!  Blocks from lake and transportation. Looking for a
-    deal in todays market - here is the one!!!
+    This flat with all 3 bed units is truly a great investment!! This
+    property also comes with a full attic that has the potential of a
+    build-out thats a possible 4 unit building in a great area!!  Blocks
+    from lake and transportation. Looking for a deal in todays market -
+    here is the one!!!
  \end{verbatim}
 
  \noindent
- Listings do not obey the grammatical rules of English.  Some authors write in
- sentences, others not, and a variety of abbreviations appear.  Punctuation
- varies from spartan to effusive, and the length of the listing runs from
- several words to a long paragraph.  The average listing has 73 words. The
- distribution of the lengths is right skewed; the shortest listing has 2 words
- whereas the longest has 568 words.  A natural approach for a statistician
- confronted with such data is to construct intuitively appealing regressors from
- the listings.  For example, one might conjecture that an agent has a lot more
- to say about an expensive property than one in need of repair.  Hence, the
- length of a listing may be predictive of its price.  In a different vein, one
- can use regular expressions -- pattern matching -- to extract specific
- numerical data from the listings.  For example, the first listing indicates
- that this property has two bedrooms and two bathrooms.  A regular expression
- can be designed to extract numbers that precede the word ``bath'' from the
- listings.  Constructing such regular expressions, however, is a labor-intensive
- process that must be done on a case-by-case basis.  The patterns become complex
- because they must allow common abbreviations, such as ``bth'', ``bath'' and
- ``bthrm'' in order to match counts of the number of bathrooms.  Complexity
- aside, the greater problem with explicit pattern matching is that most listings
- omit these characteristics.  The only numerical data common to every listing is
- the response, the advertised price.  For these listings, our regular
- expressions found that 6\% of the listings indicate the number of square feet,
- 26\% indicate the number of bathrooms, and 42\% give the number of bedrooms.
-  For the following analysis, we will limit the modeling to using only the
- length of the description.  \citet{stine13} explores the use of features
- derived from regular expressions.
+ The following listing is the outlier of the analysis.  Rather than
+ describe the property, this listing describes an organization devoted
+ to childhood education.
+
+ \begin{verbatim}
+    Since fall of 1997 Saint Rose has been a center providing day
+    training services to adults who have developmental disabilities.  For
+    over 40 years prior to becoming a day training center, we were a
+    school who taught children with developmental disabilities.  We
+    provide developmental skills for people who wish to improve their
+    lives.
+ \end{verbatim}
 
 
- Our modeling here relies on LSA to construct regressors.  LSA characterizes
- each document, or listing, as a point in a $p$-dimensional vector space,
- typically \Rp.  LSA originated in artificial intelligence and was used to
- construct a system for document retrieval known as latent semantic indexing
- \citep{deerwester88}.  From the perspective of statistics, LSA is closely
- related to principal components analysis (PCA) and canonical correlation
- analysis (CCA).  The underlying computational engine is a singular value
- decomposition (SVD).  (The use of the SVD occasionally leads to VSMs being
- described as ``spectral algorithms'' which should not be confused with
- frequency-domain methods for time series.)  The resulting regressors derived
- from listings is highly predictive. A regression using features derived from
- LSA explains over two-thirds of the variation in listed prices for real estate
- in Chicago.
-
-
- The remainder of this paper develops as follows.  The next section reviews
- latent semantic analysis (LSA) and uses this method from computational
- linguistics to featurize text.  Section \ref{sec:tokenspace} presents vector
- space models such as LSA from from the novel perspective that we call ``token
- space.'' Token space characterizes text as points in a very high dimensional
- space that restores the statistical sense of ``observations,'' samples drawn
- from a population.  In token space, LSA is seen to correspond to a CCA between
- words and the context of those words.  Various definitions of the context of a
- word allow one to construct many types of features.  Though simple to describe,
- it is more subtle to appreciate why a VSM works in regression.  Section
- \ref{sec:topic} offers one explanation by relating VSMs to a topic model that
- reproduces many aspects of the real estate listings.  Section \ref{sec:cv}
- returns to regression models for real estate with a discussion of the use of
- variable selection and uses cross-validation to measure the success of methods
- and to compare several models.  Variable selection is particularly relevant if
- one chooses to search for nonlinear behavior.  We close in Section
- \ref{sec:disc} with a discussion and collection of future projects.
-
-
-
-%--------------------------------------------------------------------------
-\section{Featurizing with Latent Semantic Analysis}
-\label{sec:lsa}
-%--------------------------------------------------------------------------
-
- LSA is principle components analysis of a matrix whose elements count how often
- each word appears in a document (in our example, the frequency of words in a
- property listing).  Using these components as features in regression then
- amounts to a principle components regression.  Numerous details, however, need
- to be resolved in any application.  For example, what is a word?  Should the
- counts be scaled?  This section describes the relevant choices within the
- context of building a regression for real estate prices.
-
- \subsection{ Tokenization }  % ------------------
-
- LSA begins by converting the source text into {\em word tokens}.  A word token
- is a sequence of one or more characters that represents an instance of a unique
- {\em word type}.  We adopt a standard, simple approach: we convert all text to
- lower case, distinguish punctuation characters as separate types, and replace
- instances of rare word types by a common token. For example, consider the
- following listing:
+ We adopt a minimalist approach to tokenization: we convert all text
+ to lower case, distinguish punctuation characters as separate word
+ types, and replace instances of rare word types by a common
+ out-of-vocabulary token.  For example, the listing
  \begin{verbatim}
    Brick flat, 2 bdrm.  With two-car garage.
  \end{verbatim}
  \noindent
- This text becomes a list of 10 tokens representing 9 word types (angle brackets
+ becomes a list of 10 tokens representing 9 word types (angle brackets
  surround punctuation tokens)
  \begin{verbatim}
    {brick, flat, <,>, 2, bdrm, <.>, with, two-car, garage,<.> }
  \end{verbatim}
  \noindent
- We leave embedded hyphens in place and do not correct spelling errors or typos.
-  Abbreviations remain as given.  \citet{manning99}, \citet{jurafsky09}, and
- \citet{turney10} describe more elaborate methods for tokenizing that are more
- suited to regular language.
+ We leave embedded hyphens in place and do not correct spelling errors
+ or typos.  Abbreviations remain as given. \citep[][describe more
+ elaborate methods for tokenizing that are more suited to regular
+ language.]{manning99,jurafsky09,turney10}.
+
+% define path, read response, token lengths, doc/type matrix
+<<get-data, cache=TRUE, echo=FALSE, results='hide'>>=
+source("~/C/text/functions.R")
+city       <- "ChicagoOld3"
+path       <- paste0("~/C/text/text_src/temp/",city,"/");
+file       <- paste0(path,"parsed.txt")
+Data       <- read.table(file, header=TRUE)
+n          <- nrow(Data)
+logPrice   <- Data[,"Y"]
+price      <- exp(Data[,"Y"])
+nTokens    <- Data[,"m"]
+logTokens  <- log(nTokens)
+W          <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
+type.names <- scan(paste0(path,"types_5704.txt"), what="character")
+colnames(W)<- type.names
+type.freq  <- colSums(W)
+Zipf       <- data.frame(list(x=1:length(type.freq),y=type.freq,lx=log(1:length(type.freq)),ly=log(type.freq)))
+
+@
 
 
- When applied to our data from Chicago, the 7,384 property listings contain
- 535,921 word tokens representing 15,215 unique word types.  As typical in text,
- the most common word types occur frequently whereas most words appear
- infrequently.  More than half of these tokens appear only once or twice.  We
- clustered these rare types into one category ($<$OOV$>$, for ``out of
- vocabulary''), resulting in a reduced vocabulary of $m = 5,704$ word types.
-  The most common word types are punctuation.  Figure \ref{fig:zipf} graphs the
- log of the frequency of these word types versus the log of their ranks.  It is
- common in text to find a linear trend with slope near 1 in this graph, the
- signature of a Zipf distribution \citep{zipf35, baayen02}.  Even though the
- text of real estate listings is not standard English, one expects to find
- counts resembling those produced by a power law \citep{clauset09}.  The shown
- line (with log-log slope -0.927) holds only for more common word types.  For
- less common words, the frequencies drop off more rapidly.
-
- The counts of word types treat each listing as a ``bag of words,'' a multiset
- that does not distinguish the placement of words within a listing.  Permuting
- the words within a listing produces the same counts.  Let $n$ denote the number
- of listings; we treat each listing as an observation in the usual sense.  Let
- $V$ denote the vocabulary, the set of $m$ word types.  The $n \times m$
- context-word matrix $W$ holds the counts of these word types across the
- listings; $W_{ij}$ is the number of times word type $j$ appears in the \ith
- document.  (All vectors in our notation are column vectors.)  $W$ is a sparse
- matrix: a small portion of the vocabulary appears in most listings.
+ When applied to our data from Chicago, the $n=$\Sexpr{nrow(Data)} property
+ listings contain 535,921 word tokens representing 15,215 unique word
+ types.  After tokenizing, listings average
+ \Sexpr{round(mean(nTokens),1)} tokens, but the average is a bit
+ misleading due to skewness of the distribution.  The shortest listing
+ has 2 tokens, whereas the longest has 568.  The median length is much
+ smaller than the average, about \Sexpr{round(median(nTokens),1)}
+ tokens.  As typical in text, the most common word types occur
+ frequently whereas most words appear infrequently.  More than half of
+ these tokens appear only once or twice.  We clustered these rare
+ types into one category ($<$OOV$>$, for ``out of vocabulary''),
+ resulting in a reduced vocabulary of $m=$5,704 word types.  The most
+ common word types are punctuation.  The document/type matrix $W$
+ holds these counts.  The $n \times m$ context-word matrix $W$ holds
+ the counts of these word types across the listings; $W_{ij}$ is the
+ number of times word type $j$ appears in the \ith document.  (All
+ vectors in our notation are column vectors.)  $W$ is a sparse matrix:
+ a small portion of the vocabulary appears in most listings.
 
 
 \begin{figure}
-\caption{  \label{fig:aic}
-  {\sl Corrected AIC for LSR models: regressors in one are words in order of
- decreasing frequency (dots), and those in the two others are computed from either
- LSA (solid) or bigrams (dashed).}  Small circles mark the positions of the
- minimum $AIC_c$ statistic for each sequence.}
-%  \centerline{\includegraphics[width=4in]{figures/aic.pdf} }
+<<zipf, echo=FALSE>>=
+ show.names <- 8
+ common.words <- type.names[1:show.names]
+ plot(y~x, xlab="Rank", ylab="Type Frequency", log="xy", data=Zipf)
+ with(Zipf, text(0.9*x[1:show.names],0.86*y[1:show.names],common.words,cex=c(1,1,0.5,0.5,0.5,0.5,0.4,0.5)))
+ regr<-lm(ly~lx, data=Zipf[1:500,]);
+ beta <- coefficients(regr)
+ lx <- log(x<-c(1,5000)); y <- exp(predict(regr, data.frame(lx=lx)))
+ lines(x,y,col="gray")
+
+@
+\caption{    \label{fig:zipf}
+ { \sl The log of the frequency of word types in the listings for
+ properties in Chicago is linear in the log of the rank of the most
+ common 500 words with slope \Sexpr{round(beta[2],2)}.}  }
 \end{figure}
 
 
- corrected AIC statistic \citep{hurvich89}
- \begin{equation}
-    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
- \end{equation}
- where $k$ is the number of estimated parameters in the regression.
-
- \ref{fig:wordtstats} summarizes the t-statistics in this fit. The left panel of
- the figure graphs $|t|$ for the words in order of decreasing frequency.  The
- solid horizontal black line is the expected value of the absolute value of a
- standard normal, $\sqrt{2/\pi}$. The dashed horizontal line is the Bonferroni
- threshold $\Phi^{-1}(1-0.025/1089) \approx 4.08$.  Between these, the almost
- flat, red curve is the loess smooth of $|t|$; the average $|t|$ is only slightly
- larger than one expects for a model with no signal.  Scattered coefficients of
- only 16 words exceed the Bonferroni threshold.  For example, the coefficient
- for the word ``vacant'' has $t=-8.1$; not surprisingly, the addition of this
- word to a listing lowers the expected price.  In contrast, the presence of
- additional out-of-vocabulary words predict higher than average prices
- ($t=5.0$).  Though these predictors stand out, a model limited to these clearly
- significant words has $R^2 = 0.236$, leaving much variation unexplained.  The
- half-normal plot in the right panel of Figure \ref{fig:wordtstats} confirms the
- diffuse signal: the fitted $t$-statistics are inconsistent with noise, but not
- by much.  The dashed line in the half-normal plot is the diagonal; the solid line
- is a regression fit to the smallest 20\% of the $|t|$-statistics.  For a sample
- from a standard normal distribution, the slope should be 1.  The slope of these
- estimates is significantly larger, but clearly the signal is widely spread over
- many words rather than concentrated in a few.
+ Figure \ref{fig:zipf} graphs the log of the frequencies $f_j = \sum_i
+ W_{ij}$ of these word types versus the log of their ranks.  It is
+ common in text to find a linear trend with slope near 1 in this
+ graph, the signature of a Zipf distribution \citep{zipf35, baayen02}.
+  Even though the text of real estate listings is not standard
+ English, the frequencies $f_j$ resemble those produced by a power law
+ \citep{clauset09}.  The shown line (with log-log slope
+ \Sexpr{round(beta[2],2)}) holds only for more common word types.  For
+ less common words, the frequencies drop off more rapidly.
 
 
- \subsection{ Regressions using LSA }  % ------------------
- \label{sec:regrUsingLSA}
 
- The use of LSA to create features for regression models essentially reproduces
- principal components regression.  Rather than regress prices on column of $W$,
- regress prices on principal components of $W$.  The only differences from the
- usual principal components regression are the absence of centering and the
- variety of choices for weighting the frequency counts in $W$ prior
- to constructing the principal components.
+% ------------------------------------------------------------------------------
+\section{Modeling with Latent Regressors}
+\label{sec:modeling}
+% ------------------------------------------------------------------------------
+
+% preliminary regression on length of listing
+<<token-regr, echo=FALSE,results='hide'>>=
+token.regr <- lm(logPrice ~ poly(logTokens,5));
+(r2 <- summary(token.regr)$r.squared)
+
+@
+
+ Regression models are very predictive of the listing price, capturing
+ about 2/3 of the variation among log prices.  All of these models
+ share a common adjustment for the length of the property listing.
+  Inclusion of this effect implies that a word type is not given
+ credit for explaining variation in prices only because that word type
+ is common.  As might be anticipated from the context, longer listings
+ are associated with higher prices.  One has more to say about a nicer
+ property.  A simple 5th degree polynomial in the log of the listing
+ length explains about \Sexpr{round(100*r2,0)}\% of the variation in
+ log prices.  (One could use more elaborate smoothing such as offered
+ by a generalized additive model to similar effect, but the direct
+ approach with a polynomial provides a simpler analysis.)
 
 
  Three of the common choices for weights can be motivated as variance stabilization.
@@ -519,132 +335,16 @@ spread out.
  $W^{**}_{ij} = W_{ij}/\sqrt{m_j}$, where $m_j = \sum_i W_{ij}$ counts the
  number of tokens of word type $j$ across all listings. This standardization
  down-weights the most common word types.  Our choice for weights combines these and uses
-  \begin{equation}
+ \begin{equation}
    \widetilde{W}_{ij} = W_{ij}/\sqrt{n_i\,m_j} \;.
-  \label{eq:Wtij}
-  \end{equation}
-  This combination produces a novel approximation to a canonical correlation analysis developed in Section \ref{sec:cca} below. \citet{turney10} describes these and other weightings, such as the popular term frequency-inverse document
- frequency (TF-IDF),  used in LSA.
-
-
- % The popular method known as  replaces the frequencies emphasizes less common
- % word types and counts the number of
- % documents in which a word appears rather than its overall frequency.  For the
- % simplest version of TF-IDF, let $d_j = \sum _i\one{W_{ij} > 0}$ count the
- % number of listings in which word type $j$ appears and replace $W_{ij}$ by
- % $W_{ij} \log(n/d_j)$.  For instance, if the word type ``.'' appears in every
- % listing, then $d_j = n$ and $\log n/d_j = 0$, removing this ubiquitous type from the
- % construction of principal components.
-
-
- Whichever weighting is selected, we compute the leading principal components of $W$
-  by using random projections.
-  Random projections produce accurate approximations to the truncated SVD of
- $W$ much more quickly than standard algorithms.  Though not absolutely necessary in this application -- one can compute
- the usual SVD of $W$ exactly -- random projections become necessary as
- the number of documents and size of the vocabulary grow.  Denote the SVD of the
- document-word matrix $W$ by
- \begin{equation}
-       W = U D V' = \sum _{i=1}^{\min(m,n)} \la_i U_i V_i' \;,
- \label{eq:W}
+ \label{eq:Wtij}
  \end{equation}
- where $U = [U_1,\ldots,U_n]$ and $V=[V_1,\ldots,V_m]$ are orthonormal, and $D =
- \mbox{diag}(\la_i)$ is a $n \times m$ diagonal matrix, with the singular values
- $\la_1 \ge \la_2 \ge \cdots \ge \la_{\min(m,n)}$ along the diagonal.  The
- columns of $U$ are the eigenvectors of $XX'$ (the sought principal components,
- or left singular vectors), and the columns of $V$ are the eigenvectors of
- $X'X$.  The truncated, or thin, SVD zeros all but the largest, say, $k$
- singular values and produces an approximate factorization of $W$ that we denote
- \begin{equation}
-       W_{1:k} \approx U_{1:k} D_k V_{1:k}' = \sum _{i=1}^k \la_i U_i V_i' \;,
- \label{eq:Wk}
- \end{equation}
- $U_{1:k}$ and $V_{1:k}$ hold the first $k$ columns of $U$ and $V$,
- respectively, and $D_k$ is the corresponding leading portion of $D$. We use the
- colon in a subscript to distinguish the matrix holding several columns from the
- columns themselves.  The computation of $U_{1:k}$ by direct means is relatively
- slow (a few hours of a current desktop computer), even for this problem with
- about 7,384 rows and 5,707 columns.  To speed this calculation, we exploit
- random projection algorithms defined and analyzed in \citet{tropp10}.  Random
- projections produce $U_{1:k}$ in less than a minute in our application and are
- essential in larger problems.
+ This combination produces a novel approximation to a canonical
+ correlation analysis developed in Section \ref{sec:cca}
+ below. \citet{turney10} describes these and other weightings, such as
+ the popular term frequency-inverse document frequency (TF-IDF), used
+ in LSA.
 
-
- Suppose in the ideal case that $W$ essentially has rank $k$ in the sense that
- $\la_k \gg 0$ and $\la_{k+1} \approx 0$.  Let $\ell$ denote an integer slightly
- larger than $k$ \citep[see][for the details]{tropp10}.  Form an $m \times \ell$
- matrix $\Omega_{\ell}$ with random elements $\Omega_{ij} \sim N(0,1)$,
- independently, and compute the product $A_{\ell} = (W W')^q W \Omega_{\ell}$
- for small $q$.  (We set $q = 4$.)  The initial multiplication of $W$ by
- $\Omega_\ell$ reduces the number of columns from $m$ to $\ell$; subsequent
- multiplication by $W W'$ improves the approximation, resembling the power
- method for finding eigenvalues. $(W W')^q W$ has the same singular vectors as
- $W$, but its singular values are $\la_j^{q+1}$, which typically increases the
- spread between $\la_k$ and $\la_{k+1}$.  The matrix product that defines
- $A_\ell$ can be done quickly by exploiting the sparsity of $W$.  Let $Q_{\ell}$
- denote an orthonormal basis for the range of $A_{\ell}$, such as through a QR
- factorization $A_\ell = Q_\ell R_\ell$.  At the end of these steps,
- \citet{tropp10} shows that we obtain a low-rank factorization of $W$ in the
- sense that
- \begin{equation}
-   \norm{W - Q_{\ell} Q_\ell' W} \le  \left(1+11 \sqrt{\ell} \min(m,n)\right) \la_{k+1}
- \label{tropp}
- \end{equation}
- with high probability.  $\norm{\cdot}$ denotes the spectral norm of a matrix.
-  To obtain the SVD of $W$, we need only compute the SVD of the much smaller
- matrix $C_\ell = Q_\ell'W$.  Write the SVD of $C_\ell$ as $C_\ell = U_c D_c
- V_c'$ with subscripts to distinguish this factorization from \eqn{W}.  If we
- plug this expression into the low-rank representation for $W$, we obtain
-\begin{equation*}
-     W \approx Q_{\ell} Q_\ell' W = Q_\ell C_\ell = Q_\ell U_c D_c V_c' \;.
-\end{equation*}
-The first $k$ columns of $Q_\ell U_c$ approximate  $U_{1:k}$. \citet{tropp10}
- provides a thorough analysis this algorithm, so we
- illustrate its performance within the context of the analysis of real estate listings.
-
-
- The spectrum of the context-word matrix $W$ lacks a distinct gap that would
- suggest the size of an accurate low-rank approximation.  Figure
- \ref{fig:spectrum} graphs the singular values of the several weighted versions
- of $W$ on a log-log scale.   The linear decay shown in the figure suggests
- a power law for the distribution of the singular values, $\la_i \propto i^{-\eta}$.  The rate
- $\eta$ is larger when $W$ is left as raw frequencies or with
- row standardization.  Column standardization produces a smaller
- exponent.  The smaller $\eta$ encountered with column standardization implies
- that power iterations in  random projection are essential to
- identify the singular vectors. Regardless of the weighting, however, the absence of a clear
- rank complicates the choice of how many components to use in a regression, so
- once again we use $AIC_c$, in this case ordering the singular vectors by the
- associated singular values.
- \ras{What is the difference between the singular values obtained from the exact SVD of the matrix to those obtained by the thinner SVD produced by random projection.}
-
-
- The conversion of words into principal components (singular vectors) produces
- a qualitative change in
- the significance of the regressors.  Figure \ref{fig:lsatstats} summarizes the
- $|t|$-statistics from a regression using the first 1,000 LSA  features
- in the same format as Figure \ref{fig:wordtstats}).  As with words, the model
- includes a polynomial in the length of the listings.   Sorting based on singular value is far more
- useful for ranking predictors than sorting on word frequency:  significant regressors  concentrate among the leading principal components, and these explain more variation than individual words. Unlike regression on
- frequencies of word types,  magnitudes of the
- $t$-statistics decline roughly monotonically, with the most
- significant effects present in the initial components. Some signal remains in the smaller components; the slope in the
- half-normal plot for smaller coefficients is 1.9.  The fitted model with all 1,000
- components obtains $R^2 = 0.756$
- with \prs = 0.664, compared to \prs = 0.580 for the previous regression on
- 1,089 words.  Consequently, with more signal in the earlier components, $AIC_c$
- finds a more predictive model with fewer coefficients than needed for
- individual words.  The sequence of $AIC_c$ statistics for this model lies well
- below that for the regression on word frequencies in Figure \ref{fig:aic}.
-  $AICc$ selects the model with 728 components, obtaining $R^2 = 0.734$
- and $\prs = 0.668$.
-
-
-
-%--------------------------------------------------------------------------
-\section{Token Space}
-\label{sec:tokenspace}
-%--------------------------------------------------------------------------
 
  Token space is the vector space generated by modeling the sequence of word
  tokens as indicator vectors.  From this perspective, the frequencies in the
@@ -654,413 +354,530 @@ The first $k$ columns of $Q_\ell U_c$ approximate  $U_{1:k}$. \citet{tropp10}
  creating a wide range of features from text.
 
 
-\subsection{Words to Matrices} % ---------------------------------------------
-\label{sec:cca}
-
- Recall that we observe $n$ real-estate listings that we will now generically
- call `documents'.  The \ith document is a sequence of $n_i$ word tokens
- chosen from a vocabulary of $m$ word types.  To distinguish word types
- from word tokens, we use the symbol $\omega$ to denote types and $w$ to denote
- tokens.  We model each document as an independent observation of a stochastic
- process $H(\theta)$ that produces a sequence of word tokens.
-  The \ith\ document is $\{w_1, w_2, \ldots, w_{n_i}\}$ with
- words chosen from the vocabulary, $w_i \in V$.  The stochastic process for each document
- potentially has its own parameters $\theta_i$.  Section \ref{sec:topic} gives an example of such a
- process.  The word tokens within a document may be independent in some
- applications, but some dependence is common \citep[\eg][]{fosterkakade07}.
- We use $\ell$ to denote the concatenation of the observed tokens into a single list,
-\begin{equation*}
-   \ell = \left\{ \underbrace{w_{11},\,w_{12},\ldots,w_{1n_1}}_{\mbox{doc 1}},\,
-            \underbrace{w_{21},\ldots,w_{2n_2}}_{\mbox{doc 2}}, \,
-            \ldots, \underbrace{w_{n1},\ldots,w_{nn_n}}_{\mbox{doc }n} \right\}\;,
-\end{equation*}
- with length $N = \sum n_i$.  The tokens resemble
-  longitudinal data in which, for example, we observe a varying number
- of blood pressure measurements per subject in a medical trial.
- The subjects are usually modeled as independent,
- but the repeated measurements are not.  There is also another similarity. It is not uncommon in observational medical records to find that
- the number of measurements is correlated with health; sicker
- patients with more visits to the physician are more closely observed than those who are healthier.  In our data, longer sequences of tokens are associated with higher prices.
-
-
- Token space represents the list $\ell$ as a very sparse matrix
- defined by columns that indicate the chosen word types.
- From $\ell$, define the $N \times m$ matrix
- $X$ in which $X_{ij} = 1$ if the \ith word token in $\ell$ is of type $\omega_j$:
+ Once we think of $W$ as a covariance matrix, it becomes natural to
+ associate LSA with canonical correlation analysis (CCA) rather than
+ PCA.  In order for the SVD of $W$ to produce canonical vectors,
+ however, we have to standardize the columns of $L$ and $X$.  Let
  \begin{equation}
-   X_{ij} = \left\{ \begin{array}{cc}
-                   1 & \mbox{ if } \ell_i = \omega_j \cr
-                   0 & \mbox{otherwise.}
-                \end{array} \right.
+   S_L = L'L/(N-1) = \mbox{diag}(n_i) \quad \mbox{ and  } \quad S_X = X'X/(N-1)
+ \label{eq:SL}
  \end{equation}
- This conversion produces a large, sparse matrix with a single 1 in each row:
- \begin{equation}
-  X =  \left( \rule{0em}{8em} \right.
-  \begin{array}{cccccccc}
-            \mbox{\scriptsize $\omega_1$} &
-            \mbox{\scriptsize $\omega_2$} &
-            \mbox{\scriptsize $\omega_3$} &
-            \mbox{\scriptsize $\omega_4$} &
-            \mbox{\scriptsize $\omega_5$} &
-            \mbox{\scriptsize $\omega_6$} &   \cdots &
-            \mbox{\scriptsize $\omega_m$}  \cr
-            0  & 0 & 1 & 0 & 0 & 0 & \cdots & 0 \cr
-            0  & 0  & 0 & 0 & 1 & 0 & \cdots & 0 \cr
-             &&&  \vdots &&&&                                 \cr
-            0  & 1  & 0 & 0 & 0 & 0 & \cdots & 0 \cr \hline
-            0  & 0 & 0 & 0 & 1 & 0 & \cdots & 0 \cr
-              &&&  \vdots &&&&                                 \cr
-            1  & 0 & 0 & 0 & 0 & 0 & \cdots & 0 \cr \hline
-              &&&  \vdots &&&\ddots&                                 \cr
-              \\
-           \end{array}
-        \left. \rule{0em}{8em} \right)
-          \begin{array}{c}
-         \cr \mbox{\scriptsize{doc 1}} \cr \cr \cr \cr \mbox{\scriptsize{doc 2}} \cr \cr \vdots
-  \end{array}
-        \;.
-    \label{eq:X}
- \end{equation}
- Clearly, this matrix is equivalent to the original text.
+ denote the uncentered covariance matrices defined by $L$ and $X$,
+ respectively.  As shown in the appendix, the SVD of $S_L^{-1/2} W
+ S_X^{-1/2}$ yields the coefficients that define a CCA.  Standardizing
+ $L$ is easy because $S_L$ is diagonal (when $L$ is uncentered), but
+ $S_X$ is not.  To avoid computing and inverting $X'X$, we treat its
+ columns as orthogonal and use the approximation $\widetilde{S}_X =
+ \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word
+ type $\omega_j$. The resulting regressors are the left singular
+ vectors of $S_L^{-1/2} W \widetilde{S}_X^{-1/2} = \widetilde{W}$
+ defined in equation \eqn{Wtij}, matching the weighed principal
+ components defined in Section \ref{sec:regrUsingLSA}.  This
+ connection provides some further intuition behind the evident success
+ of LSA in producing regressors.  The singular vectors of
+ $\widetilde{W}$ are the coefficients that define the canonical
+ variables of CCA.  The leading left singular vector identifies the
+ linear combination of documents (columns of $L$) that is most
+ correlated with a linear combination of words (columns of $X$).  If
+ we imagine the elements of this singular vector being 0/1, then in
+ this heuristic sense the CCA identifies clusters of documents
+ associated with different collections of word types.
+
+%%  Explain the CCA adjustments here
+
+%%  Review SVD notation, labeling U as the LSA components and
+%%  V as the LSA loadings (using language of factor analysis) or
+%%  principal components analysis
+
+ Because \Wt\ has a modest size, we can compute its SVD directly,
+ without need for more scalable methods.  Just the same, random
+ projection works quite nicely.  Here, we use it to obtain the first
+ 500 singular values and associated singular vectors (that is, the
+ first 500 columns of $U$ and $V$).  To speed this calculation, we
+ exploit random projection algorithms defined and analyzed in
+ \citet{tropp10}.  Random projections produce $U_{1:k}$ in less than a
+ minute in our application and are essential in larger problems.
 
 
- This conversion produces more than numbers.  It also changes the way we
- interpret common summaries such as word frequencies. Though a trivial
- conversion, this representation of text converts the modeling of text into the analysis of
- sparse numerical matrices.  The document-type
- matrix $W$ used in LSA, for instance, is seen to be proportional to an estimated
- covariance matrix.  Let the $N \times n$ matrix $L$ identify the documents,
-\begin{equation}
-  L =  \left(
-           \begin{array}{ccccc}
-            1  & 0 & 0 & \cdots & 0 \cr
-            1  & 0 & 0 & \cdots & 0 \cr
-             &&  \vdots &&                       \cr
-            1 & 0 &  0 & \cdots & 0 \cr \hline
-            0 & 1 & 0  & \cdots & 0 \cr
-              &&  \vdots &&                        \cr
-            0 & 1& 0 & \cdots & 0 \cr \hline
-              &&  \vdots  &\ddots&             \cr
-            0 & 0& 0 & \cdots & 1 \cr \hline
-           \end{array}
-         \right) = I_n \otimes \one{n_i}  \;,
-\end{equation}
-where $\one{n}$ denotes a column vector of $n$ 1s. (This definition abuses the Kronecker product by allowing the right-hand vectors to have unequal length.)  Because we model the document length $n_i$ as the random outcome of the underlying process $H(\theta_i)$, $L$ also denotes an observed collection of random variables.  It is more compact to record these lengths as integers, but in token space, we model the random characteristics as vectors in $\R^{N}$.  The document-word matrix $W$ is then $N-1$ times the uncentered sample covariance matrix between the columns of $X$ and $L$, $W =  L'X$.
+<<read-lsa, cache=TRUE, echo=FALSE,results='hide'>>=
+## read SVD of W computed in C++
+weights <- "cca"; nProj<-500;
+file    <- paste0(path,"lsa_",weights,"_", nProj,"_p4_u.txt")
+LSA     <- as.matrix(read.table(file, header=TRUE)); dim(LSA)
+(file    <- paste0(path,"lsa_",weights,"_", nProj,"_p4_d.txt"))
+D       <- scan(file)
+(file    <- paste0(path,"lsa_",weights,"_", nProj,"_p4_v.txt"))
+V       <- as.matrix(read.table(file, header=TRUE)); dim(V)
+
+@
+
+ The spectrum of the CCA scaled document/term matrix \Wt\ shown in
+ Figure \ref{fig:spectrum} falls off slowly, with no hint of a clear
+ separation between ``large'' and ``small'' singular values.  The
+ fitted line in the figure is estimated from the second through the
+ 250th singular values, omitting the first singular value; the
+ estimated decay rate is about -0.2.  The first pair of singular
+ vectors capture the size of the counts in the scaled listings. The
+ inset of Figure \ref{fig:spectrum} graphs the square of the first LSA
+ component on the number of tokens in each listing.  Since our models
+ explicitly contain a polynomial in the number of tokens, we omit the
+ first component as it would induce substantial collinearity without
+ improving predictions.
 
 
-Once we think of $W$ as a covariance matrix, it becomes natural to associate LSA with canonical correlation analysis (CCA) rather than PCA.  In order for the SVD of $W$ to produce canonical vectors, however, we have to standardize the columns of $L$ and $X$.  Let
-\begin{equation}
-  S_L = L'L/(N-1) = \mbox{diag}(n_i) \quad \mbox{ and  } \quad S_X = X'X/(N-1)
-\label{eq:SL}
-\end{equation}
-denote the uncentered covariance matrices defined by $L$ and $X$, respectively.   As shown in the appendix, the SVD of $S_L^{-1/2} W S_X^{-1/2}$  yields the coefficients that define a CCA.  Standardizing $L$ is easy because $S_L$ is diagonal (when $L$ is uncentered), but $S_X$ is not.  To avoid computing and inverting $X'X$, we treat its columns as orthogonal and use the approximation $\widetilde{S}_X = \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word type $\omega_j$. The resulting regressors are the left singular vectors of  $S_L^{-1/2} W \widetilde{S}_X^{-1/2} = \widetilde{W}$ defined in equation \eqn{Wtij}, matching the weighed principal components defined in Section \ref{sec:regrUsingLSA}.    This connection provides some further intuition behind the evident success of LSA in producing regressors.  The singular vectors of $\widetilde{W}$ are the coefficients that define the canonical variables of CCA.  The leading left singular vector identifies the linear combination of documents (columns of $L$) that is most correlated with a linear combination of words (columns of $X$).  If we imagine the elements of this singular vector being 0/1, then in this heuristic sense the CCA identifies clusters of documents associated with different collections of word types.
-
-
-\subsection{ Bigrams and Other Contexts } % ------------------------------------------
-\label{sec:bigram}
-
-A variety of other featurizations can be represented in token space. The sequential nature of the rows of $X$ suggests ideas from time series analysis, particularly lagged variables.  For instance, we might find interesting patterns in the association between adjacent word types.  Let $X_{-1}$ denote the lag of $X$ obtained by inserting a leading row of zeros and removing the final row.  Rather than use the document matrix $L$ to define the context of a word, this featurization uses the prior word.  The counts that produce the covariance between $X$ and $X_{-1}$ define the bigram matrix $B$,
- \begin{equation}
-   B = X_{-1}' X   \;.
-  \label{eq:B}
-\end{equation}
-(Note that the collection of word types we use includes a marker for the end of a document. Hence the counts in $B$ do not include pairs determined by the last word of one document and the first word of the next.) The use of a lagged indicator introduces a very different sense of context.  The SVD of $W$ identifies word types that appear together within the context of documents.  $B$ identifies word types used similarly within the narrow, very local context defined by the prior word. It is worth pointing out another difference.  $W$ ignores word placement (sequencing) within a document, treating a document as a bag of words.  In contrast $B$ combines the documents and relies on the sequence of word tokens.
-
-
-To make use of the bigram matrix, we proceed as in LSA and construct features from the leading singular vectors of $B$ obtained by random projection.  Let $\widetilde{U}_{B,k}$ denote the leading $k$ singular vectors obtained from the approximate SVD of the standardized bigram matrix $S_X^{-1/2} B S_X^{-1/2}$.   Each row of $\widetilde{U}_{B,k}$ represents a word type as a point in $\R^k$.   To build features for regression, we simply locate each document at the average position of its words, $\mbox{diag}(1/n_i)\,L'\widetilde{U}_{B,k}$.
-The columns of  $\widetilde{U}_{B,k}$ are sometimes called ``eigenwords'' because of the way in which they form directions in word space \ras{cite lyle or someone using this name}.  Figure \ref{fig:bigramtstats} shows the $|t|$-statistics from regressing real estate prices on the document centroids computed from the leading 1,000 singular vectors of the bigram matrix.  The properties of these estimated coefficients resemble those of the coefficients obtained when using word counts as features (Figure \ref{fig:wordtstats}).  The estimates lack the concentration of signal into the leading components observed for LSA components (Figure \ref{fig:lsatstats}).  It should not be surprising, then, to find that bigram centroids perform similarly to words as predictors of price (Figure \ref{fig:aic}).  The minimum $AIC_c$ occurs when using 1,110 bigram centroids, for which \prs = 0.600.  This is higher than reached by simply using the word frequencies (0.580), but inferior to the fit produced by fewer LSA components (0.622).
-
-
+% log/log plot of spectrum of CCA scaled matrix
 \begin{figure}
-\caption{  \label{fig:bigramtstats}
-  {\sl Absolute $t$-statistics from the regression of log prices on the first 1,000 bigram centroids.}  }
-%  \centerline{ \includegraphics[width=5in]{figures/bigram_tstats.pdf} }
+<<spectrum, echo=FALSE, results='hide'>>=
+plot(D, xlab="Component", ylab="Singular Value", log="xy")
+x <- log(2:250);
+y <- log(D[2:250]);
+r <- lm(y~x);
+(beta <- coefficients(r))
+pred <- predict(r, newdata=data.frame(x=log(1:400)))
+lines(1:400, exp(pred), col="gray")
+## add inset
+par(fig = c(.6, 0.95, .6, 0.95), new=TRUE)
+plot(nTokens, LSA[,1]^2, xlab="Number of Tokens", ylab="Squared Singular Vector")
+reset()
+
+@
+
+\caption{ \label{fig:spectrum}
+ {\sl The singular values $\la_i$ of the weighted document-term matrix
+ $\widetilde{W}$ decay relatively slowly, following a power law $\la_i
+ \propto i^{-\eta}$.  } The rate of decay $\eta \approx 0.2$. The
+ leading singular value represents the effect of document length. }
 \end{figure}
 
 
-The different contexts that produce either word frequencies or bigram counts offer some explanation for why LSA fares better in our analysis than features constructed from bigrams.  The context for words defined by the document matrix $L$ suggests that $W$ emphasizes semantic similarity, whereas the narrow context of adjacency provided by $X_{-1}$ suggests $B$ emphasizes syntax.   The document-specific context provided by $L$ is most natural -- and effective -- in our application.  For other tasks, such as predicting parts of speech, however, singular vectors constructed from bigrams are more effective.  As an example of this application, Figure \ref{fig:pos} shows word clusters defined by singular vectors of a bigram matrix  (eigenwords) constructed from  \ras{which is?}.  These eigenwords cluster word types by how they are used in language.  Nouns are distinct from verbs, adjectives, and \ras{what are the pos in the figure}.
+ When used as regressors, the explanatory power (quantified by the
+ absolute values of $t$-statistics of the regression coefficients)
+ shown in Figure \ref{fig:lsa_tstats}) fall off monotonically with the
+ magnitude of the singular values.  That is, leading singular vectors
+ tend to be more predictive of log-prices than those that follow.  The
+ red curve in the figure tracks the local average of the statistics.
+  The solid horizontal black line is the expected value of the
+ absolute value of a standard normal, $\sqrt{2/\pi}$. The dashed
+ horizontal line is the Bonferroni threshold $\Phi^{-1}(1-0.025/1089)
+ \approx 4.08$.  Between these, the almost flat, red curve is the
+ loess smooth of $|t|$; the average $|t|$ is only slightly larger than
+ one expects for a model with no signal.  Scattered coefficients of
+ only 16 words exceed the Bonferroni threshold.  This decay is
+ somewhat surprising because these regressors are constructed in an
+ unsupervised manner.  We offer a partial explanation of this effect
+ in the following section.  \citep[][shows how to use this
+ monotonicity to construct more efficient coefficient
+ estimates.]{zhuang14}
+
+
+% plot absolute values of the t-statistics of initial singular vectors
+\begin{figure}
+<<"lsa_tstats", echo=FALSE, results='hide'>>=
+lsa    <- as.matrix(LSA[,2:nProj])
+sr.lsa <- summary(regr.lsa <- lm(logPrice ~ poly(logTokens,5) + lsa));
+coef.summary.plot(sr.lsa, "LSA Component", omit=6, show.qq=FALSE)
+
+@
+
+\caption{  \label{fig:lsatstats}
+ {\sl Absolute $t$-statistics from the regression of log prices on the
+ LSA components of $\widetilde{W}$.} The figure omits the leading
+ singular value (size effect); the estimated model includes a size
+ adjustment. }
+\end{figure}
+
+
+ A regression diagnostic plot of a smaller model that uses only the
+ first 100 LSA components shows that these models may have problems
+ with outliers.  We chose a model with 100 which is near the kink in
+ the magnitude of the significance of the $t$-statistics in Figure
+ \ref{fig:lsatstats}.  Figure \ref{fig:diagplot} plots the standardized
+ residuals from the model on the associated leverages.  In a
+ regression with design matrix $X$, leverages are the diagonal
+ elements $h_{i}$ of the projection, or hat, matrix $H =
+ X(X'X)^{-1}X'$.  Standardized residuals $r_i$ are scaled to have
+ equal variance,
+ \begin{equation}
+     r_i = \frac{e_i}{s\, \sqrt(1-h_i)} \;,
+ \label{eq:sres}
+ \end{equation}
+ where $e_i$ is the usual residual for the \ith\ case and $s$ is the
+ root mean squared error of the regression.  These leave-one-out
+ diagnostics are easily computed without needing to refit $n$ models
+ \citep{belsley80}.  The amount of influence exerted by each case on
+ the fitted model, Cook's D statistic, is roughly the product of the
+ leverage times the Studentized residual. Figure \ref{diagplot}
+ highlights contours of equal influence.  Though the labeled points
+ are highly leveraged -- unusual within the context of the regressors
+ -- none exerts significant influence on the fitted model.  That is,
+ if any one of these cases were removed, the estimated coefficient
+ vector does not change by a statistically significant amount.
+
+
+% regression diagnostic plot of standardized residuals on leverages
+\begin{figure}
+<<diag-plot, echo=FALSE, results='hide'>>=
+lsa  <- as.matrix(LSA[,2:100])
+sr   <- summary(regr.lsa <- lm(logPrice ~ poly(logTokens,5) + lsa))
+lev  <- hat(model.matrix(regr.lsa))
+sres <- residuals(regr.lsa)/(sr$sigma * sqrt(1-lev))
+plot(regr.lsa, which=5, id.n=5)
+points(lev[3646],sres[3646], pch=19, col="black")
+
+@
+
+\caption{  \label{fig:diagplot}
+ {\sl A regression diagnostic plot reveals several highly leveraged
+ observations, but indicates none with much influence on the model. }
+  The problematic outlier is the filled-in point, case 3646.}
+\end{figure}
+
+
+ The decaying significance of LSA components observed in Figure
+ \ref{fig:lsatstats} suggests using a variable selection criterion
+ such as the corrected Akaike Information Criterion \aicc\ or 10-fold
+ cross-validation to determine the number of components to retain in
+ the model.  The corrected \aic\ statistic is defined \citep{hurvich89}
+ \begin{equation}
+    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
+ \end{equation}
+ where $k$ is the number of estimated parameters in the estimated
+ regression.  Both \aicc\ and cross-validation are well suited to the
+ problem of deciding how many LSA components to use in the model, such
+ as picking between a model with 50 components versus a model with
+ 100.  The model with 100 will have a better in-sample fit, but may
+ not be better if confronted with new listings.  In most applications,
+ these approaches to model selection lead to similar results.  In the
+ case of these data, the results are very different.  Figure
+ \ref{fig:cvss} shows the sequence of \aicc\ and cross-validation mean
+ squared errors, repeated for 5 random splits of the data into 10
+ folds.  (One obtains similar results with fewer or more folds.)
+  Whereas \aicc\ indicates that adding more and more of these features
+ improves the fit of the model, cross-validation bottoms out near 100
+ features and shows several sudden spikes.  In particular, the
+ addition of the 28th component produces an abrupt 20\% increase in
+ the out-of-sample squared error whereas \aicc\ continues its smooth
+ decay (indicating better models).
+
+% generate data used by c++ in fit AS Needed
+% <<write-table-to-c>>=
+% poly <- model.matrix(~ poly(logTokens,5) - 1)
+% colnames(poly) <- paste("poly_",1:5,sep="")
+% write.table(poly, paste(path,"logtoken_poly_5.txt",sep=""), row.names=F)
+% @
+
+% read CV results, last item is varimax CV
+<<read-cv, cache=TRUE, echo=FALSE, results='hide'>>=
+cv.results.1.10 <- read.delim(paste0(path,"cv_15242/aic_lsa_10f.txt"))
+cv.results.2.10 <- read.delim(paste0(path,"cv_24387/aic_lsa_10f.txt"))
+cv.results.3.10 <- read.delim(paste0(path,"cv_31427/aic_lsa_10f.txt"))
+cv.results.4.10 <- read.delim(paste0(path,"cv_53853/aic_lsa_10f.txt"))
+cv.results.5.10 <- read.delim(paste0(path,"cv_73241/aic_lsa_10f.txt"))
+cv.results.5.vmx<- read.delim(paste0(path,"cv_73241/aic_vmx_20_2_250.txt"))
+
+@
+
+% plot 10-fold cross-validation results with AICc and varimax for later reference
+\begin{figure}
+<<cvss-plot, out.width='.8\\textwidth', echo=FALSE, results='hide'>>=
+x <- 0:(nrow(cv.results.1.10)-1)
+xlim <- NULL;   ylim <- c(3900,9000)
+plot (x,cv.results.1.10[,"AICc"]+2000, log="y", type="l",   xlim=xlim, ylim=ylim, col="red",
+      ylab="10-Fold CVSS", xlab="Component Added")
+lines(x,cv.results.1.10 [,"CVSS"], col="black")
+lines(x,cv.results.2.10 [,"CVSS"], col="black")
+lines(x,cv.results.3.10 [,"CVSS"], col="black")
+lines(x,cv.results.4.10 [,"CVSS"], col="black")
+lines(x,cv.results.5.10 [,"CVSS"], col="black")
+lines(  cv.results.5.vmx[,"CVSS"], col="gray")
+par(fig = c(0.45, 0.90, 0.45, 0.90), new=TRUE)   # add inset to zoom on anomaly
+xlim <- c(24,34);   ylim <- c(5000,7500)
+plot (x,cv.results.1.10[,"AICc"]+2000, log="y", type="l",   xlim=xlim, ylim=ylim, col="red",
+      ylab="", xlab="", cex.axis=0.75)
+lines(x,cv.results.1.10 [,"CVSS"], col="black")
+lines(x,cv.results.2.10 [,"CVSS"], col="black")
+lines(x,cv.results.3.10 [,"CVSS"], col="black")
+lines(x,cv.results.4.10 [,"CVSS"], col="black")
+lines(x,cv.results.5.10 [,"CVSS"], col="black")
+reset()
+
+@
+
+\caption{ \label{fig:cvss}
+ {\sl Corrected AIC (red) and five replications of 10-fold
+ cross-validation sum of squares for adding increasing numbers of LSA
+ components to the regression for log price. }  The value of \aicc\
+ was shifted by an additive constant to match the scale of the
+ cross-validation sums.  The gray curve shows the CVSS using rotated
+ components explained in Section \ref{sec:rotation}. }
+\end{figure}
+
+ Having seen these results from cross validation, a careful residual
+ analysis reveals the problematic outlier.  Figure \ref{fig:calib}
+ shows a plot of the the listing prices on the predicted prices for
+ the specific fold in cross-validation that omits the outlier.  Note
+ that these are shown on a log scale -- the error at this one point is
+ large enough to explain the sudden jump in the CVSS.
+
+
+
+% build a calibration plot like those that influence CVSS graph
+\begin{figure}
+<<calib, echo=FALSE, results='hide'>>=
+set.seed(23743)
+n        <- length(logPrice)
+n.folds  <- 10
+outlier  <- 3646
+folds    <- c(rep(1:n.folds,ceiling(n/n.folds)))[1:n]
+folds    <- sample(folds,n, replace=F)
+out.fold <- folds[outlier]
+## fit the regression to the data without outlier
+degree   <- 5
+lsa      <- LSA[,2:28]
+i        <- (out.fold != folds) # fit on these
+data     <- list(y=logPrice[i], xi=poly(logTokens,degree)[i,], x=lsa[i,])
+r        <- lm(y ~ xi + x, data=data );
+## predict the hold back data
+i        <- (out.fold == folds)
+data     <- list(y=logPrice[i], xi=poly(logTokens,degree)[i,], x=lsa[i,])
+pred     <- predict(r, newdata=data)
+j        <- sum((out.fold==folds)[1:3646]); (logPrice[i]-pred)[j]
+col      <- rep("black",sum(i)); col[j]<-"red"
+plot(pred, logPrice[i], col=col, xlab="Predicted Log Price", ylab="Log Price") # calibration
+
+@
+\caption{ \label{fig:calib}
+ {\sl Predicted price for the outlying listing is exceptionally large,
+ producing the spike in the CVSS seen in Figure \ref{fig:cvss}.}}
+\end{figure}
+
+
+ Now that we recognize the source of the problem, it is simple to
+ ``Monday morning quarterback'' and pick a plot that we {\em could}
+ have used to recognize the flaw sooner had we examined residual plots
+ for each of the increasing sequence of models summarized in Figure
+ \ref{fig:diag2}.  With 27 LSA components, the outlying listing is
+ leveraged, but has little effect on the fitted model.  With the
+ addition of the 28th component, however, the both its leverage and
+ influence have increased substantially.
+
+
+% show regr diagnostic pre/post adding variable 28
+\begin{figure}
+<<diag2728, fig.keep='high', echo=FALSE, results='hide', out.width='0.5\\textwidth'>>=
+ry <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:27]);
+plot(ry, which=5, id.n=1, cook.levels=c(1,8,32) )
+ry <- lm(logPrice ~ poly(logTokens,5) + LSA[,2:28]);
+plot(ry, which=5, id.n=1, cook.levels=c(1,8,32) )
+
+@
+\caption{ \label{fig:diag2}
+  {\sl The leveraged outlier becomes strongly influential when the 28th
+       LSA component joins the model.}  }
+\end{figure}
+
+
+% ------------------------------------------------------------------------------
+\section{Rotations and Outliers}
+\label{sec:rotation}
+% ------------------------------------------------------------------------------
+
+ Now that we have seen that a single outlier caused the surprising
+ jump in the sequence of cross-validation errors, it would be easy to
+ fix the problem: Simply exclude this case.  Do so works in this
+ example, but we gain more insight by appreciating how it is that a
+ single point -- one out of more than 7,000 -- can exert such large
+ influence.
+
+
+ The first step in gaining this understanding is to look at how the
+ LSA components are defined.  Because LSA, like principal components
+ analysis, seeks to maximize the variance of the constructed
+ components, interpretation is problematic.  We observed that the
+ leading component captures document length.  Other components mix
+ distinct combinations of words that we will call ``rays''.  Figure
+ \ref{fig:lsacomponents} explains this choice of names.  The figure
+ shows a two-dimensional projection of the LSA loadings $V$.  This
+ figure shows the loadings -- coefficients applied to the frequencies
+ for the word types -- that define the 8th and 9th LSA components.
+  When projected into 2 dimensions, these weights appear as rays
+ emanating from the origin.  The ray directed from the origin to the
+ lower left at ``auction'' appears to identify a cluster of words
+ related auction sales.  The ray directed to the upper left toward
+ ``downturn'' is harder to name.  The ray headed toward the right
+ identifies properties offered by Wells Fargo.  Each LSA component
+ typically captures several clusters of words which appear when
+projected into two dimensions.
+
 
 
 \begin{figure}
-\caption{  \label{fig:pos}
-  {\sl Word clusters produced by singular vectors of the bigram matrix defined from \ras{insert} identify nouns(symbol), verbs(symbol)}, \ras{etc}. }
-  %  \centerline{ \includegraphics[width=5in]{figures/bigram_tstats.pdf} }
-  \ras{Need version of the pretty plot using symbols rather than colors (at some point).}
+% draw LSA components
+<<lsacomponents, echo=FALSE, results='hide'>>=
+draw.pair <- function(V,j, k=NULL, label="Component", col="gray", show.names=T) {
+    if(is.null(k)) k <- j + 1;
+    plot(V[,j],V[,k], col=col, xlim=1.1*range(V[,j]), ylim=1.15*range(V[,k]),
+         xlab=paste(label,j), ylab=paste(label,k));
+    if (show.names) {
+        w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
+        text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
+        w<-order(rowSums(V[,5:50]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
+        points(V[w,j],V[w,k],cex=0.5, pch=19, col="red")
+        return(colnames(W)[w[1:20]])
+    }}
+draw.pair(V,8)
+
+@
+\caption{  \label{fig:lsacomponents}
+  {\sl Loadings of LSA components typically mix several underlying dimensions.}  }
+\end{figure}
+
+
+ This ``mixing'' of the components generates a model in which the odd
+ listing produces a highly influential outlier.  Figure
+ \ref{fig:outloading} shows the loadings for components 27 and 28.
+  Both are incrementally statistically significant predictors.  That
+ is, adding each to a model that contains lower indexed LSA components
+ produces a significant improvement in the fit of the model.  Notice
+ that the ray directed toward the upper right and the word type
+ ``developmental'' (which only occurs in the outlying listing)
+ captures the text of this unusual listing and little else.  How is it
+ possible for fitting this one listing to be a significant benefit to
+ the model.
+
+% show adding the outlier variable has a significant effect on the model
+<<out-regr>>=
+lsa <- LSA[,2:29]
+data <- list(y=logPrice, xi=poly(logTokens,degree), x=lsa)
+r <- lm(y ~ xi + x, data=data );
+summary(r)
+
+@
+
+
+% show outlier loadings prior to rotation
+\begin{figure}
+<<outloading, echo=FALSE, results='hide'>>=
+draw.pair(V,27)
+
+@
+ \caption{ \label{fig:outloading} {\sl Loadings of LSA components
+ typically mix several underlying dimensions.}  }
+\end{figure}
+
+
+ The answer is that this one component not only detects the outlier
+ word mix, but also the mix of words associated with the other ray in
+ Figure \ref{fig:outloading}.
+
+ After rotation, clearer picture
+ emerges, one that does not mix rays (clusters) into a single
+ components.
+
+% rotate the components  (skip first as its the logToken effect)
+% check that these match:  (V[,2:k] %*% vm$rotmat)[1:3,1:6]; v[1:3,1:6]
+<<rotate-components, cache=TRUE, echo=FALSE, results='hide'>>=
+k <- 250
+vm <- varimax(V[,2:k])
+v <- vm$loadings
+
+@
+
+% draw rotated components
+\begin{figure}
+<<rotcomponents, echo=FALSE, results='hide'>>=
+draw.pair(v, 7,label="Rotated");
+
+@
+\caption{  \label{fig:rotcomponents}
+ {\sl Rotated LSA components have simpler structure that confines
+ word set to one variable.}  }
+\end{figure}
+
+
+ After rotation, the explanatory power in regression is less
+ concentrated in leading terms, more spread out.
+
+
+% plot t-stats of rotated components
+\begin{figure}
+<<rottstats, echo=FALSE, results='hide'>>=
+lsa.vm <- LSA[,2:250] %*% vm$rotmat
+colnames(lsa.vm) <- paste0("LVM",1:ncol(lsa.vm))  # 0 based
+sr.rot <- summary(regr.rot <- lm(logPrice ~ poly(logTokens,5) + lsa.vm))
+coef.summary.plot(sr.rot, "Rotated Component", omit=6, show.qq=FALSE)
+
+@
+\caption{  \label{fig:rottstats}
+  {\sl Absolute $t$-statistics from the regression of log prices on varimax
+   rotated LSA components of $\widetilde{W}$.}  }
+\end{figure}
+
+
+ And what about the outlier component?  How does it contribute to the
+ model with rotated components?  It does not add significant
+ variation.
+
+<<regr-post-rot>>=
+## adding the outlier variable no longer has significant effect on the model
+lsa.vm <- (LSA[,2:250] %*% vm$rotmat)[,1:30]
+colnames(lsa.vm) <- paste0("LVM",1:ncol(lsa.vm))
+sr.rot <- summary(regr.rot <- lm(logPrice ~ poly(logTokens,5) + lsa.vm)); sr.rot
+
+@
+
+
+% show outlier component after rotation
+\begin{figure}
+<<"rot_out_loading", echo=FALSE, results='hide'>>=
+draw.pair(v,26, label="Rotated Component")
+
+@
+\caption{  \label{fig:rotoutloading}
+  {\sl Loadings of LSA components typically mix several underlying dimensions.}  }
 \end{figure}
 
 
 %--------------------------------------------------------------------------
-\section{Topic Models}
-\label{sec:topic}
-%--------------------------------------------------------------------------
-
-
-A class of generative probability models known as topic models offers an explanation for the success of the regressors we construct from text.  Topic models are common in the Bayesian analysis of text. \citet{blei12} provides a recent survey.   Topic models for text propose that the observed text of a document was produced by sampling words according to a mixture of distributions associated with the topics in the document.  Each topic is a probability distribution over a vocabulary of words.  Topic models treat words as exchangeable and model the text of a document as a multiset,  as in LSA.  In machine learning, topic modeling is  an unsupervised algorithm used to cluster documents based on the presence of latent topics revealed by a hierarchical Bayesian model.
-
-
-By incorporating a regression structure,  \citet{bleimcauliffe07} developed supervised topic models (called sLDA, for supervised latent Dirichlet allocation) in an application that is similar to ours.  Begin with the assumption that the observed text was produced by sampling words from $K$ topics. Let $P_j$ denote the vector of probabilities over words in the vocabulary that defines the \ith[j]\ topic.  Arrange these distributions as the $K$ rows of the $K \times m$ matrix $P$.  The sLDA model assumes that  the following algorithm generates the text of each document.  In particular, this algorithm fills in the elements of the response $Y$ and the token-space matrix $X$ defined in \eqn{X}:
-\begin{enumerate}
- \item Let $\theta_i \sim \mbox{Dirichlet}(\al)$ be a $K$-vector that allocates the proportions of
-          the $K$ topics that appear in the \ith\ document.  The parameter $\al$ is estimated in sLDA.
- \item Let $x_{ij}$ denote the row of $X$ associated with word $w_{ij}$.
-    \begin{enumerate}
-      \item Independently sample one topic, $\tau_{ij} \sim \mbox{Multinomial}(1, \theta_i)$.
-               $\tau_{ij}$ is a $K$-vector with a single 1 that identifies the chosen topic for the \ith[j]\ word and
-               is otherwise 0.
-       \item Draw the vector $x_{ij} \sim \mbox{Multinomial}(1, \tau_{ij}'P)$.
-    \end{enumerate}
-  \item Sample the response $y_i \sim N(\tau_i'\beta, \sigma_\ep^2)$, where $\tau_i = \sum_j \tau_{ij}$.  The
-           parameters $\beta$ and $\sigma_\ep^2$ are estimated within the sLDA modeling.
-\end{enumerate}
-Note that \citet{bleimcauliffe07} use the proportion of topics $\tau_i/n_i$ in the regression model rather the sum.  We use the sum here in order for this generative model to capture the evident association between document length and the response shown in Figure \ref{fig:parsed}.  Authors of listings write more about valuable properties than cheaper properties, and are motivated to write more about expensive properties, those with numerous attractive attributes worth mentioning.
-
-
-LSA is well-matched to this generative process because both treat a document as a bag-of-words with the expected response determined by a linear function of the underlying mixture of attributes.  Let $T$ denote the $n \times K$ matrix with rows $\tau_i$.  Then we can write the expected value of $W$ as a sum of $K$ outer products:
-\begin{equation}
-    \ev W = T\, P = \sum_k T_k \, P_k' \;,
-  \label{eq:EW}
-\end{equation}
-where $T_k$ is the \ith[k]\ column of $T$, enumerating the presence of the \ith[k]\ topic in the various documents.  This factorization of $\ev W$ mimics the structure of the SVD of $W$.  For our models of text, the left singular vectors $U_W$ from \eqn{Wk} capture the allocation of attributes over documents, recovering much of the information in $T$.  Of course, there are many ways to factor a matrix, and it is not apparent why the factorization provided by the SVD would produce good estimates of this factorization.  For instance, the right singular vectors of $W$ do not necessarily define a stochastic matrix.  Obtaining good regressors, however, does not require that we recover $P$ or $T$.  We need only recover the range of $T$ in order to predict the response.
-
-
-\subsection{Examples of Simulated Data} %-------------------------------------------------
-
-The following two examples illustrate the performance of LSA methods when applied to data generated by the sLDA process.  Each example uses $n = 5,000$ documents with words chosen from a vocabulary of $m = 1,500$ words. The lengths of the documents are exogenous to the sLDA algorithm; we set  the lengths in our simulations to $n_i \sim \mbox{Poisson}(50)$.  The simulation generates the response and text of these documents by sampling $K = 30$ topics, with $\theta_i = 0.4$ throughout. This parameter produces documents that mix several topics.  For the response, we sampled the regression coefficients $\beta \sim N(\mu=2,\sigma^2=1)$; allowing a few negative coefficients produces a slightly weaker correlation between the response and document length. In our simulations, the correlation is about 0.25.  To finish the generation of the response, we chose the errors variance $\sigma_\ep^2$ in step 3 so that  $R^2 =0.60$ in the  regression of $y$ on the true topic composition in $T$.
-
-
-The two examples are distinguished by the degree of overlap among the 30 topic distributions.  In both cases, we simulated distributions by sampling a Dirichlet distribution, $P_k \sim \mbox{Dirichlet}(\alpha)$. Small values of $\alpha$ produce very 'spiky' distributions with little overlap; increasing $\alpha$ produces distributions with substantial common support.   Figure \ref{fig:P} graphs probability distributions with $\alpha = 0.01$ (essentially disjoint) and $\alpha = 0.10$.  All but one of the points in the left frame with $\alpha=0.01$ lie along the axes of the graph; the two distributions are essentially singular.  In contrast, with $\alpha=0.10$, both distributions assign  probability to many words in common.
-
-
-\begin{figure}
-\caption{ \label{fig:P}
-{ \sl  Probability distributions over words simulated from a Dirichlet distribution with parameter $\al = 0.01$ (left) are essentially disjoint, whereas with $\al = 0.10$ (right), the simulated distributions substantial common support.}}
- \centerline{
- \vspace{0.1in}
- % raphics[width=7.5in]{figures/P} }
- \end{figure}
-
-
- One of our reasons for simulating data from  a probability model  was to gain some insight as to the best normalization to apply to $W$ prior to performing LSA.  First, we simulated documents with nearly disjoint topic distributions ($\al = 0.01)$.  Figure \ref{fig:spectra} shows the first 100 singular values produced by two normalizations of $W$, either none (raw frequencies) or the approximate CCA normalization $S_L^{-1/2}WS_X^{-1/2}$. The results do not produce a clear-cut winner. The gap between adjacent singular values at $K=30$ is most pronounced with the CCA normalization, though evident in both situations. This more noticeable gap favors the CCA normalization, but this normalization simultaneously flattens the spectrum.  In both cases, the leading singular value stands out. Without normalization, the first left singular vector $U_1$ picks up document length, and the first right singular vector $V_1$ captures word frequency.  The CCA normalization weakens these patterns.  In the case of data produced by overlapping topics ($\al = 0.10$), neither spectrum produces the slightest hint of a gap.
-
-\begin{figure}
-\caption{ \label{fig:spectra}
-{ \sl Spectra obtained for the document/word matrix $W$ with no standardization or CCA standardization.}}
- \vspace{0.1in}
-% \centerline{ \includegraphics[width=6.0in]{figures/spectra} }
- \end{figure}
-
-
-Our objective in modeling text, however, is not to determine the precise number of latent variables (as if these exist in actual text), but rather lies in building regression models.  For this task, CCA  standardization produces a better set of regressors.  Table \ref{fig:ccawins} summarizes the predictive $R^2$ of regression models fit to 100 samples produced by the sLDA algorithm.  As in the prior examples, the population has $K=30$ topics that are either distinct ($\al=0.01$) or overlapping ($\al=0.10$).  The error variance in the regression of $Y$ on $T$ is chosen to produce a model with $R^2 = 0.60$.  In each case, we fit $k=100$ singular vectors or, in the case of word frequencies, the frequencies of the most common 200 words.  When the topics are distinct,  CCA regressors produces an average \prs\ equal to XXXX, which is nearly as good as the best possible, namely that produced by the smaller number of unobserved topics themselves.  The unnormalized singular vectors do well, but lag behind with an average \prs\ at XXXX.  Using raw frequencies is lower still.  When the topics are overlapping, the results for all of these data-driven features fall off.  The average \prs\ for the CCA singular vectors drops down to XXXX, compared to XXXX for the unnormalized singular vectors.  The performance of word counts falls even more to XXXX.
-
-\begin{table}
-\caption{ \label{tab:ccawins}
-{ \sl Average predictive $R^2$ statistics for regression models fit to simulated data generated by the sLDA model.}  Results summarize a simulation of 100 replications with distinct ($\al = 0.01$) and overlapping ($\al = 0.10$) topic distributions. Standard errors are XXXX }
- \begin{center}
-  \begin{tabular}{lcc}
-                                                      &  \multicolumn{2}{c}{Dirichlet Parameter} \cr
-   \multicolumn{1}{c}{Regressors}&  $\al = 0.01$   & $\al = 0.10$  \cr \hline
-   Latent topics $T$                       &   0.600 & 0.606  \cr
-   CCA standardized  ($k=100$)   &  0.561  & 0.437  \cr
-   Not standardized ($k=100$)      & 0.470  & 0.368  \cr
-   Most frequent 200 word counts  & 0.395 &  0.124   \cr \hline
-   \end{tabular} \end{center}
- \end{table}
-
-
-%--------------------------------------------------------------------------
-\section{Variable Selection and Cross Validation}
-\label{sec:cv}
-%--------------------------------------------------------------------------
-
-
-For comparison, we performed repeated 10-fold transductive cross validation.  Transductive cross-validation presumes that the full collection of regressors is available for the training data, which in this case implies that we have all of the data available to perform the principal components analysis.  Only the values of the response are hidden in each fold of the cross-validation; the collection of regressors is fixed.  We repeated the 10-fold cross-validation 20 times, each time randomly partitioning the cases into 10 folds. The observed average squared error was slightly higher than anticipated at $0.614 \pm 0.007$, but basically agreed with the estimate from the fitted model.
-
-
-%--------------------------------------------------------------------------
-\section{Lighthouse Variables and Interpretation}
-\label{sec:light}
-%--------------------------------------------------------------------------
-
-
-
- Our emphasis on predictive accuracy does not necessarily produce an
- interpretable model, and one can use other data to create such structure.  Our
- explanatory variable resemble those from principal components analysis and
- share their anonymity.  To provide more interpretable regressors, the presence
- of partial quantitative information in real estate listings (\eg, some listings
- include the number of square feet) provides what we call ‘lighthouse variables’
- that can be used to derive more interpretable variables.  In our sample, few
- listings (about 6\%) indicate the number of square feet.  With so much missing
- data, this manually derived predictor is not very useful as an explanatory
- variable in a regression.  This partially observed variable can then be used to
- define a weighted sum of the anonymous text-derived features, producing a
- regressor that is both complete (no missing cases) and interpretable.  One
- could similarly use features from a lexicon to provide more interpretable
- features.
-
-
-Though regression models are seldom causal, one is often tempted to interpret
- properties of the solution within the domain of application.  Because the
- predictors computed from the decompositions in the prior section describe
- subspaces rather than some specific property of words, interpretation is
- essentially non-existent.
-
-
- To obtain features that are interpretable, we exploit the pre<sence of
- characteristics that are occasionally observable.  For example,
- most home listings do not include the number of bathrooms.  An
- explanatory variable obtained by parsing this count is missing for 74\% of the property listings.  We can use this partially observed variable, however, to construct a more interpretable variable from either the principal components of $W$ or the bigram variables.
-
-
- Let $z \in \Rn$ denote the partially observed or perhaps noisy data
- that measures a substantively interesting characteristic of the
- observations.  For our example, $z$ is the partially observed count of the number of bathrooms.  Rather than use $z$ directly as a predictor of $y$, we
- can use it to form an interpretable blend of, for instance, $U_W$.   In
- particular, we simply regress $z$ on these columns, finding the
- linear combination of these basis vectors most correlated with the
- observed variable.  This variable, call it $\hat{z}$ then becomes
- another regressor.  Because such variables can be used to guide the
- construction of interpretable combinations of the bases $U_W$ and
- $C$, we call these lighthouse variables.
-
-
- In our example, the correlation between the number of bathrooms and the price of the listing is 0.42 for listings that show this characteristic.  This correlation is much smaller (0.19) if we fill the missing values with the mean number of bathrooms (Figure  \ref{fig:parsed}).  If we form the projection $\hat{z}$ given by regressing the observed counts on the corresponding rows of $U_W$, this new regressor has correlation 0.29 with the log of price.
-
-
-
-%--------------------------------------------------------------------------
-\section{Summary and Next Steps}
+\section{Conclusion}
 \label{sec:disc}
 %--------------------------------------------------------------------------
 
-  Regression modeling always benefits from greater substantive insight, and the modeling of text is no exception.  An obvious approach to building regressors from text data relies on a
- substantive analysis of the text.  For example, sentiment analysis constructs a
- domain-specific lexicon of positive and negative words.  In the context of real
- estate, one might suspect  words such as ``modern'' and ``spacious''  to be associated with more expensive properties, whereas
- ``Fannie Mae'' and ``fixer-upper'' to signal properties with lower prices.  The
- development of such lexicons has been an active area of research in sentiment
- analysis over the past decade \citep{taboada11}.  The development of a lexicon
- require substantial knowledge of the context and the results are known to be
- domain specific.  Each new problem requires a new lexicon.  The lexicon for
- pricing homes would be quite different from the lexicon for diagnosing patient
- health.  Our approach is also domain specific, but requires little user input
- and so can be highly automated.
+  Regression modeling always benefits from greater substantive
+ insight, and the modeling of text is no exception.  An obvious
+ approach to building regressors from text data relies on a
+ substantive analysis of the text.  For example, sentiment analysis
+ constructs a domain-specific lexicon of positive and negative words.
+  In the context of real estate, one might suspect words such as
+ ``modern'' and ``spacious'' to be associated with more expensive
+ properties, whereas ``Fannie Mae'' and ``fixer-upper'' to signal
+ properties with lower prices.  The development of such lexicons has
+ been an active area of research in sentiment analysis over the past
+ decade \citep{taboada11}.  The development of a lexicon require
+ substantial knowledge of the context and the results are known to be
+ domain specific.  Each new problem requires a new lexicon.  The
+ lexicon for pricing homes would be quite different from the lexicon
+ for diagnosing patient health.  Our approach is also domain specific,
+ but requires little user input and so can be highly automated.
 
 
- Our analysis here shows that one can exploit well-known methods of multivariate analysis to create regressors from unstructured text.  Compared to iterative methods based on MCMC, the computations are essentially immediate.  Surprisingly, the resulting regressors are quite predictive in several examples we have explored.  For example, we used this same methodology to model ratings assigned to wines based on tasting notes.  The tasting notes themselves are typically shorter than these real estate listings (averaging about 42 tokens compared to 72 for the listings), but we have a larger collection of about 21,000.  Using the methods demonstrated here, a regression using 250 principal components of $W$ explains about 66\% of the variation in ratings, we a remarkably similar distribution of effect sizes as shown in Figure \ref{fig:wine}.  Similarly, regression on the 250 left and 250 right regressors constructed from the bigram matrix explains about 68\% of the variation.  We plan to explore other applications in the near future.
-
-
- \begin{figure}
- \caption{ \label{fig:wine} \sl Regression t-statistics from a model that predicts wine ratings using 250 principal components of $W$ based on 21,000 wine tasting notes.}
-
-  \end{figure}
-
-
-   The connection to topic models is an important aspect of these results.  Topic models define a DGP for which the regressors that we construct capture the underlying data-generating mechanism.  If one accepts topic models as a reasonable working model of the semantics of text, then it is no accident that regressors constructed from text are predictive.
-
-
- Our work here merely introduces these methods, and we hope that this introduction will encourage more statisticians to engage problems in  modeling text.  Our results here also suggest several directions for further research:
-
-   \begin{description}
-
-   \item[n-grams.]  Our example uses bigrams to capture word associations captured by adjacent placement.  Other reasonable choices define different measures of context,  such as trigrams (sequence of 3 words) or skipped bigrams (words separated by some count of tokens).  Some preliminary results show, for instance, that trigrams offer modest gains, albeit at a nontrivial increase in computation.
-
-   \item[Transfer learning.]  Transfer learning refers to learning what can be extrapolated from one situation to another.  In our context, it would be of interest to learn how well models developed from data in June 2013 work when applied to data from later time periods or different locations.  It is evident that the models shown here would not perform so well applied to the language of a different market, such as in Miami or Los Angeles.  Not only do the characteristics of valuable properties change, but  local conventions for phrasing listings are also likely to be different.  Having a methodology for distinguishing idiosyncratic local features from those that generalize in time or space would be valuable.
-
-  \item[Alternative forms of tokenization.] Would be interesting to explore the use of stemming to reduce the number of word types and with a larger collection of documents, to explore annotation (that would distinguish words by their part of speech).  Further parsing, lexical analysis.  Some readers will be troubled by the simplicity of the  bag-of-words representation of a document.  Our methods understand neither the English language nor the rules of grammar and spelling.  They do not attempt to untangle  multiple uses of the same word.  Linguists have debated the ability of such  representations to reveal the meaning of language, and it is clear that the bag of words representation loses information.  Just imagine cooking from``bag of words'' recipe or following a ``bag of words'' driving directions.  Nonetheless, this very direct representation produces very useful explanatory variables within our application.  We leave open the opportunity to embellish this approach with more domain specific methods of parsing, such as adding part-of-speech tags and lexical information.
-
-   \item[Use of unsupervised data.] Most words are used only once or twice, meaning that we lack enough data to identify their connection to the response or indeed to other words.  As a partial remedy, it may be possible to build regressors that represent such words from larger, more generic text such as the collection of n-grams collected by Google.  Using this supplemental unsupervised data requires solving the problem of transfer learning, at least to some degree, but opens the door to much more extensive examples.
-
-   \item[Variable selection.]  The distribution of effects (such as shown by the $|t|$ statistics of the text-derived regressors) are poorly matched to the so-called `nearly black' model commonly adopted in research on the theory of variable selection.  Rather than have most of the predictive power concentrated in a very small number of regressors, these regressors spread the power of many.
-
-   It would also be interesting to explore these models for nonlinearity. Variable selection is perhaps unnecessary for using the regressors derived from $U_W$ and $C$, but essential if one hopes to detect and incorporate nonlinearity. In particular, searching for nonlinearity -- such as interactions -- requires variable selection.  Even a very large corpus of documents looks small compared to the number of possible second-order interactions.  Finally, the ordered presentation of the $|t|$ statistics suggests an opportunity for variable selection derived from alpha investing \citep{fosterstine08}.  Alpha investing is a procedure for testing a sequence of hypotheses that benefits from {\it a priori} ordering of the tests.
-
-      \item[Sparse CCA.] If the left singular vectors were sparse, only 0/1, then the heuristic explanation could become less heuristic and more honest.  Would sparse CCA (Witten et al) be useful? \citet{witten09}
-
-
-   \end{description}
-
-One can generalize LSA from words and documents to collections of other items,
- such as phonemes in speech or tones in music \cite[called latent semantic
- mapping in][]{bellegarda05}.
-
+  If the left singular vectors were sparse, only 0/1, then the
+ heuristic explanation could become less heuristic and more honest.
+  Would sparse CCA (Witten et al) be useful? \citet{witten09}
 
 
 %--------------------------------------------------------------------------
-\section*{Acknowledgement}
+\section*{Acknowledgment}
 %--------------------------------------------------------------------------
 
-The authors thank Vanessa Villatoro from Trulia's PR Team for allowing us to scrape the data from their web site.
-
-%--------------------------------------------------------------------------
-\section*{Appendix}
-%--------------------------------------------------------------------------
-
- The singular value decomposition can produce either a
- PCA or CCA.  The role of the SVD for computing principal components is both
- well documented and direct.  The left singular vectors are the principal
- components, and the right singular vectors provide the loadings (or coefficients).  The use of
- the SVD for CCA is implicit and known \citep[e.g.][]{fosterkakade07} but more
- subtle, and so we provide the details here.
-
- Let $X$ and $Y$ denote column-centered matrices of observed random
- variables of dimension $n \times k_x$ and $n \times k_y$, respectively, with
- $k_x \le k_y$. The sample variance-covariance matrices are
- \begin{displaymath}
-   S_{xx} = X'X/(n-1),\quad S_{yy} = Y'Y/(n-1), \quad \mbox{ and }
-   S_{xy} = X'Y/(n-1) = S_{yx}' \;.
- \end{displaymath}
- For simplicity, assume both $X$ and $Y$ are full rank so that $S_{xx}$ and
- $S_{yy}$ are invertible.  The first pair of canonical variables are the linear
- combinations, say $X a_1$ and $Y b_1$, which are most highly correlated,
- \begin{displaymath}
-   a_1, b_1 = \arg \max_{a \in \R^{k_x},b \in \R^{k_y}} \corr(Xa,Yb) \;.
- \end{displaymath}
- The second pair, $X a_2$ and $Y b_2$, defines the linear combinations that are
- most correlated with each other, but orthogonal to $Xa_1$ and $Yb_1$.  Let $A$
- denote the $k_x \times k_x$ with columns $a_1,\ldots,a_{k_x}$ and let $B$ be
- the corresponding matrix with columns $b_1,\ldots,b_{k_y}$.  The coefficients of
- the canonical variables are obtained by solving the eigenvalue problems
- \begin{eqnarray}
-   S_{xx}^{-1} S_{xy} S_{yy}^{-1} S_{yx} \, A &=& A \, \Lambda_A \cr
-   S_{yy}^{-1} S_{yx} S_{xx}^{-1} S_{xy} \, B &=& B \, \Lambda_B
- \label{eq:appA}
- \end{eqnarray}
- The leading $k_x$ elements of the diagonal matrices $\Lambda_A$ and $\Lambda_B$
- are the squared canonical correlations between $X$ and $Y$.  The canonical
- variables are the leading $k_x$ columns of $X\,A$ and $Y\,B$.
-
-
- The SVD provides an alternative method of computation. Define the standardized,
- orthogonal variables
- \begin{displaymath}
-   \tilde{X} = X S_{xx}^{-1/2} \quad \mbox{and }  \quad
-   \tilde{Y} = Y S_{yy}^{-1/2}
- \end{displaymath}
- with covariance matrix
- \begin{displaymath}
-   \tilde{S} =
-     \cov(\tilde{X},\tilde{Y}) = S_{xx}^{-1/2} S_{xy} S_{yy}^{-1/2} \;.
- \end{displaymath}
- Let the matrix $U$ hold the left singular vectors of $\tilde{S}$.  These are
- eigenvectors of $\tilde{S} \tilde{S}'$, satisfying
- \begin{equation}
-    S_{xx}^{-1/2} S_{xy} S_{yy}^{-1} S_{yx} S_{xx}^{-1/2} \, U = U \, \Lambda_U \;.
- \label{eq:appS}
- \end{equation}
- If we multiply both sides of \eqn{appS} by $S_{xx}^{-1/2}$ then we see that
- $S_{xx}^{-1/2}U$ solves the first equation of \eqn{appA} with $S_{xx}^{-1/2}U = A$.
-  Similarly, if $V$ denotes the right singular vectors of $\tilde{S}$, then
- $S_{yy}^{-1/2}V = B$.  Notice that the left and right singular vectors of
- $\tilde{S}$ are the coefficients that define the canonical vectors.  Unlike PCA,
- in which the SVD gives the principal components, for CCA the SVD gives the
- canonical coefficients, not canonical variables.
+ The authors thank Vanessa Villatoro from Trulia's PR Team for
+ allowing us to scrape the data from their web site.
 
 %--------------------------------------------------------------------------
 % References
 %--------------------------------------------------------------------------
 
-\bibliography{../../../../references/stat,../../../../references/TextPapers/text}
-\bibliographystyle{../bst/ims}
+\bibliography{stat,text}
+\bibliographystyle{../../bst/ims}
 
 \end{document} %==========================================================

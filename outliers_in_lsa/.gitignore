@@ -1,2 +1,8 @@
+.Rapp.history
+.Rhistory
+figures
+cache
 .DS_Store
 old_figures
+*.pdf
+paper.tex
