@@ -32,7 +32,7 @@ source("~/C/text/functions.R")
 # --- lengths (m)
 	mean(nTokens); fivenum(nTokens); quantile(nTokens,0.87)
 	boxplot(nTokens, horizontal=TRUE, xlab="Lengths of Descriptions")   # boxplot.pdf
-	hist(log10(nTokens))
+	hist(nTokens, xlim=c(0,300), xlab="Number of Tokens", breaks=100)
 
 # --- analysis of prices (thousands of $)
 	par(mfrow=c(1,2))
@@ -63,6 +63,7 @@ source("~/C/text/functions.R")
 
 	# fix column names when rebuild count matrix to remove embedded quote
 	W  <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
+	
 	# read raw column names to avoid R translation (first line of w5704.txt)
 	names <- scan(paste0(path,"types_5704.txt"), what="character")
 	colnames(W) <- names
