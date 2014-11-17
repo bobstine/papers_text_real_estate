@@ -354,9 +354,8 @@ token.regr <- lm(logPrice ~ poly(logTokens,5));
  creating a wide range of features from text.
 
 
- Once we think of $W$ as a covariance matrix, it becomes natural to
- associate LSA with canonical correlation analysis (CCA) rather than
- PCA.  In order for the SVD of $W$ to produce canonical vectors,
+ Once we think of $W$ as (proportional to) an estimated covariance matrix, it becomes natural to
+ associate LSA with canonical correlation analysis (CCA).  In order for the SVD of $W$ to produce canonical vectors,
  however, we have to standardize the columns of $L$ and $X$.  Let
  \begin{equation}
    S_L = L'L/(N-1) = \mbox{diag}(n_i) \quad \mbox{ and  } \quad S_X = X'X/(N-1)
@@ -401,7 +400,8 @@ token.regr <- lm(logPrice ~ poly(logTokens,5));
 
 <<read-lsa, cache=TRUE, echo=FALSE,results='hide'>>=
 ## read SVD of W computed in C++
-weights <- "cca"; nProj<-500;
+weights <- "cca"; 
+nProj<-500;
 file    <- paste0(path,"lsa_",weights,"_", nProj,"_p4_u.txt")
 LSA     <- as.matrix(read.table(file, header=TRUE)); dim(LSA)
 (file    <- paste0(path,"lsa_",weights,"_", nProj,"_p4_d.txt"))
@@ -472,7 +472,7 @@ reset()
 
 % plot absolute values of the t-statistics of initial singular vectors
 \begin{figure}
-<<"lsa_tstats", echo=FALSE, results='hide'>>=
+<<lsa-tstats, echo=FALSE, results='hide'>>=
 lsa    <- as.matrix(LSA[,2:nProj])
 sr.lsa <- summary(regr.lsa <- lm(logPrice ~ poly(logTokens,5) + lsa));
 coef.summary.plot(sr.lsa, "LSA Component", omit=6, show.qq=FALSE)
@@ -486,6 +486,34 @@ coef.summary.plot(sr.lsa, "LSA Component", omit=6, show.qq=FALSE)
  adjustment. }
 \end{figure}
 
+
+<<kurtosis>>=
+# what is the kurtosis of the LSA components themselves
+# does high kurtosis imply higher risk in replicating LSA effect?
+library(moments)
+kk <- apply(LSA,2,kurtosis)    # generally high around 25th
+order(kk, decreasing=T)[1:5]   # largest is 27, the outlier guy
+plot(kk)
+plot(lsa[,27])
+plot(lsa[,38])
+
+#  second largest kurtosis on lsa[,38] also has outlier, 3506.
+#  are words of this listing also basically repeated here and not
+#  elsewhere, like those of the weird listing?
+#    location elston appears 4 times in corpus, 3 in this one and
+#  once in another.   laporte is 3 times in just this one listing
+#  Does this second special listing also define another free-rider?
+j <- which("elston" == type.names)
+sum(W[,j]); plot(W[,j])
+(j <- which("laporte" == type.names))
+sum(W[,j]); plot(W[,j])
+
+#  how to distinguish a document as being really different, outside
+#  the lsa analysis itself?  Just a matter of leverage?
+
+#  what happens to the kurtosis in general after doing the rotation
+
+@
 
  A regression diagnostic plot of a smaller model that uses only the
  first 100 LSA components shows that these models may have problems

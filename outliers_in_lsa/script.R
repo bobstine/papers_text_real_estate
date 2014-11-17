@@ -65,8 +65,8 @@ source("~/C/text/functions.R")
 	W  <- as.matrix(read.table(paste0(path,"w5704.txt"),header=T,as.is=T))
 	
 	# read raw column names to avoid R translation (first line of w5704.txt)
-	names <- scan(paste0(path,"types_5704.txt"), what="character")
-	colnames(W) <- names
+	w.names <- scan(paste0(path,"types_5704.txt"), what="character")
+	colnames(W) <- w.names
 	type.freq <- colSums(W)
 
 
@@ -133,7 +133,7 @@ source("~/C/text/functions.R")
 	# plot a component in type freq order
 	x <- 1:nrow(V)
 	j <- 17; plot(V[,j],col="gray"); w<-order(abs(V[,j]),decreasing=T)[1:50];
-	text(x[w],V[w,j],colnames(W)[w],cex=0.75)
+	text(x[w],V[w,j],w.names[w],cex=0.75)
 
 	# 46 has very clear rays; 8/9 have the auction ray (sale process; also in 12-13)
 	# 14-15 is the almost 'ideal' with roughly orthogonal terms; 26-27,50-51 have oblique
@@ -151,17 +151,16 @@ source("~/C/text/functions.R")
 				xlab=paste(label,j), ylab=paste(label,k)); 
 		if (show.names) {
 			w<-order(rowSums(V[,c(j,k)]^2),decreasing=T)[1:60]; abline(h=0,v=0,col="gray")
-			text(V[w,j],V[w,k],colnames(W)[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
-			return(colnames(W)[w[1:20]])
+			text(V[w,j],V[w,k],w.names[w],cex=0.7, offset=0.45, pos=c(1,2,3,4,1,2,3,4))
+			return(w.names[w[1:20]])
 		}}
 	# adding 28 produces the huge jump
 	par(mfrow=c(2,2))								# [ lsa_components.pdf ]
 		draw.pair(V,5) ; draw.pair(V,8)
 		draw.pair(V,23); draw.pair(V,27)
 	reset()
-	# adding 28 produces the huge jump
-
-=======
+	draw.pair(V,27,26)
+	draw.pair(V,27,28)
 	
 	# do the tips of the rays stand out?
 	i <- order(rowSums(V^2), decreasing=T)           
@@ -175,7 +174,7 @@ source("~/C/text/functions.R")
 		draw.pair(V[i,],k,col=colors, show.names=F)
 		points(V[i[1:50],k],V[i[1:50],k+1],pch=19,col="cyan",cex=0.5)
 	reset()
->>>>>>> 737ae6c3c98afba12adb164b87280d95631cb51c
+
 
 # --- Rotate the leading k LSA components as in factor analysis
 	k <- 250
@@ -336,10 +335,10 @@ source("~/C/text/functions.R")
 
 	# partial regr of L28 on L0:L28 is basically nil (R2 < 0.01, but is signficant)
 	p.28 <- lm(LSA[,28] ~ poly(logTokens,5) + LSA[,2:27]); summary(p.27)
-	p.29 <- lm(LSA[,29] ~ poly(logTokens,5) + LSA[,2:28]); summary(p.28)
+	p.29 <- lm(LSA[,29] ~ poly(logTokens,5) + LSA[,2:28]); summary(p.29)
 
-	plot(sr.28)   # 3646 is highly leveraged (about 0.9)
-	plot(sr.29)   # 3646 remains highly leveraged
+	plot(p.28)   # 3646 is highly leveraged (about 0.9)
+	plot(p.29)   # 3646 remains highly leveraged
 
 	# partial regression plots
 	pr.plot <- function(k) {
@@ -353,7 +352,7 @@ source("~/C/text/functions.R")
 		x <- x[-ii]; y <- y[-ii]
 		abline(r <- lm(y~x), col="red");
 	}
-	pr.plot
+	
 	# 	observation 3646 is highly leveraged (esp for var 27)
 	par(mfrow=c(1,2)	);	mapply(pr.plot,  c(27,28));		reset()		# [ leverage_plots.pdf ]
 
