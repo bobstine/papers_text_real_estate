@@ -1,0 +1,1010 @@
+%-*- mode: Rnw-mode; outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 95; -*-
+
+\documentclass[12pt]{article}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[longnamesfirst]{natbib}
+% \usepackage[usenames]{color}  % causes problems in knitr
+\usepackage{graphicx}  % Macintosh pdf files for figures
+\usepackage{amssymb}   % Real number symbol {\Bbb R}
+\usepackage{amsmath}
+\usepackage{bbm}
+\input{../../../standard}
+
+% --- margins
+\usepackage{../../sty/simplemargins}
+\setleftmargin{0.8in}   % 1 inch is NSF legal minimum
+\setrightmargin{0.8in}  % 1 inch is NSF legal minimum
+\settopmargin{1in}    % 1 inch is NSF legal minimum
+\setbottommargin{1in} % 1 inch is NSF legal minimum
+
+% --- Paragraph split, indents
+\setlength{\parskip}{0.00in}
+\setlength{\parindent}{0in}
+
+% --- Line spacing
+\renewcommand{\baselinestretch}{1.4}
+
+% --- page numbers
+\pagestyle{empty}  % so no page numbers
+
+% --- Hypthenation
+\sloppy  % fewer hyphenated
+\hyphenation{stan-dard}
+\hyphenation{among}
+
+% --- Customized commands, abbreviations
+\newcommand{\TIT}{{\it  {\tiny Outliers and Rotations (DRAFT, \today)}}}
+\newcommand{\prs}{\mbox{$\ol{\ol{R}}^2$}}
+\newcommand{\aicc}{\mbox{\it AIC$_c$}}
+\newcommand{\Wt}{\mbox{$\widetilde{W}$}}
+
+% --- Header
+\pagestyle{myheadings}
+\markright{\TIT}
+
+% --- Title
+
+\title{ Outliers in Latent Semantic Regression: A Tutorial Example }
+ \author{ Dean P. Foster \ \ Mark Liberman \ \ Robert A. Stine
+ \footnote{Dean Foster and Robert Stine are members of the Department
+ of Statistics of the University of Pennsylvania.
+ Mark Liberman is at the Linguistic Data Corporation.}    \\
+        University of Pennsylvania \\
+        Philadelphia, PA }
+
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+\vspace{-0.5in}
+\maketitle
+% ------------------------------------------------------------------------------
+\vspace{-.5in}
+
+\abstract{
+
+ A single outlying document is able to exert a surprising influence
+ upon the structure of a latent semantic analysis (LSA).  The outlier
+ can influence several latent components, leading to surprising
+ effects when these components are used, for instance, as features in
+ a predictive model.  The outlier can easily lead to a highly
+ leveraged observation that distorts the influence of several latent
+ components.  Because of this mixing effect, the outlier contaminates
+ several variables, and the resulting model confounds useful structure
+ with that presented by the original outlying text.  These effects can
+ distort, for example, the use of cross-validation for selecting model
+ features.  In our case, a simple rotation of the latent components,
+ however, localizes the effects of the outlier.  Not only are these
+ rotated components more robust to the influence of the outlier,
+ rotated components are more interpret able as predictors in other
+ models.
+
+}
+
+% ------------------------------------------------------------------------------
+
+\vspace{0.15in}
+
+\noindent {\it Key Phrases:
+
+ varimax rotation, singular value decomposition, text mining}
+
+\clearpage
+
+
+
+% ------------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+% ------------------------------------------------------------------------------
+
+ The effects of outliers on data analysis are well known.  Simple
+ examples abound: a single positive outlying point can lead to a
+ positive average even if the rest of the data are negative.  Methods
+ for detecting outliers are well-developed in many domains,
+ particularly regression analysis \citep[see, for instance,]
+ []{belsley80}.  When combined with modern interactive graphics, these
+ methods simplify the task of isolating outliers in a regression
+ model.
+
+
+ Outliers in text are less easy to appreciate.  Unusual text can be
+ associated with the presence of different authors, vocabularies, or
+ writing styles.  \citet{guthrie08} approach this problem by
+ representing text using an ensemble of linguistic features.  They
+ employ 158 explicit characteristics, including sentence length, parts
+ of speech, and readability indices.  Once encoded by these features,
+ Guthrie {\it et al} employ methods for multivariate outlier detection.
+  Their objective is to produce homogeneous corpora by contrasting
+ these properties of new text to those of a collection of reference
+ documents.
+
+
+ In contrast, we focus on the impact of outliers within a specific
+ methodology, namely the use of features from an {\em unsupervised}
+ latent semantic analysis (LSA) as predictive features of a model.
+  Variations on LSA have been used to identify outlying clusters of
+ documents \citep[\eg][]{kobayashi02}.  Our objective here is rather
+ different.  Rather than isolate a subset of documents, we emphasize
+ the surprisingly large influence exerted by a {\em single} outlying
+ document when features from LSA are used as predictors in a
+ regression model.  The variance maximization used by LSA spreads the
+ impact of this outlying document over several features, complicating
+ model selection and cross validation.  Fortunately for us, a simple
+ rotation (known as varimax) that creates more interpretable features
+ also confines the outlier to a single latent variable.  Once
+ confined, the outlier has a benign impact on both model selection and
+ prediction.  The outlier remains leveraged -- that is, distinct from
+ the other listings -- but no longer influences the predictions of the
+ model.  The specific application developed here investigates how well
+ unsupervised features from LSA from the brief text of real-estate
+ listings predict the prices.  A single outlying listing complicates
+ both the choice of features for the model as well as the
+ interpretation of which features influence the price.
+
+
+% ------------------------------------------------------------------------------
+\section{Property Listings}
+\label{sec:listings}
+% ------------------------------------------------------------------------------
+
+ The data for this example describe $n=$7,384 property listings in
+ Chicago, IL, extracted (with permission) from trulia.com in 2013.  At
+ the time, Trulia offered more than 30,000 listings for Chicago, but
+ most were foreclosure announcements that we exclude from our
+ analysis.  The response of interest is the log of the listed price.
+  The log transformation produces roughly Gaussian variation.  Without
+ this transformation, predictive models typified by least squares
+ regression would focus on fitting the most highly valued properties.
+
+
+ The listings for these properties are written in an idiosyncratic
+ vernacular familiar to those who have recently shopped for a house.
+  These listings do not obey the grammatical rules of English.  Some
+ authors write in sentences, others not, and a variety of
+ abbreviations appear.  Punctuation and description vary from spartan
+ to effusive.  The following four listings are typical.
+
+ \begin{verbatim}
+    Stunning skyline views like something from a postcard are yours
+    with this large 2 bed, 2 bath loft in Dearborn Tower!  Detailed
+    hrdwd floors throughout the unit compliment an open kitchen and
+    spacious living-room and dining-room /w walk-in closet, steam
+    shower and marble entry.  Parking available.
+
+    4 bedroom, 2 bath 2 story frame home. Property features a large
+    kitchen, living-room and a full basement. This is a Fannie Mae
+    Homepath property.
+
+    Great short sale opportunity...  Brick 2 flat with 3 bdrm each unit.
+    4 or more cars parking. Easy to show.
+
+    This flat with all 3 bed units is truly a great investment!! This
+    property also comes with a full attic that has the potential of a
+    build-out thats a possible 4 unit building in a great area!!  Blocks
+    from lake and transportation. Looking for a deal in todays market -
+    here is the one!!!
+ \end{verbatim}
+
+ \noindent
+ The following listing is the outlier of the analysis.  Rather than
+ describe the property, this listing describes an organization devoted
+ to childhood education.
+
+ \begin{verbatim}
+    Since fall of 1997 Saint Rose has been a center providing day
+    training services to adults who have developmental disabilities.  For
+    over 40 years prior to becoming a day training center, we were a
+    school who taught children with developmental disabilities.  We
+    provide developmental skills for people who wish to improve their
+    lives.
+ \end{verbatim}
+
+
+ We adopt a minimalist approach to tokenization: we convert all text
+ to lower case, distinguish punctuation characters as separate word
+ types, and replace instances of rare word types by a common
+ out-of-vocabulary token.  For example, the listing
+ \begin{verbatim}
+   Brick flat, 2 bdrm.  With two-car garage.
+ \end{verbatim}
+ \noindent
+ becomes a list of 10 tokens representing 9 word types (angle brackets
+ surround punctuation tokens)
+ \begin{verbatim}
+   {brick, flat, <,>, 2, bdrm, <.>, with, two-car, garage,<.> }
+ \end{verbatim}
+ \noindent
+ We leave embedded hyphens in place and do not correct spelling errors
+ or typos.  Abbreviations remain as given. \citep[][describe more
+ elaborate methods for tokenizing that are more suited to regular
+ language.]{manning99,jurafsky09,turney10}.
+
+% define path, read response, token lengths, doc/type matrix
+
+
+
+ When applied to our data from Chicago, the $n=$7384 property
+ listings contain 535,921 word tokens representing 15,215 unique word
+ types.  After tokenizing, listings average
+ 72.7 tokens, but the average is a bit
+ misleading due to skewness of the distribution.  The shortest listing
+ has 2 tokens, whereas the longest has 568.  The median length is much
+ smaller than the average, about 74
+ tokens.  As typical in text, the most common word types occur
+ frequently whereas most words appear infrequently.  More than half of
+ these tokens appear only once or twice.  We clustered these rare
+ types into one category ($<$OOV$>$, for ``out of vocabulary''),
+ resulting in a reduced vocabulary of $m=$5,704 word types.  The most
+ common word types are punctuation.  The document/type matrix $W$
+ holds these counts.  The $n \times m$ context-word matrix $W$ holds
+ the counts of these word types across the listings; $W_{ij}$ is the
+ number of times word type $j$ appears in the \ith document.  (All
+ vectors in our notation are column vectors.)  $W$ is a sparse matrix:
+ a small portion of the vocabulary appears in most listings.
+
+
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/zipf-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{    \label{fig:zipf}
+ { \sl The log of the frequency of word types in the listings for
+ properties in Chicago is linear in the log of the rank of the most
+ common 500 words with slope \ensuremath{-0.92}.}  }
+\end{figure}
+
+
+ Figure \ref{fig:zipf} graphs the log of the frequencies $f_j = \sum_i
+ W_{ij}$ of these word types versus the log of their ranks.  It is
+ common in text to find a linear trend with slope near 1 in this
+ graph, the signature of a Zipf distribution \citep{zipf35, baayen02}.
+  Even though the text of real estate listings is not standard
+ English, the frequencies $f_j$ resemble those produced by a power law
+ \citep{clauset09}.  The shown line (with log-log slope
+ \ensuremath{-0.92}) holds only for more common word types.  For
+ less common words, the frequencies drop off more rapidly.
+
+
+
+% ------------------------------------------------------------------------------
+\section{Modeling with Latent Regressors}
+\label{sec:modeling}
+% ------------------------------------------------------------------------------
+
+% preliminary regression on length of listing
+
+
+ Regression models are very predictive of the listing price, capturing
+ about 2/3 of the variation among log prices.  All of these models
+ share a common adjustment for the length of the property listing.
+  Inclusion of this effect implies that a word type is not given
+ credit for explaining variation in prices only because that word type
+ is common.  As might be anticipated from the context, longer listings
+ are associated with higher prices.  One has more to say about a nicer
+ property.  A simple 5th degree polynomial in the log of the listing
+ length explains about 19\% of the variation in
+ log prices.  (One could use more elaborate smoothing such as offered
+ by a generalized additive model to similar effect, but the direct
+ approach with a polynomial provides a simpler analysis.)
+
+
+ Three of the common choices for weights can be motivated as variance stabilization.
+ For example, one might choose to stabilize the differing variances produced by
+ unequal document lengths.  Define
+ ${W}^{*}$ to be the $n \times m$ matrix with elements ${W}^{*}_{ij} =
+ W_{ij}/\sqrt{n_i}$ with $n_i = \sum_j W_{ij}$ counting the number of word
+ tokens in the \ith listing.  Were tokens within listings random samples from a
+ multinomial distribution with probabilities $p_{1}, \ldots, p_{m}$ across the word types,
+ then $\Var({W}^{*}_{ij}) = p_j(1-\sum_{k\ne j} p_k)$, regardless of the
+ number of words in the listing.  Similarly, we can define $W^{**}$ with elements
+ $W^{**}_{ij} = W_{ij}/\sqrt{m_j}$, where $m_j = \sum_i W_{ij}$ counts the
+ number of tokens of word type $j$ across all listings. This standardization
+ down-weights the most common word types.  Our choice for weights combines these and uses
+ \begin{equation}
+   \widetilde{W}_{ij} = W_{ij}/\sqrt{n_i\,m_j} \;.
+ \label{eq:Wtij}
+ \end{equation}
+ This combination produces a novel approximation to a canonical
+ correlation analysis developed in Section \ref{sec:cca}
+ below. \citet{turney10} describes these and other weightings, such as
+ the popular term frequency-inverse document frequency (TF-IDF), used
+ in LSA.
+
+
+ Token space is the vector space generated by modeling the sequence of word
+ tokens as indicator vectors.  From this perspective, the frequencies in the
+ document-word matrix $W$ are seen to be proportional to estimated covariances between random variables
+ that represent different word tokens. Token space should feel
+ familiar to statisticians and provides motivation and heuristics for
+ creating a wide range of features from text.
+
+
+ Once we think of $W$ as a covariance matrix, it becomes natural to
+ associate LSA with canonical correlation analysis (CCA) rather than
+ PCA.  In order for the SVD of $W$ to produce canonical vectors,
+ however, we have to standardize the columns of $L$ and $X$.  Let
+ \begin{equation}
+   S_L = L'L/(N-1) = \mbox{diag}(n_i) \quad \mbox{ and  } \quad S_X = X'X/(N-1)
+ \label{eq:SL}
+ \end{equation}
+ denote the uncentered covariance matrices defined by $L$ and $X$,
+ respectively.  As shown in the appendix, the SVD of $S_L^{-1/2} W
+ S_X^{-1/2}$ yields the coefficients that define a CCA.  Standardizing
+ $L$ is easy because $S_L$ is diagonal (when $L$ is uncentered), but
+ $S_X$ is not.  To avoid computing and inverting $X'X$, we treat its
+ columns as orthogonal and use the approximation $\widetilde{S}_X =
+ \mbox{diag}(m_j)$, with $m_j$ counting the number of tokens of word
+ type $\omega_j$. The resulting regressors are the left singular
+ vectors of $S_L^{-1/2} W \widetilde{S}_X^{-1/2} = \widetilde{W}$
+ defined in equation \eqn{Wtij}, matching the weighed principal
+ components defined in Section \ref{sec:regrUsingLSA}.  This
+ connection provides some further intuition behind the evident success
+ of LSA in producing regressors.  The singular vectors of
+ $\widetilde{W}$ are the coefficients that define the canonical
+ variables of CCA.  The leading left singular vector identifies the
+ linear combination of documents (columns of $L$) that is most
+ correlated with a linear combination of words (columns of $X$).  If
+ we imagine the elements of this singular vector being 0/1, then in
+ this heuristic sense the CCA identifies clusters of documents
+ associated with different collections of word types.
+
+%%  Explain the CCA adjustments here
+
+%%  Review SVD notation, labeling U as the LSA components and
+%%  V as the LSA loadings (using language of factor analysis) or
+%%  principal components analysis
+
+ Because \Wt\ has a modest size, we can compute its SVD directly,
+ without need for more scalable methods.  Just the same, random
+ projection works quite nicely.  Here, we use it to obtain the first
+ 500 singular values and associated singular vectors (that is, the
+ first 500 columns of $U$ and $V$).  To speed this calculation, we
+ exploit random projection algorithms defined and analyzed in
+ \citet{tropp10}.  Random projections produce $U_{1:k}$ in less than a
+ minute in our application and are essential in larger problems.
+
+
+
+
+ The spectrum of the CCA scaled document/term matrix \Wt\ shown in
+ Figure \ref{fig:spectrum} falls off slowly, with no hint of a clear
+ separation between ``large'' and ``small'' singular values.  The
+ fitted line in the figure is estimated from the second through the
+ 250th singular values, omitting the first singular value; the
+ estimated decay rate is about -0.2.  The first pair of singular
+ vectors capture the size of the counts in the scaled listings. The
+ inset of Figure \ref{fig:spectrum} graphs the square of the first LSA
+ component on the number of tokens in each listing.  Since our models
+ explicitly contain a polynomial in the number of tokens, we omit the
+ first component as it would induce substantial collinearity without
+ improving predictions.
+
+
+% log/log plot of spectrum of CCA scaled matrix
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/spectrum-1} 
+
+}
+
+
+\begin{kframe}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.new(): figure margins too large}}\end{kframe}
+\end{knitrout}
+
+\caption{ \label{fig:spectrum}
+ {\sl The singular values $\la_i$ of the weighted document-term matrix
+ $\widetilde{W}$ decay relatively slowly, following a power law $\la_i
+ \propto i^{-\eta}$.  } The rate of decay $\eta \approx 0.2$. The
+ leading singular value represents the effect of document length. }
+\end{figure}
+
+
+ When used as regressors, the explanatory power (quantified by the
+ absolute values of $t$-statistics of the regression coefficients)
+ shown in Figure \ref{fig:lsa_tstats}) fall off monotonically with the
+ magnitude of the singular values.  That is, leading singular vectors
+ tend to be more predictive of log-prices than those that follow.  The
+ red curve in the figure tracks the local average of the statistics.
+  The solid horizontal black line is the expected value of the
+ absolute value of a standard normal, $\sqrt{2/\pi}$. The dashed
+ horizontal line is the Bonferroni threshold $\Phi^{-1}(1-0.025/1089)
+ \approx 4.08$.  Between these, the almost flat, red curve is the
+ loess smooth of $|t|$; the average $|t|$ is only slightly larger than
+ one expects for a model with no signal.  Scattered coefficients of
+ only 16 words exceed the Bonferroni threshold.  This decay is
+ somewhat surprising because these regressors are constructed in an
+ unsupervised manner.  We offer a partial explanation of this effect
+ in the following section.  \citep[][shows how to use this
+ monotonicity to construct more efficient coefficient
+ estimates.]{zhuang14}
+
+
+% plot absolute values of the t-statistics of initial singular vectors
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/lsa_tstats-1} 
+
+}
+
+
+
+\end{knitrout}
+
+\caption{  \label{fig:lsatstats}
+ {\sl Absolute $t$-statistics from the regression of log prices on the
+ LSA components of $\widetilde{W}$.} The figure omits the leading
+ singular value (size effect); the estimated model includes a size
+ adjustment. }
+\end{figure}
+
+
+ A regression diagnostic plot of a smaller model that uses only the
+ first 100 LSA components shows that these models may have problems
+ with outliers.  We chose a model with 100 which is near the kink in
+ the magnitude of the significance of the $t$-statistics in Figure
+ \ref{fig:lsatstats}.  Figure \ref{fig:diagplot} plots the standardized
+ residuals from the model on the associated leverages.  In a
+ regression with design matrix $X$, leverages are the diagonal
+ elements $h_{i}$ of the projection, or hat, matrix $H =
+ X(X'X)^{-1}X'$.  Standardized residuals $r_i$ are scaled to have
+ equal variance,
+ \begin{equation}
+     r_i = \frac{e_i}{s\, \sqrt(1-h_i)} \;,
+ \label{eq:sres}
+ \end{equation}
+ where $e_i$ is the usual residual for the \ith\ case and $s$ is the
+ root mean squared error of the regression.  These leave-one-out
+ diagnostics are easily computed without needing to refit $n$ models
+ \citep{belsley80}.  The amount of influence exerted by each case on
+ the fitted model, Cook's D statistic, is roughly the product of the
+ leverage times the Studentized residual. Figure \ref{diagplot}
+ highlights contours of equal influence.  Though the labeled points
+ are highly leveraged -- unusual within the context of the regressors
+ -- none exerts significant influence on the fitted model.  That is,
+ if any one of these cases were removed, the estimated coefficient
+ vector does not change by a statistically significant amount.
+
+
+% regression diagnostic plot of standardized residuals on leverages
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning in sqrt(crit * p * (1 - hh)/hh): NaNs produced}}
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning in sqrt(crit * p * (1 - hh)/hh): NaNs produced}}\end{kframe}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/diag-plot-1} 
+
+}
+
+
+
+\end{knitrout}
+
+\caption{  \label{fig:diagplot}
+ {\sl A regression diagnostic plot reveals several highly leveraged
+ observations, but indicates none with much influence on the model. }
+  The problematic outlier is the filled-in point, case 3646.}
+\end{figure}
+
+
+ The decaying significance of LSA components observed in Figure
+ \ref{fig:lsatstats} suggests using a variable selection criterion
+ such as the corrected Akaike Information Criterion \aicc\ or 10-fold
+ cross-validation to determine the number of components to retain in
+ the model.  The corrected \aic\ statistic is defined \citep{hurvich89}
+ \begin{equation}
+    AIC_{c}(k) = n \log \frac{RSS(k)}{n} + \frac{n+k}{1-(k+2)/n} \;,
+ \end{equation}
+ where $k$ is the number of estimated parameters in the estimated
+ regression.  Both \aicc\ and cross-validation are well suited to the
+ problem of deciding how many LSA components to use in the model, such
+ as picking between a model with 50 components versus a model with
+ 100.  The model with 100 will have a better in-sample fit, but may
+ not be better if confronted with new listings.  In most applications,
+ these approaches to model selection lead to similar results.  In the
+ case of these data, the results are very different.  Figure
+ \ref{fig:cvss} shows the sequence of \aicc\ and cross-validation mean
+ squared errors, repeated for 5 random splits of the data into 10
+ folds.  (One obtains similar results with fewer or more folds.)
+  Whereas \aicc\ indicates that adding more and more of these features
+ improves the fit of the model, cross-validation bottoms out near 100
+ features and shows several sudden spikes.  In particular, the
+ addition of the 28th component produces an abrupt 20\% increase in
+ the out-of-sample squared error whereas \aicc\ continues its smooth
+ decay (indicating better models).
+
+% generate data used by c++ in fit AS Needed
+% <<write-table-to-c>>=
+% poly <- model.matrix(~ poly(logTokens,5) - 1)
+% colnames(poly) <- paste("poly_",1:5,sep="")
+% write.table(poly, paste(path,"logtoken_poly_5.txt",sep=""), row.names=F)
+% @
+
+% read CV results, last item is varimax CV
+
+
+% plot 10-fold cross-validation results with AICc and varimax for later reference
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=.8\textwidth]{figures/cvss-plot-1} 
+
+}
+
+
+\begin{kframe}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.new(): figure margins too large}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.xy(xy.coords(x, y), type = type, ...): invalid graphics state}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.xy(xy.coords(x, y), type = type, ...): invalid graphics state}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.xy(xy.coords(x, y), type = type, ...): invalid graphics state}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.xy(xy.coords(x, y), type = type, ...): invalid graphics state}}
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in plot.xy(xy.coords(x, y), type = type, ...): invalid graphics state}}\end{kframe}
+\end{knitrout}
+
+\caption{ \label{fig:cvss}
+ {\sl Corrected AIC (red) and five replications of 10-fold
+ cross-validation sum of squares for adding increasing numbers of LSA
+ components to the regression for log price. }  The value of \aicc\
+ was shifted by an additive constant to match the scale of the
+ cross-validation sums.  The gray curve shows the CVSS using rotated
+ components explained in Section \ref{sec:rotation}. }
+\end{figure}
+
+ Having seen these results from cross validation, a careful residual
+ analysis reveals the problematic outlier.  Figure \ref{fig:calib}
+ shows a plot of the the listing prices on the predicted prices for
+ the specific fold in cross-validation that omits the outlier.  Note
+ that these are shown on a log scale -- the error at this one point is
+ large enough to explain the sudden jump in the CVSS.
+
+
+
+% build a calibration plot like those that influence CVSS graph
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/calib-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{ \label{fig:calib}
+ {\sl Predicted price for the outlying listing is exceptionally large,
+ producing the spike in the CVSS seen in Figure \ref{fig:cvss}.}}
+\end{figure}
+
+
+ Now that we recognize the source of the problem, it is simple to
+ ``Monday morning quarterback'' and pick a plot that we {\em could}
+ have used to recognize the flaw sooner had we examined residual plots
+ for each of the increasing sequence of models summarized in Figure
+ \ref{fig:diag2}.  With 27 LSA components, the outlying listing is
+ leveraged, but has little effect on the fitted model.  With the
+ addition of the 28th component, however, the both its leverage and
+ influence have increased substantially.
+
+
+% show regr diagnostic pre/post adding variable 28
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.5\textwidth]{figures/diag2728-1} 
+
+}
+
+
+
+
+{\centering \includegraphics[width=0.5\textwidth]{figures/diag2728-2} 
+
+}
+
+
+
+\end{knitrout}
+\caption{ \label{fig:diag2}
+  {\sl The leveraged outlier becomes strongly influential when the 28th
+       LSA component joins the model.}  }
+\end{figure}
+
+
+% ------------------------------------------------------------------------------
+\section{Rotations and Outliers}
+\label{sec:rotation}
+% ------------------------------------------------------------------------------
+
+ Now that we have seen that a single outlier caused the surprising
+ jump in the sequence of cross-validation errors, it would be easy to
+ fix the problem: Simply exclude this case.  Do so works in this
+ example, but we gain more insight by appreciating how it is that a
+ single point -- one out of more than 7,000 -- can exert such large
+ influence.
+
+
+ The first step in gaining this understanding is to look at how the
+ LSA components are defined.  Because LSA, like principal components
+ analysis, seeks to maximize the variance of the constructed
+ components, interpretation is problematic.  We observed that the
+ leading component captures document length.  Other components mix
+ distinct combinations of words that we will call ``rays''.  Figure
+ \ref{fig:lsacomponents} explains this choice of names.  The figure
+ shows a two-dimensional projection of the LSA loadings $V$.  This
+ figure shows the loadings -- coefficients applied to the frequencies
+ for the word types -- that define the 8th and 9th LSA components.
+  When projected into 2 dimensions, these weights appear as rays
+ emanating from the origin.  The ray directed from the origin to the
+ lower left at ``auction'' appears to identify a cluster of words
+ related auction sales.  The ray directed to the upper left toward
+ ``downturn'' is harder to name.  The ray headed toward the right
+ identifies properties offered by Wells Fargo.  Each LSA component
+ typically captures several clusters of words which appear when
+projected into two dimensions.
+
+
+
+\begin{figure}
+% draw LSA components
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/lsacomponents-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{  \label{fig:lsacomponents}
+  {\sl Loadings of LSA components typically mix several underlying dimensions.}  }
+\end{figure}
+
+
+ This ``mixing'' of the components generates a model in which the odd
+ listing produces a highly influential outlier.  Figure
+ \ref{fig:outloading} shows the loadings for components 27 and 28.
+  Both are incrementally statistically significant predictors.  That
+ is, adding each to a model that contains lower indexed LSA components
+ produces a significant improvement in the fit of the model.  Notice
+ that the ray directed toward the upper right and the word type
+ ``developmental'' (which only occurs in the outlying listing)
+ captures the text of this unusual listing and little else.  How is it
+ possible for fitting this one listing to be a significant benefit to
+ the model.
+
+% show adding the outlier variable has a significant effect on the model
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+lsa <- LSA[,2:29]
+data <- list(y=logPrice, xi=poly(logTokens,degree), x=lsa)
+r <- lm(y ~ xi + x, data=data );
+summary(r)
+## 
+## Call:
+## lm(formula = y ~ xi + x, data = data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.4092 -0.4991 -0.0353  0.4863  5.1645 
+## 
+## Coefficients:
+##              Estimate Std. Error  t value Pr(>|t|)    
+## (Intercept)  12.23008    0.01001 1222.171  < 2e-16 ***
+## xi1          21.94433    1.02387   21.433  < 2e-16 ***
+## xi2           2.86674    0.96332    2.976 0.002931 ** 
+## xi3          -4.33778    0.92191   -4.705 2.58e-06 ***
+## xi4           1.53361    0.90330    1.698 0.089589 .  
+## xi5           0.64489    0.91374    0.706 0.480352    
+## xL1         -47.89865    0.93950  -50.983  < 2e-16 ***
+## xL2         -12.84261    0.87087  -14.747  < 2e-16 ***
+## xL3          30.64147    0.97949   31.283  < 2e-16 ***
+## xL4          -1.46842    0.87808   -1.672 0.094507 .  
+## xL5           5.14805    0.87608    5.876 4.38e-09 ***
+## xL6          -6.51420    0.89840   -7.251 4.56e-13 ***
+## xL7          -4.73131    0.84897   -5.573 2.59e-08 ***
+## xL8          -3.25116    0.86855   -3.743 0.000183 ***
+## xL9           3.95682    0.84782    4.667 3.11e-06 ***
+## xL10          3.93598    0.86506    4.550 5.45e-06 ***
+## xL11          7.90785    0.85251    9.276  < 2e-16 ***
+## xL12         -4.73251    0.85006   -5.567 2.68e-08 ***
+## xL13         -2.76292    0.84751   -3.260 0.001119 ** 
+## xL14          3.80148    0.85606    4.441 9.10e-06 ***
+## xL15          5.13254    0.85981    5.969 2.49e-09 ***
+## xL16          0.17086    0.84984    0.201 0.840667    
+## xL17          7.29303    0.86015    8.479  < 2e-16 ***
+## xL18         -6.57448    0.84721   -7.760 9.63e-15 ***
+## xL19         -1.17792    0.84685   -1.391 0.164282    
+## xL20         -2.34998    0.84722   -2.774 0.005555 ** 
+## xL21         -0.80407    0.84879   -0.947 0.343514    
+## xL22         -2.16356    0.85242   -2.538 0.011165 *  
+## xL23         -0.85824    0.86149   -0.996 0.319170    
+## xL24          4.37959    0.85245    5.138 2.85e-07 ***
+## xL25          8.78957    0.85287   10.306  < 2e-16 ***
+## xL26         -3.35548    0.85016   -3.947 7.99e-05 ***
+## xL27          6.86216    0.85157    8.058 8.97e-16 ***
+## xL28         11.31634    0.85032   13.308  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.8459 on 7350 degrees of freedom
+## Multiple R-squared:  0.5107,	Adjusted R-squared:  0.5085 
+## F-statistic: 232.5 on 33 and 7350 DF,  p-value: < 2.2e-16
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+% show outlier loadings prior to rotation
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/outloading-1} 
+
+}
+
+
+
+\end{knitrout}
+ \caption{ \label{fig:outloading} {\sl Loadings of LSA components
+ typically mix several underlying dimensions.}  }
+\end{figure}
+
+
+ The answer is that this one component not only detects the outlier
+ word mix, but also the mix of words associated with the other ray in
+ Figure \ref{fig:outloading}.
+
+ After rotation, clearer picture
+ emerges, one that does not mix rays (clusters) into a single
+ components.
+
+% rotate the components  (skip first as its the logToken effect)
+% check that these match:  (V[,2:k] %*% vm$rotmat)[1:3,1:6]; v[1:3,1:6]
+
+
+% draw rotated components
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/rotcomponents-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{  \label{fig:rotcomponents}
+ {\sl Rotated LSA components have simpler structure that confines
+ word set to one variable.}  }
+\end{figure}
+
+
+ After rotation, the explanatory power in regression is less
+ concentrated in leading terms, more spread out.
+
+
+% plot t-stats of rotated components
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/rottstats-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{  \label{fig:rottstats}
+  {\sl Absolute $t$-statistics from the regression of log prices on varimax
+   rotated LSA components of $\widetilde{W}$.}  }
+\end{figure}
+
+
+ And what about the outlier component?  How does it contribute to the
+ model with rotated components?  It does not add significant
+ variation.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## adding the outlier variable no longer has significant effect on the model
+lsa.vm <- (LSA[,2:250] %*% vm$rotmat)[,1:30]
+colnames(lsa.vm) <- paste0("LVM",1:ncol(lsa.vm))
+sr.rot <- summary(regr.rot <- lm(logPrice ~ poly(logTokens,5) + lsa.vm)); sr.rot
+## 
+## Call:
+## lm(formula = logPrice ~ poly(logTokens, 5) + lsa.vm)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -8.2719 -0.5715 -0.0062  0.5736  5.8717 
+## 
+## Coefficients:
+##                      Estimate Std. Error  t value Pr(>|t|)    
+## (Intercept)          12.17542    0.01174 1037.119  < 2e-16 ***
+## poly(logTokens, 5)1  40.71395    1.06337   38.288  < 2e-16 ***
+## poly(logTokens, 5)2   9.58760    1.08098    8.869  < 2e-16 ***
+## poly(logTokens, 5)3  -9.77956    1.05706   -9.252  < 2e-16 ***
+## poly(logTokens, 5)4  -6.77040    1.02172   -6.626 3.68e-11 ***
+## poly(logTokens, 5)5   0.58677    1.05570    0.556  0.57836    
+## lsa.vmLVM1          -14.39995    1.01063  -14.249  < 2e-16 ***
+## lsa.vmLVM2          -10.16861    1.02013   -9.968  < 2e-16 ***
+## lsa.vmLVM3          -11.11422    1.11380   -9.979  < 2e-16 ***
+## lsa.vmLVM4          -13.19851    1.02512  -12.875  < 2e-16 ***
+## lsa.vmLVM5            9.90552    1.00584    9.848  < 2e-16 ***
+## lsa.vmLVM6            3.18736    1.00772    3.163  0.00157 ** 
+## lsa.vmLVM7            7.62978    1.00474    7.594 3.49e-14 ***
+## lsa.vmLVM8           -3.27690    1.00548   -3.259  0.00112 ** 
+## lsa.vmLVM9            5.35647    1.00684    5.320 1.07e-07 ***
+## lsa.vmLVM10           9.90893    1.00730    9.837  < 2e-16 ***
+## lsa.vmLVM11           7.34605    1.00501    7.309 2.96e-13 ***
+## lsa.vmLVM12          11.29649    1.02082   11.066  < 2e-16 ***
+## lsa.vmLVM13           2.45190    1.00466    2.441  0.01469 *  
+## lsa.vmLVM14          -1.75894    1.00505   -1.750  0.08014 .  
+## lsa.vmLVM15           9.15404    1.00978    9.065  < 2e-16 ***
+## lsa.vmLVM16           2.91457    1.01253    2.879  0.00401 ** 
+## lsa.vmLVM17           1.22898    1.01171    1.215  0.22450    
+## lsa.vmLVM18          -1.52415    1.00434   -1.518  0.12917    
+## lsa.vmLVM19           0.45037    1.00488    0.448  0.65403    
+## lsa.vmLVM20           2.24955    1.00534    2.238  0.02528 *  
+## lsa.vmLVM21          -0.04809    1.00408   -0.048  0.96180    
+## lsa.vmLVM22          -4.35292    1.00412   -4.335 1.48e-05 ***
+## lsa.vmLVM23          -1.70002    1.03752   -1.639  0.10135    
+## lsa.vmLVM24           2.55194    1.00571    2.537  0.01119 *  
+## lsa.vmLVM25           6.16918    1.00426    6.143 8.52e-10 ***
+## lsa.vmLVM26           1.40329    1.00406    1.398  0.16227    
+## lsa.vmLVM27          -6.50650    1.01091   -6.436 1.30e-10 ***
+## lsa.vmLVM28           1.01204    1.00430    1.008  0.31363    
+## lsa.vmLVM29          -5.73601    1.01247   -5.665 1.52e-08 ***
+## lsa.vmLVM30          -1.65900    1.00405   -1.652  0.09851 .  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.004 on 7348 degrees of freedom
+## Multiple R-squared:  0.3109,	Adjusted R-squared:  0.3076 
+## F-statistic: 94.71 on 35 and 7348 DF,  p-value: < 2.2e-16
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+% show outlier component after rotation
+\begin{figure}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+
+{\centering \includegraphics[width=0.7\textwidth]{figures/rot_out_loading-1} 
+
+}
+
+
+
+\end{knitrout}
+\caption{  \label{fig:rotoutloading}
+  {\sl Loadings of LSA components typically mix several underlying dimensions.}  }
+\end{figure}
+
+
+%--------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:disc}
+%--------------------------------------------------------------------------
+
+  Regression modeling always benefits from greater substantive
+ insight, and the modeling of text is no exception.  An obvious
+ approach to building regressors from text data relies on a
+ substantive analysis of the text.  For example, sentiment analysis
+ constructs a domain-specific lexicon of positive and negative words.
+  In the context of real estate, one might suspect words such as
+ ``modern'' and ``spacious'' to be associated with more expensive
+ properties, whereas ``Fannie Mae'' and ``fixer-upper'' to signal
+ properties with lower prices.  The development of such lexicons has
+ been an active area of research in sentiment analysis over the past
+ decade \citep{taboada11}.  The development of a lexicon require
+ substantial knowledge of the context and the results are known to be
+ domain specific.  Each new problem requires a new lexicon.  The
+ lexicon for pricing homes would be quite different from the lexicon
+ for diagnosing patient health.  Our approach is also domain specific,
+ but requires little user input and so can be highly automated.
+
+
+  If the left singular vectors were sparse, only 0/1, then the
+ heuristic explanation could become less heuristic and more honest.
+  Would sparse CCA (Witten et al) be useful? \citet{witten09}
+
+
+%--------------------------------------------------------------------------
+\section*{Acknowledgment}
+%--------------------------------------------------------------------------
+
+ The authors thank Vanessa Villatoro from Trulia's PR Team for
+ allowing us to scrape the data from their web site.
+
+%--------------------------------------------------------------------------
+% References
+%--------------------------------------------------------------------------
+
+\bibliography{stat,text}
+\bibliographystyle{../../bst/ims}
+
+\end{document} %==========================================================

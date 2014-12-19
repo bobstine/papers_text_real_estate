@@ -1,0 +1,361 @@
+%-*- outline-regexp: "\\\\section\\|\\\\subsection";fill-column: 95; -*-
+
+<<begin.rcode, include=FALSE>>=
+
+library(knitr)
+opts_chunk$set(fig.path='figures/',fig.keep='last',dev='pdf',fig.align='center')
+opts_chunk$set(fig.width=6, fig.height=4, out.width='0.7\\textwidth')
+opts_chunk$set(cache.path='cache/', highlight=FALSE)
+
+source("~/C/text/functions.R")
+
+@
+
+\documentclass[12pt]{article}
+\usepackage[longnamesfirst]{natbib}
+% \usepackage[usenames]{color}  % causes problems in knitr
+\usepackage{graphicx}  % Macintosh pdf files for figures
+\usepackage{amssymb}   % Real number symbol {\Bbb R}
+\usepackage{amsmath}
+\usepackage{bbm}
+\input{../../../standard}
+
+% --- margins
+\usepackage{../../sty/simplemargins}
+\setleftmargin{0.8in}   % 1 inch is NSF legal minimum
+\setrightmargin{0.8in}  % 1 inch is NSF legal minimum
+\settopmargin{1in}    % 1 inch is NSF legal minimum
+\setbottommargin{1in} % 1 inch is NSF legal minimum
+
+% --- Paragraph split, indents
+\setlength{\parskip}{0.00in}
+\setlength{\parindent}{0in}
+
+% --- Line spacing
+\renewcommand{\baselinestretch}{1.4}
+
+% --- page numbers
+\pagestyle{empty}  % so no page numbers
+
+% --- Hypthenation
+\sloppy  % fewer hyphenated
+\hyphenation{stan-dard}
+\hyphenation{among}
+
+% --- Customized commands, abbreviations
+\newcommand{\TIT}{{\it  {\tiny Zipf Topics and LSA (DRAFT, \today)}}}
+\newcommand{\Wt}{\mbox{$\widetilde{W}$}}
+
+% --- Header
+\pagestyle{myheadings}
+\markright{\TIT}
+
+% --- Title
+
+\title{ Zipf Topic Models }
+\author{ RAS }
+
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\vspace{-0.5in}
+\maketitle
+% ------------------------------------------------------------------------------
+\vspace{-.5in}
+
+\abstract{
+
+ Topics models are a popular choice for the analysis of text.  These models, however, do not
+ reproduce a common signature of text, namely a Zipf power law distribution for the frequency
+ of the occurence of words.  We define a simple variation on these models that creates topics
+ that do reproduce this characteristic of text.  LSA of simulated Zipf-topics reproduces
+ features observed in text documents (house price listings).
+
+Outline
+\begin{enumerate}
+  \item Show that topic models don't show Zipf.  Do this by fitting a topic model to real
+ estate.  no zipf in topics, but zipf in data \citep{sato14}
+  \item Introduce alternative model that ``bakes in'' the zipf shape.
+  \item Show that LSA recovers such topics, whereas topic models have issues.
+  \item Comment on other estimation methods such as VarEM
+\end{enumerate}
+
+% ------------------------------------------------------------------------------
+
+\vspace{0.15in}
+
+\noindent {\it Key Phrases: latent semantic analysis, singular value decomposition.
+
+\clearpage
+
+
+<<set-constants, cache=TRUE>>=
+ n.outlier.words <- 10
+ n.vocab <- 500
+ K <- 30
+ alpha.P <- 0.02
+ alpha.d <- rep(0.4,K)
+ n <- 2500
+ lambda <- 50
+
+@
+
+
+
+% ------------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+% ------------------------------------------------------------------------------
+
+ Simulated text from the standard construction of a topic model does not reproduce what is
+ perhaps the most common feature observed in text, namely a power law distribution of word
+ frequencies.  \citet{sato14}
+
+
+ Build a topic model for the real-estate listings using software described in \citet{hornik11}.
+
+<<"build-doc-term">>=
+
+ # read in real-estate listings
+library(tm)
+
+ ?readPlain
+
+ readPlain(
+@
+
+
+
+
+
+ The Blei-McAuliffe supervised topic model defines the generative process used in the following
+ examples.  Number the documents $i = 1,\ldots,n$, and assume a vocabulary of $V$ word types.
+  For the calculations shown here, the simulation produces $n=\Sexpr{n}$ documents with a
+ vocabulary of size $V=\Sexpr{n.vocab}$.  The generating process is controlled by several other
+ hyperparameters:
+ \begin{itemize}
+  \item $\alpha_p$ and $\alpha_d$ control the underlying Dirichlet process.  Small values of
+ $\alpha$ produce essentially disjoint distributions (the underlying gamma r.v. are very highly
+ skewed).  In the shown simulation $\alpha_p=\Sexpr{alpha.P}$.
+  \item $\lambda$ is the mean count of word tokens in documents, here set to $\lambda =
+ \Sexpr{lambda}$ tokens.
+  \item $K$ is the number of topics and $P_k$ is the distribution over word types for this the
+ $k$th topic, with $P_k \given \alpha \sim \mbox{Dir}(\alpha_p)$.  Arrange these distributions
+ into the $K\times V$ matrix $P$, with the distribution for the $k$th topic $P_k$ in the $k$th
+ row.  For the shown example, $K = \Sexpr{K}$.
+ \end{itemize}
+ The generative process for the $i$th document works as follows.
+ \begin{enumerate}
+ \item Determine the expected mix of topics in the $i$th document.  Drawing topic proportions
+ $\theta_{i1}, \ldots, \theta_{ik}$ for this document from a Dirichlet prior, $\theta_i \sim
+ \mbox{Dir}(\alpha_d)$.  $\theta_i$ is a $K$-element vector, with $k$th element giving the
+ expected proportion of tokens drawn from the $k$th topic.
+ \item For the $n_i \sim \mbox{Poisson}(\la)$ word tokens in this document,
+   \begin{enumerate}
+    \item Simulate the number of word tokens sampled from each topic from a multinomial
+ distribution, $z_{i} \sim \mbox{Multi}(n_i,\theta_i)$. ($z_i$ is a vector of $K$ counts.)
+    \item Sample the words from each topic, $w_{ijk} \given z_i,P_k \sim \mbox{Multi}(z_{ik},
+ P_k),$ defining the observed $n \times V$ document/type matrix $W_{ij} = \sum_k w_{ijk}$.
+   \end{enumerate}
+ \end{equation}
+\end{enumerate}
+
+
+ The following code generates the $n \times V$ word-document matrix $W$.  The code first
+ generates $K=30$ topic distributions.  If $\alpha_p \approx 0.01$, topic distributions are
+ by-and-large distinct; \ie, the topics have few words in common.  Larger choices for
+ $\alpha_p$ produce more overlap, as shown in Figure \fig{topic-dist} with $\alpha_p \approx
+ 0.10$.  In addition, to allow some flexibility in making the topics even more distinct, each
+ has room (extra columns) to allow for disjoint words that separate the topics.  The word types
+ are sorted by probability for later convenience in finding the common words.
+
+<<gen-p, cache=TRUE, dependson="constants">>=
+
+ P <-matrix(0,nrow=K,ncol=n.vocab-n.outlier.words)
+ for(i in 1:K) P[i,] <- rdirichlet(rep(alpha.P,n.vocab-n.outlier.words))
+ P <- P[,order(colSums(P), decreasing=TRUE)]
+ P <- cbind(P, matrix(0,nrow(P), n.outlier.words))
+
+ @
+
+<<plot-p, fig.cap="Overlap of the topic distributions depends on the Dirichlet parameter $\\alpha_p$">>=
+
+ par(mfrow=c(1,2))
+  a <- 0.05;
+  p1 <- rdirichlet(rep(a,n.vocab)); 	p2 <- rdirichlet(rep(a,n.vocab))
+  plot(p1,p2, xlab=expression("P"[1]),ylab=expression("P"[2]),
+       main=expression(paste(alpha,"=0.05")))
+  a <- 0.20;
+  p1 <- rdirichlet(rep(a,n.vocab)); 	p2 <- rdirichlet(rep(a,n.vocab))
+  plot(p1,p2, xlab=expression("P"[1]),ylab=expression("P"[2]),
+       main=expression(paste(alpha,"=0.10")))
+ reset()
+
+ @
+
+ Once we have defined the topic distributions, the next task is to
+ sample words from these to form the documents and the document/type
+ matrix of counts $W$.  Notice that this is clearly a bag-of-words
+ model.  Words are just a mixture of samples from the various
+ multinomial distributions.  Again, for convenience, I have sorted the
+ documents to have those with the most words come first.  In order to
+ get the word counts, we first determine how many tokens to sample
+ from each topic.  The multinomial counts $z_i$ determine the response
+ (though that's not relevant yet).
+
+<<gen-z, cache=TRUE, dependson="gen-p">>=
+
+theta <- matrix(0,nrow=n,ncol=K)
+Z <- matrix(0,nrow=n,ncol=K)
+doc.len <- sort(rpois(n,lambda), decreasing=TRUE)
+for(i in 1:n) {
+    theta[i,] <- rdirichlet(alpha.d)
+    Z[i,] <- as.vector(rmultinom(1,doc.len[i],theta[i,]))
+}
+
+@
+
+<<plot-theta, fig.cap="Distribution of topics for a document">>=
+
+plot(theta[1,], xlab="Topic", ylab="Share of Vocabulary", main="Topic Mix for a Document")
+
+@
+
+\noindent
+ Figure \ref{fig:plot-theta} shows the mix of topics for a typical
+ document.  In this case, Topic \Sexpr{which.max(theta[1,])} has the
+ largest share of words (\Sexpr{max(theta[1,])}).  Finally, we
+ generate $W$ by using multinomial samples from the topic
+ distributions, with the number from each given by $z_i$.  We also
+ generate the mean of the response here; the coefficients in the
+ ``true'' regression model ($\beta$ in equation \eqn{Yi}) by sampling a
+ normal distribution.
+
+
+<<gen-w, cache=TRUE, dependson="gen-z">>=
+
+W <- matrix(0,nrow=n, ncol=n.vocab)
+W.ev <- W;
+eta <- rnorm(K, mean=2, sd=1)
+mu.y <- rep(0,n)
+for(i in 1:n) {
+    W.ev[i,] <- doc.len[i] * theta[i,] %*% P # prob distribution over words for each doc
+    for(k in 1:K) if(Z[i,k]>0) W[i,]<-W[i,]+rmultinom(1,Z[i,k],P[k,])
+    mu.y[i] <- sum(eta * Z[i,])
+}
+
+@
+
+ Figure \ref{fig:plot-within-doc} is a check that I've done the
+ calculations right.  This plot graphs the within-document word counts
+ (a row of word counts $W_i$) on the corresponding expected word
+ counts $n_i\theta_i'P$.  The smooth lines follow a linear fit (red)
+ or a quadratic fit (blue).  These are estimated by fitting Poisson
+ regressions of the observed counts on the expected counts.  (Getting
+ R to fit this with a Poisson error model but linear link required
+ adding an offset to both $x$ and $y$ coordinates (to avoid taking the
+ log of near-zero, I suspect.)  A loess fit (dark green) has a lot of
+ the curvature out where the data are sparse, but otherwise agrees
+ with the linear pattern.
+
+<<plot-within-doc, warning=FALSE, fig.cap="Regression of observed on expected counts.">>=
+
+i <- 2; off <- 0.3 ;  y <- W[i,]+off;  x <- W.ev[i,]+off; x2 <- x^2 + off
+summary(r1 <- glm(y ~     x  , family=poisson(link='identity'), start=c(0,1    )))
+summary(r2 <- glm(y ~ x + x2 , family=poisson(link='identity'), start=c(0,1,0  )))
+
+plot(x, y, xlab="Expected Word Counts (with offset)", ylab="Observed Counts", col="gray")
+abline(a=0,b=1,col="black",lwd=3)
+o <- order(x);
+f <- fitted.values(r1);
+lines(x[o], f[o], col="red", lwd=1)
+f <- fitted.values(r2);
+lines(x[o], f[o], col="blue")
+f <- fitted(loess(y ~ x, span=0.2))
+lines(x[o], f[o], col="seagreen")
+
+@
+
+<<check-glm, eval=FALSE, include=FALSE>>=
+
+## WTF was going on in the Poisson regression plot: a mess without linear link.
+##  Aha, 'Poisson regression' fits a log-linear model, assuming the log of the
+##  conditional mean is linear.  That's not what happens in the text situation.
+##  The means are linear.
+
+x <- runif(1000, min=0.5,max=20)
+y <- sapply(x, function(la) rpois(1,la))
+plot(x,y, col="gray")
+abline(a=0,b=1,lwd=2)
+
+## this form will generate a curved fit since it thinks its log-linear
+r <- glm(y ~ x, family=poisson)
+f <- fitted.values(r); o <- order(x)
+lines(x[o],f[o], col="red", lwd=2)
+summary(r)
+
+## this version forces a linear link function (must supply starting values)
+r <- glm(y ~ x, family=poisson(link='identity'), start=c(0,1))
+f <- fitted.values(r); o <- order(x)
+lines(x[o],f[o], col="blue", lwd=2)
+summary(r)
+
+@
+
+ The last step is to generate the response.  The model generates a
+ response for each document as a linear combination of the latent
+ counts $z_i$ of the number of words sampled from each topic.  The
+ value of $\sigma^2$ (regression error variance) is determined by the
+ chosen goodness-of-fit.
+
+<<gen-y, cache=TRUE, dependson="gen-w">>=
+
+target.r2 <- 0.6
+Y <- mu.y + rnorm(n, sd=sqrt((1-target.r2) * var(mu.y) / target.r2))
+summary(regr.z <-	lm(Y ~ Z) )$r.squared
+
+@
+
+ \noindent
+ The regression parameters (weights on $Z$) so that $R^2 \approx
+ \Sexpr{target.r2}$.  It's very close in this example.
+
+
+ Before going on, Figure \ref{fig:plot-zipf} graphs the log of the
+ word type frequencies on the log of their ranks.  The distribution
+ over word types implied by the Blei-McAuliffe topic model does
+ resemble a Zipf distribution in the sense that the fitted decay is
+ much slower than usual -- seems like a weakness of this generative
+ model, perhaps since the model does not produce ``common'' words that
+ would be shared by every topic.
+
+<<plot-zipf, fig.cap="Simulated data do not match the usual Zipf distribution">>=
+
+freq <- apply(W,2,sum)
+cat(sum(freq==0)," unused words\n");
+sort.freq <- sort(freq[freq>0],decreasing=TRUE)
+lf <- log(sort.freq); lr <- log(1:length(sort.freq))
+plot(sort.freq,log="xy", xlab="Word Rank", ylab="Frequency", main="Zipf Plot")
+use <- 100; lf <- lf[1:use]; lr <- lr[1:use]
+regr <- lm(lf ~ lr); coefficients(summary(regr));
+lines(exp(predict(regr)), col="red")
+
+@
+
+ \noindent
+ The estimated log-log slope (which is fit to the top \Sexpr{use} words
+ is much closer to zero than typical ($\approx \Sexpr{round(coef(regr)[2],2)}$).
+
+
+@
+
+%--------------------------------------------------------------------------
+% References
+%--------------------------------------------------------------------------
+
+\bibliography{stat,text}
+\bibliographystyle{../../bst/ims}
+
+\end{document} %==========================================================
