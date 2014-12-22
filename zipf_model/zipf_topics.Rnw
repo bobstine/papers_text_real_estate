@@ -118,14 +118,168 @@ Outline
 
 <<"build-doc-term">>=
 
- # read in real-estate listings
+## read real-estate listings, trim off price, drop empty/near empty
+library(stringr)
+the.text <- readLines("~/data/text/real_estate/Set10Tokenized/PhiladelphiaNew3Tokenized")
+raw.prices <- as.double(str_extract(the.text,"[0-9]+"))
+the.text <- str_replace(the.text, "[0-9]+ ","")
+the.text <- the.text[b <- str_length(the.text)>9]
+raw.prices <- raw.prices[b]
+
+## convert to tm corpus
 library(tm)
+Listings <- VCorpus(VectorSource(the.text), readerControl=list(language="en"))
 
- ?readPlain
+## optional
+##  <- tm_map(Listings, content_transformer(tolower))
+##  <- tm_map(Listings, stripWhitespace)
+##  <- tm_map(Listings, removeWords, stopwords("english"))
+##  <- tm_map(Listings, stemDocument)
+##  <- tm_map(Listings, removePunctuation)
 
- readPlain(
+## create document/term matrix
+(dtm <- DocumentTermMatrix(Listings))
+
+## explore the matrix
+findFreqTerms(dtm, 1000)  # appear more than xxx times
+
+findAssocs(dtm, "granite", 0.3)
+
+dtm <- removeSparseTerms(dtm, 0.99) # remove types that appear in fewer than (1 - xxx)% documents
+dtm
+
+dtmat = as.matrix(dtm)
+dtmat <- dtmat[b<-rowSums(dtmat)>9,]        # at least 10 words
+storage.mode(dtmat) <- 'integer'
+prices <- raw.prices[b]
+
 @
 
+<<word-clouds>>=
+
+library(wordcloud)
+
+freq = sort(colSums(dtmat), decreasing=TRUE) # calculate the frequency of words
+
+wordcloud(names(freq), freq, min.freq=20, random.color=TRUE,colors=rainbow(7))
+
+@
+
+
+<<"build-topic-model-data">>=
+
+library(lda)
+require("reshape2")
+
+convert.dtm.row <- function(r) {
+    v <- which(r>0)
+    names(v) <- NULL
+    rbind(v-as.integer(1),r[v])   # blei wants zero based, integer-valued
+}
+
+docs <- apply(dtmat,1,convert.dtm.row)
+vocab <- names(dtmat[1,])
+
+@
+
+<<"fit-topic-model">>=
+
+set.seed(75309)
+
+K <- 25
+result <- lda.collapsed.gibbs.sampler(docs,  K, vocab, 25,  ## Num iterations
+                                      0.1,  0.1,
+                                      compute.log.likelihood=TRUE)
+plot(result$log.likelihoods[1,])
+
+
+## compare to SVD of doc/term
+udv <- svd(dtmat)
+qplot(1:length(udv$d),udv$d, log="xy")
+
+cca.v <- cancor(udv$v[,1:20], t(result$topics))
+plot(cca.v$cor)
+
+cca.u <- cancor(udv$u[,1:20], t(result$document_sums))
+plot(cca.u$cor)
+
+## Get the top words in the cluster
+top.words <- top.topic.words(result$topics, 5, by.score=TRUE)
+
+
+## Number of documents to display
+N <- 10
+topic.proportions <- t(result$document_sums) / colSums(result$document_sums)
+topic.proportions <- topic.proportions[sample(1:nrow(topic.proportions), N),]
+topic.proportions[is.na(topic.proportions)] <-  1 / K
+colnames(topic.proportions) <- apply(top.words, 2, paste, collapse=" ")
+
+topic.proportions.df <- melt(cbind(data.frame(topic.proportions),
+                                   document=factor(1:N)),
+                             variable.name="topic",
+                             id.vars = "document")
+
+@
+
+
+<<"fit-slda">>=
+
+num.topics <- 10
+starting.values <- sample(c(-1, 1), num.topics, replace=TRUE)
+mean(log(prices))  # better not be NA!
+
+result <- slda.em(documents=docs, K=num.topics, vocab=vocab,
+                   num.e.iterations=10,   num.m.iterations=4,
+                   alpha=1.0, eta=0.1,
+                   log(prices),
+                   starting.values, variance=0.25,  lambda=1.0,
+                   logistic=FALSE,  method="sLDA")
+
+summary(result$model)
+
+plot(fitted.values(result$model),log(prices))
+cor(fitted.values(result$model),log(prices))
+
+y <- log(prices); U <- udv$u[,1:10]
+summary(lm(y~U))
+
+> ## Make a pretty picture.
+> require("ggplot2")
+
+> Topics <- apply(top.topic.words(result$topics, 5, by.score=TRUE),
++                 2, paste, collapse=" ")
+
+> coefs <- data.frame(coef(summary(result$model)))
+
+> theme_set(theme_bw())
+
+> coefs <- cbind(coefs, Topics=factor(Topics, Topics[order(coefs$Estimate)]))
+
+> coefs <- coefs[order(coefs$Estimate),]
+
+> qplot(Topics, Estimate, colour=Estimate, size=abs(t.value), data=coefs) +
++   geom_errorbar(width=0.5, aes(ymin=Estimate-Std..Error,
++                   ymax=Estimate+Std..Error)) + coord_flip()
+Hit <Return> to see next plot:
+
+> predictions <- slda.predict(poliblog.documents,
++                             result$topics,
++                             result$model,
++                             alpha = 1.0,
++                             eta=0.1)
+
+> qplot(predictions,
++       fill=factor(poliblog.ratings),
++       xlab = "predicted rating",
++       ylab = "density",
++       alpha=I(0.5),
++       geom="density") +
++   geom_vline(aes(xintercept=0)) +
++   opts(legend.position = "none")
+Error: Use 'theme' instead. (Defunct; last used in version 0.9.1)
+>
+
+@
 
 
 
