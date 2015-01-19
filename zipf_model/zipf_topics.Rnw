@@ -145,7 +145,7 @@ findFreqTerms(dtm, 1000)  # appear more than xxx times
 
 findAssocs(dtm, "granite", 0.3)
 
-dtm <- removeSparseTerms(dtm, 0.99) # remove types that appear in fewer than (1 - xxx)% documents
+dtm <- removeSparseTerms(dtm, 0.995) # remove types that appear in fewer than (1 - xxx)% documents
 dtm
 
 dtmat = as.matrix(dtm)
@@ -155,7 +155,31 @@ prices <- raw.prices[b]
 
 @
 
-<<word-clouds>>=
+Plot the Zipf distribution after removing types that are too few.
+
+<<"plot-zipf-dtm">>=
+
+min(freq <- colSums(dtmat)) # 29
+min(rowSums(dtmat)) # 10, by construction
+
+zipf.plot <- function(freq, n.fit=NULL) {
+    freq <- freq[freq>0]
+    if(is.null(n.fit)) n.fit <- length(freq)
+    o <- order(freq, decreasing=TRUE)
+    lx <- log10(1:length(freq))
+    ly <- log10(freq[o])
+    plot(lx,ly)
+    ly <- ly[1:n.fit]; lx <- lx[1:n.fit]
+    regr <- lm(ly ~ lx)
+    abline(regr,col="red")
+    return(regr)
+}
+
+(zipf.plot(freq, n.fit=500))  # slope about -0.86
+
+@
+
+<<"word-cloud">>=
 
 library(wordcloud)
 
@@ -182,6 +206,12 @@ vocab <- names(dtmat[1,])
 
 @
 
+
+ I find it interesting that the topics discovered by LDA to appear to assign words so as to
+ have a Zipf distribution as found in the source text.  If, however, you simulate these, you
+ don't get a Zipf.
+
+
 <<"fit-topic-model">>=
 
 set.seed(75309)
@@ -190,7 +220,15 @@ K <- 25
 result <- lda.collapsed.gibbs.sampler(docs,  K, vocab, 25,  ## Num iterations
                                       0.1,  0.1,
                                       compute.log.likelihood=TRUE)
+names(result)
+
+dim(result$topics)   # K x V matrix
+
 plot(result$log.likelihoods[1,])
+
+
+## get 'dist' implied by topics
+zipf.plot(result$topics[1,], n.fit=100)
 
 
 ## compare to SVD of doc/term
